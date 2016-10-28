@@ -1,0 +1,11 @@
+language: node_js
+node_js:
+  - "4"
+  - "5"
+os:
+  - linux
+sudo: false
+before_script:
+  - sh -c "git log | head -12"
+script:
+  - npm run coverage
