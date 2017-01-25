@@ -1,6 +1,6 @@
 {
   "name": "cli-kit",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Everything you need to create awesome command line interfaces",
   "main": "./dist/index.js",
   "author": "Chris Barber <chris@cb1inc.com> (https://github.com/cb1kenobi)",
@@ -39,27 +39,29 @@
     "test": "gulp test"
   },
   "dependencies": {
-    "source-map-support": "^0.4.5"
+    "debug": "^2.6.0",
+    "hook-emitter": "^2.0.0",
+    "source-map-support": "^0.4.10"
   },
   "devDependencies": {
-    "babel-eslint": "^7.1.0",
-    "babel-preset-es2015-node4": "^2.1.0",
+    "babel-eslint": "^7.1.1",
+    "babel-preset-es2015-node4": "^2.1.1",
     "chai": "^3.5.0",
     "del": "^2.2.2",
     "esdoc-es7-plugin": "^0.0.3",
     "gulp": "^3.9.1",
     "gulp-babel": "^6.1.2",
-    "gulp-babel-istanbul": "^1.5.0",
-    "gulp-debug": "^2.1.2",
+    "gulp-babel-istanbul": "^1.6.0",
+    "gulp-debug": "^3.0.0",
     "gulp-esdoc": "^0.3.0",
     "gulp-eslint": "^3.0.1",
-    "gulp-filter": "^4.0.0",
+    "gulp-filter": "^5.0.0",
     "gulp-inject-modules": "^1.0.0",
-    "gulp-load-plugins": "^1.3.0",
+    "gulp-load-plugins": "^1.4.0",
     "gulp-mocha": "^3.0.1",
     "gulp-plumber": "^1.1.0",
-    "gulp-sourcemaps": "^2.2.0",
-    "sinon": "^1.17.6",
+    "gulp-sourcemaps": "^2.4.0",
+    "sinon": "^1.17.7",
     "sinon-chai": "^2.8.0"
   },
   "homepage": "https://github.com/cb1kenobi/cli-kit#readme",

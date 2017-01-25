@@ -1,3 +1,6 @@
+> Note: cli-kit is not ready for use. Parts of it work, but is missing many
+> essential features. Please check back later.
+
 # cli-kit
 
 [![NPM Version][npm-image]][npm-url]
@@ -12,7 +15,9 @@ Everything you need to make awesome Command Line Interfaces.
 
 ## Features
 
-* ?
+* Command line parsing
+* Support for multi-tier commands
+* Auto-generated help
 
 ## Installation
 
@@ -28,7 +33,7 @@ Everything you need to make awesome Command Line Interfaces.
 
 (The MIT License)
 
-Copyright (c) 2015-2016 Chris Barber
+Copyright (c) 2015-2017 Chris Barber
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
