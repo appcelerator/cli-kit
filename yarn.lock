@@ -884,7 +884,7 @@ debug@2.2.0:
   dependencies:
     ms "0.7.1"
 
-debug@2.X, debug@^2.1.1, debug@^2.2.0, debug@^2.3.3, debug@^2.6.0:
+debug@2.X, debug@^2.1.1, debug@^2.2.0, debug@^2.3.3:
   version "2.6.0"
   resolved "https://registry.yarnpkg.com/debug/-/debug-2.6.0.tgz#bc596bcabe7617f11d9fa15361eded5608b8499b"
   dependencies:
@@ -1268,6 +1268,12 @@ figures@^1.3.5:
   dependencies:
     escape-string-regexp "^1.0.5"
     object-assign "^4.1.0"
+
+figures@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/figures/-/figures-2.0.0.tgz#3ab1a2d2a62c8bfb431a0c94cb797a2fce27c962"
+  dependencies:
+    escape-string-regexp "^1.0.5"
 
 file-entry-cache@^2.0.0:
   version "2.0.0"
@@ -1798,6 +1804,10 @@ http-signature@~1.1.0:
     assert-plus "^0.2.0"
     jsprim "^1.2.2"
     sshpk "^1.7.0"
+
+humanize@^0.0.9:
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/humanize/-/humanize-0.0.9.tgz#1994ffaecdfe9c441ed2bdac7452b7bb4c9e41a4"
 
 ice-cap@0.0.4:
   version "0.0.4"
@@ -2413,6 +2423,10 @@ mocha@^3.0.0:
     mkdirp "0.5.1"
     supports-color "3.1.2"
 
+moment@^2.17.1:
+  version "2.17.1"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.17.1.tgz#fed9506063f36b10f066c8b59a144d7faebe1d82"
+
 ms@0.7.1:
   version "0.7.1"
   resolved "https://registry.yarnpkg.com/ms/-/ms-0.7.1.tgz#9cd13c03adbff25b65effde7ce864ee952017098"
@@ -2447,6 +2461,12 @@ multipipe@^0.1.2:
 mute-stream@0.0.5:
   version "0.0.5"
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.5.tgz#8fbfabb0a98a253d3184331f9e8deb7372fac6c0"
+
+nanobuffer@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/nanobuffer/-/nanobuffer-1.0.0.tgz#76ce369d7cc944616c1746f90369a49b4d6d1268"
+  dependencies:
+    source-map-support "^0.4.11"
 
 natives@^1.1.0:
   version "1.1.0"
@@ -2930,6 +2950,17 @@ slice-ansi@0.0.4:
   version "0.0.4"
   resolved "https://registry.yarnpkg.com/slice-ansi/-/slice-ansi-0.0.4.tgz#edbf8903f66f7ce2f8eafd6ceed65e264c831b35"
 
+snooplogg@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/snooplogg/-/snooplogg-1.0.0.tgz#c94c2f176bc13e8a41709b5fcf195caf6db25c60"
+  dependencies:
+    figures "^2.0.0"
+    humanize "^0.0.9"
+    moment "^2.17.1"
+    nanobuffer "^1.0.0"
+    source-map-support "^0.4.11"
+    supports-color "^3.2.3"
+
 sntp@1.x.x:
   version "1.0.9"
   resolved "https://registry.yarnpkg.com/sntp/-/sntp-1.0.9.tgz#6541184cc90aeea6c6e7b35e2659082443c66198"
@@ -2948,6 +2979,12 @@ source-map-resolve@^0.3.0:
 source-map-support@^0.4.0, source-map-support@^0.4.10, source-map-support@^0.4.2, source-map-support@^0.4.6:
   version "0.4.10"
   resolved "https://registry.yarnpkg.com/source-map-support/-/source-map-support-0.4.10.tgz#d7b19038040a14c0837a18e630a196453952b378"
+  dependencies:
+    source-map "^0.5.3"
+
+source-map-support@^0.4.11:
+  version "0.4.11"
+  resolved "https://registry.yarnpkg.com/source-map-support/-/source-map-support-0.4.11.tgz#647f939978b38535909530885303daf23279f322"
   dependencies:
     source-map "^0.5.3"
 
@@ -3071,6 +3108,12 @@ supports-color@3.1.2, supports-color@3.1.x:
 supports-color@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-2.0.0.tgz#535d045ce6b6363fa40117084629995e9df324c7"
+
+supports-color@^3.2.3:
+  version "3.2.3"
+  resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-3.2.3.tgz#65ac0504b3954171d8a64946b2ae3cbb8a5f54f6"
+  dependencies:
+    has-flag "^1.0.0"
 
 "symbol-tree@>= 3.1.0 < 4.0.0":
   version "3.2.1"

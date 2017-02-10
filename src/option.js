@@ -1,4 +1,4 @@
-import { types } from './option-types';
+import { types } from './types';
 
 const formatRegExp = /^(?:\-([^-])(?:[ ,|]+)?)?(?:\-\-([^\s]+))?(?:\s+?(.+))?$/;
 const valueRegExp = /^(\[(?=.+\]$)|\<(?=.+\>$))(.+)[\]\>]$/;

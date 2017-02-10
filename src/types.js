@@ -4,22 +4,22 @@ const yesRegExp = /^y(es)?$/;
 const noRegExp = /^no?$/;
 
 /**
- * Options have a type. Generally they are either a `bool` (flag) or `string`
- * (option). However, for non-bool options, you can specify a type that will
- * validate and format the value.
+ * Options/args have a type. Generally they are either a `bool` (flag) or
+ * `string` (option/arg). However, for non-bool options, you can specify a type
+ * that will validate and format the value.
  *
  * Below is the list of supported types and their transformers.
  */
 export const types = {};
 
-export class OptionType {
+export class Type {
 	constructor(opts) {
 		if (!opts || typeof opts !== 'object' || Array.isArray(opts)) {
 			throw new TypeError('Expected opts to be an object');
 		}
 
 		if (!opts.name) {
-			throw new Error('Missing option type name');
+			throw new Error('Missing type name');
 		}
 
 		if (opts.transform && typeof opts.transform !== 'function') {
@@ -31,19 +31,19 @@ export class OptionType {
 	}
 }
 
-export default function addOptionType(opts) {
-	if (!(opts instanceof OptionType)) {
-		opts = new OptionType(opts);
+export function addType(opts) {
+	if (!(opts instanceof Type)) {
+		opts = new Type(opts);
 	}
 	types[opts.name] = opts;
 }
 
-addOptionType({
+addType({
 	name: 'bool',
 	transform: value => Boolean(value)
 });
 
-addOptionType({
+addType({
 	name: 'date',
 	transform: value => {
 		let date;
@@ -65,7 +65,7 @@ addOptionType({
 	}
 });
 
-addOptionType({
+addType({
 	name: 'file',
 	transform: value => {
 		if (!value) {
@@ -75,7 +75,7 @@ addOptionType({
 	}
 });
 
-addOptionType({
+addType({
 	name: 'int',
 	transform: value => {
 		let num;
@@ -86,7 +86,7 @@ addOptionType({
 	}
 });
 
-addOptionType({
+addType({
 	name: 'json',
 	transform: value => {
 		try {
@@ -97,7 +97,7 @@ addOptionType({
 	}
 });
 
-addOptionType({
+addType({
 	name: 'number',
 	transform: value => {
 		let num = Number(value);
@@ -108,7 +108,7 @@ addOptionType({
 	}
 });
 
-addOptionType({
+addType({
 	name: 'positiveInt',
 	transform: value => {
 		let num;
@@ -119,12 +119,12 @@ addOptionType({
 	}
 });
 
-addOptionType({
+addType({
 	name: 'string',
 	transform: value => value
 });
 
-addOptionType({
+addType({
 	name: 'yesno',
 	transform: value => {
 		if (yesRegExp.test(value)) {

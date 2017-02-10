@@ -1,10 +1,11 @@
+import Argument from './argument';
 import Arguments from './arguments';
 import Command from './command';
-import debug from 'debug';
 import HookEmitter from 'hook-emitter';
 import Option from './option';
+import snooplogg from 'snooplogg';
 
-const log = debug('cli-kit:context');
+const log = snooplogg.config({ theme: 'detailed' })('cli-kit:context').log;
 
 const optRE = /^(?:--|—)(?:([^=]+)(?:=([\s\S]*))?)?$/;
 const dashOpt = /^(?:-|—)(.+)$/;
@@ -14,35 +15,41 @@ function camelCase(s) {
 	return s.replace(/(?:^\w|[A-Z]|\b\w)/g, (m, i) => i ? m.toUpperCase() : m.toLowerCase()).replace(/[^\w]+/g, '');
 }
 
+/**
+ * Defines a context for commands, options, and args.
+ *
+ * @extends {HookEmitter}
+ */
 export default class Context extends HookEmitter {
 	/**
 	 * Constructs a context instance.
 	 *
-	 * @param {Object} [params] - Various params.
-	 * @param {Array<Object> [params.args] - An array of arguments.
-	 * @param {Boolean} [params.camelCase=true] - Camel case option names.
-	 * @param {Array<Object> [params.commands] - An array of commands.
-	 * @param {Array<Object> [params.options] - An array of options.
-	 * @param {Context} [params.parent] - Parent context.
-	 * @param {String} [params.title] - Context title.
+	 * @param {Object} [opts] - Various options.
+	 * @param {Array<Object>} [opts.args] - An array of arguments.
+	 * @param {Boolean} [opts.camelCase=true] - Camel case option names.
+	 * @param {Object} [opts.commands] - A map of command names to command
+	 * descriptors.
+	 * @param {Array<Object>|Object} [opts.options] - An array of options.
+	 * @param {Context} [opts.parent] - Parent context.
+	 * @param {String} [opts.title] - Context title.
 	 * @access public
 	 */
-	constructor(params={}) {
-		if (params.args && !Array.isArray(params.args)) {
+	constructor(opts={}) {
+		if (opts.args && !Array.isArray(opts.args)) {
 			throw new TypeError('Expected args to be an array');
 		}
 
-		if (params.commands && (typeof params.commands !== 'object' || Array.isArray(params.commands))) {
+		if (opts.commands && (typeof opts.commands !== 'object' || Array.isArray(opts.commands))) {
 			throw new TypeError('Expected commands to be an object');
 		}
 
-		if (params.options && typeof params.options !== 'object') {
+		if (opts.options && typeof opts.options !== 'object') {
 			throw new TypeError('Expected options to be an object or an array');
 		}
 
 		super();
 
-		Object.assign(this, params);
+		Object.assign(this, opts);
 
 		this.args      = [];
 		this.commands  = {};
@@ -65,19 +72,19 @@ export default class Context extends HookEmitter {
 			}
 		};
 
-		this.camelCase = params.camelCase !== false;
+		this.camelCase = opts.camelCase !== false;
 
 		// initialize the commands
-		if (params.commands) {
-			for (const name of Object.keys(params.commands)) {
-				this.command(name, params.commands[name]);
+		if (opts.commands) {
+			for (const name of Object.keys(opts.commands)) {
+				this.command(name, opts.commands[name]);
 			}
 		}
 
 		// initialize the options
-		if (Array.isArray(params.options)) {
+		if (Array.isArray(opts.options)) {
 			let group = null;
-			for (const groupOrOption of params.options) {
+			for (const groupOrOption of opts.options) {
 				if (!groupOrOption || (typeof groupOrOption !== 'string' && typeof groupOrOption !== 'object') || Array.isArray(groupOrOption)) {
 					throw new TypeError('Expected options array element to be a string or an object');
 				}
@@ -89,20 +96,21 @@ export default class Context extends HookEmitter {
 					}
 				}
 			}
-		} else if (params.options) {
-			for (const format of Object.keys(params.options)) {
-				this.option(format, params.options[format]);
+		} else if (opts.options) {
+			for (const format of Object.keys(opts.options)) {
+				this.option(format, opts.options[format]);
 			}
 		}
 
-		if (Array.isArray(params.args)) {
-			for (const arg of params.args) {
+		if (Array.isArray(opts.args)) {
+			for (const arg of opts.args) {
 				this.argument(arg);
 			}
 		}
 	}
 
 	argument(arg={}) {
+		this.args.push(arg instanceof Argument ? arg : new Argument(arg));
 	}
 
 	command(name, opts) {
@@ -115,12 +123,18 @@ export default class Context extends HookEmitter {
 			throw new TypeError('Expected name to be a non-empty string');
 		}
 
-		if (!opts) {
+		if (typeof opts === 'function') {
+			opts = {
+				action: opts
+			};
+		} else if (!opts) {
 			opts = {};
 		}
+
 		if (typeof opts !== 'object' || Array.isArray(opts)) {
 			throw new TypeError('Expected argument to be an object');
 		}
+
 		opts.parent = this;
 
 		log(`Adding command: ${name}`);
@@ -325,6 +339,7 @@ export default class Context extends HookEmitter {
 
 					// fill argv and _
 					log('Filling argv and _');
+					let i = 0;
 					for (const arg of $args.args) {
 						if (typeof arg === 'object') {
 							switch (arg.type) {
@@ -336,7 +351,11 @@ export default class Context extends HookEmitter {
 									break;
 							}
 						} else {
+							if (this.args[i]) {
+								//
+							}
 							$args._.push(arg);
+							i++;
 						}
 					}
 

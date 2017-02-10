@@ -1,6 +1,6 @@
 {
   "name": "cli-kit",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Everything you need to create awesome command line interfaces",
   "main": "./dist/index.js",
   "author": "Chris Barber <chris@cb1inc.com> (https://github.com/cb1kenobi)",
@@ -39,8 +39,8 @@
     "test": "gulp test"
   },
   "dependencies": {
-    "debug": "^2.6.0",
     "hook-emitter": "^2.0.0",
+    "snooplogg": "^1.0.0",
     "source-map-support": "^0.4.10"
   },
   "devDependencies": {
