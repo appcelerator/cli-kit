@@ -41,11 +41,15 @@
   "dependencies": {
     "hook-emitter": "^2.0.0",
     "snooplogg": "^1.0.0",
-    "source-map-support": "^0.4.10"
+    "source-map-support": "^0.4.11"
   },
   "devDependencies": {
     "babel-eslint": "^7.1.1",
-    "babel-preset-es2015-node4": "^2.1.1",
+    "babel-plugin-transform-class-properties": "^6.22.0",
+    "babel-plugin-transform-es2015-destructuring": "^6.22.0",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.22.0",
+    "babel-plugin-transform-es2015-parameters": "^6.22.0",
+    "babel-plugin-transform-object-rest-spread": "^6.22.0",
     "chai": "^3.5.0",
     "del": "^2.2.2",
     "esdoc-es7-plugin": "^0.0.3",
@@ -53,14 +57,14 @@
     "gulp-babel": "^6.1.2",
     "gulp-babel-istanbul": "^1.6.0",
     "gulp-debug": "^3.0.0",
-    "gulp-esdoc": "^0.3.0",
+    "gulp-esdoc": "^0.4.0",
     "gulp-eslint": "^3.0.1",
     "gulp-filter": "^5.0.0",
     "gulp-inject-modules": "^1.0.0",
-    "gulp-load-plugins": "^1.4.0",
+    "gulp-load-plugins": "^1.5.0",
     "gulp-mocha": "^3.0.1",
     "gulp-plumber": "^1.1.0",
-    "gulp-sourcemaps": "^2.4.0",
+    "gulp-sourcemaps": "^2.4.1",
     "sinon": "^1.17.7",
     "sinon-chai": "^2.8.0"
   },
