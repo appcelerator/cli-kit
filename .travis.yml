@@ -10,4 +10,4 @@ before_script: sh -c "git log | head -12"
 script: npm run coverage
 after_success:
   - coveralls < ./coverage/lcov.info
-  - CODECLIMATE_REPO_TOKEN= codeclimate-test-reporter < ./coverage/lcov.info
+  - CODECLIMATE_REPO_TOKEN=1a43bb0ff5569a39f4e9a90353b17bc607a18fa3de1d0a346ae0bb76e7f4fa98 codeclimate-test-reporter < ./coverage/lcov.info
