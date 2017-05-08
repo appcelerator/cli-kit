@@ -352,9 +352,10 @@ export default class Context extends HookEmitter {
 							}
 						} else {
 							if (this.args[i]) {
-								//
+								$args._.push(this.args[i].transform(arg));
+							} else {
+								$args._.push(arg);
 							}
-							$args._.push(arg);
 							i++;
 						}
 					}

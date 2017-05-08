@@ -11,26 +11,24 @@ const aliasRegExp = /^(?:\-(.)|\-{2}(.+))$/;
  */
 export default class Option {
 	/**
-	 * Constructs the option instance.
+	 * Creates an option descriptor.
 	 *
 	 * @param {String} format - The option format containing the general info.
 	 * @param {Object} [params] - Additional parameters.
-	 * @param {Object|Array<String>} [params.aliases]
+	 * @param {Object|Array<String>} [paramsaliases]
 	 * @param {*} [params.default] - ???????
-	 * @param {String} [params.desc] - The description of the option used in the
-	 * help display.
-	 * @param {String} [param.env] - The environment variable name to get a
-	 * a value from. If the environment variable is set, it overrides the
-	 * value parsed from the arguments.
+	 * @param {String} [params.desc] - The description of the option used in the help display.
+	 * @param {String} [param.env] - The environment variable name to get a value from. If the
+	 * environment variable is set, it overrides the value parsed from the arguments.
 	 * @param {Boolean} [params.hidden=false]
-	 * @param {String} [params.hint] - The hint label if the option expects a
-	 * value.
-	 * @param {Number} [params.min] - When `type` is `int`, `number`, or
-	 * `positiveInt`, then checks that the
+	 * @param {String} [params.hint] - The hint label if the option expects a value.
+	 * @param {Number} [params.min] - When `type` is `int`, `number`, or `positiveInt`, then checks
+	 * that the option's value is at greater than or equal to the specified value.
 	 * @param {Boolean} [params.multiple] - ????????????????????????????????????????????????????
 	 * @param {String} [params.name] - The name of the option.
-	 * @param {Boolean} [params.negate] - When true, the
+	 * @param {Boolean} [params.negate] - When `true`, ??????????
 	 * @param {Boolean} [params.required] - Marks the option value as required.
+	 * @param {String} [params.type] - The option type to coerce the data type into.
 	 * @param {Function} [params.validate(value)]
 	 * @access public
 	 */
@@ -56,6 +54,7 @@ export default class Option {
 		if (!m || (!m[1] && !m[2])) {
 			throw new TypeError(`Invalid option format "${format}"`);
 		}
+		const hint = m[3];
 
 		// process the aliases
 		const aliases = {
@@ -99,16 +98,8 @@ export default class Option {
 
 		Object.assign(this, params);
 
-		// if we don't have a hint and there's no type, force to 'bool'
-		if (!m[3] && !params.type) {
-			params.type = 'bool';
-		}
-
 		// initialize the param values
 		this.aliases  = aliases;
-		this.desc     = params.desc || null;
-		this.env      = params.env || null;
-		this.type     = m[3] ? 'string' : 'bool';
 		this.long     = null;
 		this.negate   = false;
 		this.short    = m[1] || null;
@@ -122,8 +113,8 @@ export default class Option {
 		}
 
 		// check if we have a hint
-		if (m[3]) {
-			const value = m[3].match(valueRegExp);
+		if (hint) {
+			const value = hint.match(valueRegExp);
 			if (!value) {
 				throw new TypeError(`Invalid option format "${format}"`);
 			}
@@ -131,24 +122,32 @@ export default class Option {
 			this.hint = value[2].trim();
 		}
 
+		// TODO: params.regex
+
 		this.camelCase = params.camelCase !== false;
 		this.count     = !!params.count;
-		this.hint      = params.hint || this.hint || null;
+		this.hint      = params.hint || this.hint;
 		this.max       = params.max || null;
 		this.min       = params.min || null;
 		this.multiple  = !!params.multiple;
  		this.name      = params.name || this.name || (this.long ? `--${this.long}` : this.short ? `-${this.short}` : null);
 		this.order     = params.order || null;
 		this.required  = this.required === undefined ? !!params.required : this.required;
-		this.type      = params.type || this.type;
+		this.type      = params.type || (hint ? 'string' : 'bool');
 
 		if (this.count && this.type !== 'bool') {
 			throw new Error('Count requires option to be a bool');
 		}
 
-		this.default   = params.default || (params.type === 'bool' && this.negate ? true : undefined);
+		this.default   = params.default || (this.type === 'bool' && this.negate ? true : undefined);
 	}
 
+	/**
+	 * Transforms the given option value based on its type.
+	 *
+	 * @param {*} value - The value to transform.
+	 * @returns {*}
+	 */
 	transform(value) {
 		if (typeof types[this.type].transform === 'function') {
 			value = types[this.type].transform(value);
