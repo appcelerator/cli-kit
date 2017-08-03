@@ -5,15 +5,13 @@ import HookEmitter from 'hook-emitter';
 import Option from './option';
 import snooplogg from 'snooplogg';
 
+import { camelCase } from './util';
+
 const log = snooplogg.config({ theme: 'detailed' })('cli-kit:context').log;
 
 const optRE = /^(?:--|—)(?:([^=]+)(?:=([\s\S]*))?)?$/;
 const dashOpt = /^(?:-|—)(.+)$/;
 const negateRegExp = /^no-(.+)$/;
-
-function camelCase(s) {
-	return s.replace(/(?:^\w|[A-Z]|\b\w)/g, (m, i) => i ? m.toUpperCase() : m.toLowerCase()).replace(/[^\w]+/g, '');
-}
 
 /**
  * Defines a context for commands, options, and args.
@@ -27,14 +25,13 @@ export default class Context extends HookEmitter {
 	 * @param {Object} [opts] - Various options.
 	 * @param {Array<Object>} [opts.args] - An array of arguments.
 	 * @param {Boolean} [opts.camelCase=true] - Camel case option names.
-	 * @param {Object} [opts.commands] - A map of command names to command
-	 * descriptors.
+	 * @param {Object} [opts.commands] - A map of command names to command descriptors.
 	 * @param {Array<Object>|Object} [opts.options] - An array of options.
 	 * @param {Context} [opts.parent] - Parent context.
 	 * @param {String} [opts.title] - Context title.
 	 * @access public
 	 */
-	constructor(opts={}) {
+	constructor(opts = {}) {
 		if (opts.args && !Array.isArray(opts.args)) {
 			throw new TypeError('Expected args to be an array');
 		}
@@ -62,13 +59,23 @@ export default class Context extends HookEmitter {
 			long:     {},
 			short:    {},
 			toString: () => {
-				return 'Context Lookup:\n' +
-					(Object.keys(this.lookup.commands).length ? `  Commands:\n${Object.keys(this.lookup.commands).map(c => `    ${c} => ${this.lookup.commands[c].name}`).join('\n')}\n` : '') +
-					(Object.keys(this.lookup.long).length || Object.keys(this.lookup.short).length ?
-						( '  Options:\n' +
-							Object.keys(this.lookup.long).map(s => `    --${s} => ${this.lookup.long[s].name}`).join('\n') + '\n' +
-							Object.keys(this.lookup.short).map(s => `    -${s} => ${this.lookup.short[s].name}`).join('\n')
-						) : '');
+				let s = [];
+				if (Object.keys(this.lookup.commands).length) {
+					s.push('  Commands:');
+					for (const name of Object.keys(this.lookup.commands)) {
+						s.push(`    ${name} => ${this.lookup.commands[name].name}`);
+					}
+				}
+				if (Object.keys(this.lookup.long).length || Object.keys(this.lookup.short).length) {
+					s.push('  Options:');
+					for (const name of Object.keys(this.lookup.long)) {
+						s.push(`    --${name} => ${this.lookup.long[name].name}`);
+					}
+					for (const name of Object.keys(this.lookup.short)) {
+						s.push(`    -${name} => ${this.lookup.short[name].name}`);
+					}
+				}
+				return s.length ? `Context Lookup:\n${s.join('\n')}` : '';
 			}
 		};
 
@@ -109,7 +116,7 @@ export default class Context extends HookEmitter {
 		}
 	}
 
-	argument(arg={}) {
+	argument(arg = {}) {
 		this.args.push(arg instanceof Argument ? arg : new Argument(arg));
 	}
 
@@ -200,7 +207,7 @@ export default class Context extends HookEmitter {
 			// if we have an unknown option, then we need to reconstruct it to
 			// make our regexes below work
 			if (arg && arg.type === 'unknown option') {
-				arg = '--' + arg.name;
+				arg = arg.orig;
 
 			// arg is null, empty, or already processed, so skip it
 			} else if (!arg || typeof arg === 'object') {
@@ -224,12 +231,14 @@ export default class Context extends HookEmitter {
 				const negated = m[1].match(negateRegExp);
 				const name = negated ? negated[1] : m[1];
 				const option = this.lookup.long[name];
+
 				if (option) {
 					log(`Found option: ${option.name}`);
+					log(`Negated? ${!!negated}`);
 
 					if (m[2]) {
 						// --something=foo
-						args[i] = { type: 'option', option, value: option.transform(m[2]) };
+						args[i] = { type: 'option', option, value: option.transform(m[2], negated) };
 						return $args;
 					}
 
@@ -248,7 +257,7 @@ export default class Context extends HookEmitter {
 				}
 
 				// treat unknown options as flags
-				args[i] = { type: 'unknown option', name: m[1] };
+				args[i] = { type: 'unknown option', orig: arg };
 				return $args;
 			}
 
@@ -322,7 +331,7 @@ export default class Context extends HookEmitter {
 					// environment variable valuedefault options
 					log(`Processing default options and environment variables for ${$args.contexts.length} contexts`);
 					for (let i = $args.contexts.length; i; i--) {
-						for (const option of $args.contexts[i-1].options) {
+						for (const option of $args.contexts[i - 1].options) {
 							if (option.name) {
 								const name = option.camelCase === false || !this.camelCase ? option.name : camelCase(option.name);
 								if (option.default !== undefined) {

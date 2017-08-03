@@ -40,7 +40,9 @@ export function addType(opts) {
 
 addType({
 	name: 'bool',
-	transform: value => Boolean(value)
+	transform: value => {
+		return value && value !== 'false';
+	}
 });
 
 addType({

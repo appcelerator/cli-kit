@@ -1,7 +1,7 @@
-import Arguments from '../src/arguments';
-import Command from '../src/command';
-import Context from '../src/context';
-import Option from '../src/option';
+import Arguments from '../dist/arguments';
+import Command from '../dist/command';
+import Context from '../dist/context';
+import Option from '../dist/option';
 
 describe('Context', () => {
 
@@ -12,7 +12,7 @@ describe('Context', () => {
 			options: {
 				'--data <json>': { type: 'json' },
 				'--log-file <file>':  { type: 'file' },
-				'--verbose':     {}
+				'--verbose': {}
 			},
 			action: cmd => {
 				//
@@ -23,7 +23,7 @@ describe('Context', () => {
 			.then(parsed => {
 				expect(parsed).to.be.instanceof(Arguments);
 
-				expect(parsed.args).to.be.an.Array;
+				expect(parsed.args).to.be.an.instanceof(Array);
 				expect(parsed.args).to.have.lengthOf(4);
 
 				expect(parsed.args[0].type).to.equal('command');

@@ -1,4 +1,4 @@
-import Option from '../src/option';
+import Option from '../dist/option';
 
 describe('Option', () => {
 
@@ -115,5 +115,15 @@ describe('Option', () => {
 		expect(opt.required).to.be.false;
 	});
 
-//	'--no-colors': { desc: 'disables colors' }
+	it('should parse negated option', () => {
+		const opt = new Option('--no-colors');
+		expect(opt.long).to.equal('colors');
+		expect(opt.negate).to.be.true;
+	});
+
+	it('should parse short and long negated option', () => {
+		const opt = new Option('-c | --no-colors');
+		expect(opt.long).to.equal('colors');
+		expect(opt.negate).to.be.true;
+	});
 });

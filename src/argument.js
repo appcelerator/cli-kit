@@ -1,5 +1,8 @@
 import { types } from './types';
 
+/**
+ * Defines a parsed argument.
+ */
 export default class Argument {
 	/**
 	 * Creates an argument descriptor.

@@ -4,11 +4,10 @@ import Context from './context';
 import help from './help';
 import snooplogg from 'snooplogg';
 
-const log = snooplogg.config({ theme: 'detailed' })('cli-kit:cli').log;
+const { log } = snooplogg.config({ theme: 'detailed' })('cli-kit:cli');
 
 /**
- * Defines a CLI context and is responsible for parsing the command line
- * arguments.
+ * Defines a CLI context and is responsible for parsing the command line arguments.
  */
 export default class CLI {
 	/**
@@ -17,12 +16,12 @@ export default class CLI {
 	 * @param {Object} [opts] - Various options.
 	 * @param {Array<Object>} [opts.args] - An array of arguments.
 	 * @param {Boolean} [opts.camelCase=true] - Camel case option names.
-	 * @param {Object} [opts.commands] - A map of command names to command
-	 * descriptors.
-	 * @param {Boolean} [opts.help=true] - When true, displays the auto-
-	 * generated help screen if there is no active command.
+	 * @param {Object} [opts.commands] - A map of command names to command descriptors.
+	 * @param {Boolean} [opts.default='help'] - The default command to execute.
+	 * @param {Boolean} [opts.help=true] - When `true`, enabled the built-in help command.
 	 * @param {Array<Object>|Object} [opts.options] - An array of options.
 	 * @param {String} [opts.title='Global'] - The title for the global context.
+	 * @access public
 	 */
 	constructor(opts = {}) {
 		if (typeof opts !== 'object' || Array.isArray(opts)) {
@@ -31,6 +30,9 @@ export default class CLI {
 
 		opts.title || (opts.title = 'Global');
 		this.ctx = new Context(opts);
+
+		// set the default command
+		this.default = opts.default || 'help';
 
 		// context methods
 		this.argument = this.ctx.argument.bind(this.ctx);
@@ -42,30 +44,45 @@ export default class CLI {
 		this.once     = this.ctx.once.bind(this.ctx);
 		this.off      = this.ctx.off.bind(this.ctx);
 
-		this.help = opts.help !== false;
-		if (this.help) {
+		// add the built-in help
+		if (opts.help !== false && !this.ctx.commands.help) {
 			this.command(help);
 		}
 	}
 
-	exec(args) {
+	/**
+	 * Parses the command line arguments and runs the command.
+	 *
+	 * @param {Array} [args] - An array of arguments to parse. If not specified, it defaults to the
+	 * `process.argv` starting with the 3rd argument.
+	 * @returns {Promise}
+	 * @access public
+	 */
+	async exec(args) {
 		if (args && !Array.isArray(args)) {
 			throw new TypeError('Expected args to be an array');
 		}
 
-		return Promise.resolve()
-			.then(() => this.ctx.parse(args ? args.slice() : process.argv.slice(2)))
-			.then($args => {
-				let cmd = $args.contexts[0];
-				if (!(cmd instanceof Command) && this.help) {
-					$args.contexts.unshift(cmd = this.ctx.commands.help);
-				}
+		const $args = await this.ctx.parse(args ? args.slice() : process.argv.slice(2));
 
-				if (cmd && typeof cmd.action === 'function') {
-					return Promise.resolve().then(() => cmd.action($args));
-				}
+		console.log($args);
+		console.log($args.toString());
 
-				return Promise.resolve($args);
-			});
+		let cmd = $args.contexts[0];
+
+		// if there was no command found, then set the default command
+		if (!(cmd instanceof Command)) {
+			cmd = this.ctx.commands[this.default];
+			if (cmd) {
+				$args.contexts.unshift(cmd);
+			}
+		}
+
+		// execute the command
+		if (cmd && typeof cmd.action === 'function') {
+			return await cmd.action($args);
+		}
+
+		return $args;
 	}
 }

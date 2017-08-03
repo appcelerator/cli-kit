@@ -1,10 +1,10 @@
 import { types } from './types';
 
-const formatRegExp = /^(?:\-([^-])(?:[ ,|]+)?)?(?:\-\-([^\s]+))?(?:\s+?(.+))?$/;
-const valueRegExp = /^(\[(?=.+\]$)|\<(?=.+\>$))(.+)[\]\>]$/;
+const formatRegExp = /^(?:-([^-])(?:[ ,|]+)?)?(?:--([^\s]+))?(?:\s+?(.+))?$/;
+const valueRegExp = /^(\[(?=.+\]$)|<(?=.+>$))(.+)[\]>]$/;
 const negateRegExp = /^no-(.+)$/;
 const aliasSepRegExp = /[ ,|]+/;
-const aliasRegExp = /^(?:\-(.)|\-{2}(.+))$/;
+const aliasRegExp = /^(?:-(.)|-{2}(.+))$/;
 
 /**
  * Defines an option and it's parameters.
@@ -15,12 +15,14 @@ export default class Option {
 	 *
 	 * @param {String} format - The option format containing the general info.
 	 * @param {Object} [params] - Additional parameters.
-	 * @param {Object|Array<String>} [paramsaliases]
+	 * @param {Object|Array<String>} [params.aliases] - An array of option aliases or an object with
+	 * `visible` and `hidden` arrays of aliases.
 	 * @param {*} [params.default] - ???????
 	 * @param {String} [params.desc] - The description of the option used in the help display.
 	 * @param {String} [param.env] - The environment variable name to get a value from. If the
 	 * environment variable is set, it overrides the value parsed from the arguments.
-	 * @param {Boolean} [params.hidden=false]
+	 * @param {Boolean} [params.hidden=false] - When `true`, the option is not displayed on the help
+	 * screen or auto-suggest.
 	 * @param {String} [params.hint] - The hint label if the option expects a value.
 	 * @param {Number} [params.min] - When `type` is `int`, `number`, or `positiveInt`, then checks
 	 * that the option's value is at greater than or equal to the specified value.
@@ -29,7 +31,7 @@ export default class Option {
 	 * @param {Boolean} [params.negate] - When `true`, ??????????
 	 * @param {Boolean} [params.required] - Marks the option value as required.
 	 * @param {String} [params.type] - The option type to coerce the data type into.
-	 * @param {Function} [params.validate(value)]
+	 * @param {Function} [params.validate] - A function to call to validate the option value.
 	 * @access public
 	 */
 	constructor(format, params) {
@@ -63,7 +65,7 @@ export default class Option {
 		};
 
 		if (params.aliases) {
-			const initAliases = (items, visibility='hidden') => {
+			const initAliases = (items, visibility = 'hidden') => {
 				if (Array.isArray(items)) {
 					for (const alias of items) {
 						if (!alias || typeof alias !== 'string') {
@@ -130,7 +132,7 @@ export default class Option {
 		this.max       = params.max || null;
 		this.min       = params.min || null;
 		this.multiple  = !!params.multiple;
- 		this.name      = params.name || this.name || (this.long ? `--${this.long}` : this.short ? `-${this.short}` : null);
+		this.name      = params.name || this.name || (this.long ? `--${this.long}` : this.short ? `-${this.short}` : null);
 		this.order     = params.order || null;
 		this.required  = this.required === undefined ? !!params.required : this.required;
 		this.type      = params.type || (hint ? 'string' : 'bool');
@@ -146,11 +148,17 @@ export default class Option {
 	 * Transforms the given option value based on its type.
 	 *
 	 * @param {*} value - The value to transform.
+	 * @param {Boolean} [negated] - Set to `true` if the parsed argument started with `no-`.
 	 * @returns {*}
 	 */
-	transform(value) {
+	transform(value, negated) {
 		if (typeof types[this.type].transform === 'function') {
 			value = types[this.type].transform(value);
+
+			// for bools, we need to negate, but only if the option name specified negated version
+			if (this.type === 'bool' && negated) {
+				value = !value;
+			}
 		}
 
 		switch (this.type) {

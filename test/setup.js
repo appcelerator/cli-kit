@@ -1,5 +1,3 @@
-import { expect } from 'chai';
-
 global.chai = require('chai');
 global.chai.use(require('sinon-chai'));
 global.expect = global.chai.expect;
@@ -16,3 +14,5 @@ afterEach(function () {
 	delete global.stub;
 	this.sandbox.restore();
 });
+
+process.env.SNOOPLOGG_MIN_BRIGHTNESS = '100';
