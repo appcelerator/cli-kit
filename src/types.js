@@ -12,6 +12,41 @@ const noRegExp = /^no?$/;
  */
 export const types = {};
 
+/**
+ * Ensures that the specified list of types is indeed an array and each value is a supported type,
+ * then returns the cleaned up list of types or a default value if no types were found.
+ *
+ * @param {String} type - A list of types to validate.
+ * @param {String} [defaultValue] - An optional list of types to default to if no
+ * types were originally specified.
+ * @returns {String}
+ */
+export function checkType(type, defaultValue) {
+	if (type && !types[type]) {
+		throw new Error(`Unsupported type "${type}"`);
+	}
+
+	if (!type && defaultValue) {
+		return defaultValue;
+	}
+
+	return type;
+}
+
+/**
+ * Transforms a value to the first successfully transformed data type.
+ *
+ * @param {*} value - The value to transform.
+ * @param {String} type - A list of data types to try to coerce the value into.
+ * @returns {*}
+ */
+export function transformValue(value, type) {
+	if (typeof types[type].transform === 'function') {
+		value = types[type].transform(value);
+	}
+	return value;
+}
+
 export class Type {
 	constructor(opts) {
 		if (!opts || typeof opts !== 'object' || Array.isArray(opts)) {

@@ -2,9 +2,10 @@ import Arguments from './arguments';
 import Command from './command';
 import Context from './context';
 import help from './help';
+import logger from './logger';
 import snooplogg from 'snooplogg';
 
-const { log } = snooplogg.config({ theme: 'detailed' })('cli-kit:cli');
+const { log } = logger('cli-kit:cli');
 
 /**
  * Defines a CLI context and is responsible for parsing the command line arguments.
@@ -20,6 +21,7 @@ export default class CLI {
 	 * @param {Boolean} [opts.default='help'] - The default command to execute.
 	 * @param {Boolean} [opts.help=true] - When `true`, enabled the built-in help command.
 	 * @param {Array<Object>|Object} [opts.options] - An array of options.
+	 * @param {String} [opts.program] - The name of the program.
 	 * @param {String} [opts.title='Global'] - The title for the global context.
 	 * @access public
 	 */
@@ -32,7 +34,8 @@ export default class CLI {
 		this.ctx = new Context(opts);
 
 		// set the default command
-		this.default = opts.default || 'help';
+		this.default  = opts.default || 'help';
+		this.help     = opts.help !== false;
 
 		// context methods
 		this.argument = this.ctx.argument.bind(this.ctx);
@@ -45,8 +48,14 @@ export default class CLI {
 		this.off      = this.ctx.off.bind(this.ctx);
 
 		// add the built-in help
-		if (opts.help !== false && !this.ctx.commands.help) {
-			this.command(help);
+		if (this.help) {
+			if (!this.ctx.commands.help) {
+				this.command(help);
+			}
+
+			if (!this.ctx.lookup.long.help) {
+				this.option('-h, --help');
+			}
 		}
 	}
 
@@ -65,10 +74,7 @@ export default class CLI {
 
 		const $args = await this.ctx.parse(args ? args.slice() : process.argv.slice(2));
 
-		console.log($args);
-		console.log($args.toString());
-
-		let cmd = $args.contexts[0];
+		let cmd = this.help && $args.argv.help ? 'help' : $args.contexts[0];
 
 		// if there was no command found, then set the default command
 		if (!(cmd instanceof Command)) {

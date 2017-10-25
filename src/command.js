@@ -14,6 +14,7 @@ export default class Command extends Context {
 	 * @param {Array<String>} [params.aliases] - An array of command aliases.
 	 * @param {Boolean} [params.camelCase=true] - Camel case option names.
 	 * @param {Array<Object>} [params.commands] - An array of commands.
+	 * @param {String} [params.desc] - The description of the command used in the help display.
 	 * @param {Boolean} [params.hidden=false] - When `true`, the command will not be displayed on
 	 * the help screen or auto-suggest.
 	 * @param {Array<Object>} [params.options] - An array of options definition objects.

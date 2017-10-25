@@ -1,8 +1,8 @@
 const help = {
 	name: 'help',
-	action: args => {
-		console.log('hi from help!');
-		console.log(args);
+	action: ({ contexts }) => {
+		// the first context is the help command, so just skip to the second context
+		contexts[1].renderHelp(console.log);
 	}
 };
 

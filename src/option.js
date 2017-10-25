@@ -1,4 +1,4 @@
-import { types } from './types';
+import { checkType, transformValue } from './types';
 
 const formatRegExp = /^(?:-([^-])(?:[ ,|]+)?)?(?:--([^\s]+))?(?:\s+?(.+))?$/;
 const valueRegExp = /^(\[(?=.+\]$)|<(?=.+>$))(.+)[\]>]$/;
@@ -30,7 +30,7 @@ export default class Option {
 	 * @param {String} [params.name] - The name of the option.
 	 * @param {Boolean} [params.negate] - When `true`, ??????????
 	 * @param {Boolean} [params.required] - Marks the option value as required.
-	 * @param {String} [params.type] - The option type to coerce the data type into.
+	 * @param {String|Array.<String>} [params.type] - The option type to coerce the data type into.
 	 * @param {Function} [params.validate] - A function to call to validate the option value.
 	 * @access public
 	 */
@@ -45,10 +45,6 @@ export default class Option {
 		}
 		if (typeof params !== 'object' || Array.isArray(params)) {
 			throw new TypeError('Expected params to be an object');
-		}
-
-		if (params.type && !types[params.type]) {
-			throw new Error(`Unsupported type "${params.type}"`);
 		}
 
 		// first try to see if we have a valid option format
@@ -135,10 +131,16 @@ export default class Option {
 		this.name      = params.name || this.name || (this.long ? `--${this.long}` : this.short ? `-${this.short}` : null);
 		this.order     = params.order || null;
 		this.required  = this.required === undefined ? !!params.required : this.required;
-		this.type      = params.type || (hint ? 'string' : 'bool');
+		this.type      = checkType(params.type, hint || 'bool');
 
-		if (this.count && this.type !== 'bool') {
-			throw new Error('Count requires option to be a bool');
+		if (this.type !== 'bool') {
+			if (this.negate) {
+				throw new Error('Negate requires option to be a bool');
+			}
+
+			if (this.count) {
+				throw new Error('Count requires option to be a bool');
+			}
 		}
 
 		this.default   = params.default || (this.type === 'bool' && this.negate ? true : undefined);
@@ -152,16 +154,16 @@ export default class Option {
 	 * @returns {*}
 	 */
 	transform(value, negated) {
-		if (typeof types[this.type].transform === 'function') {
-			value = types[this.type].transform(value);
-
-			// for bools, we need to negate, but only if the option name specified negated version
-			if (this.type === 'bool' && negated) {
-				value = !value;
-			}
-		}
+		value = transformValue(value, this.type);
 
 		switch (this.type) {
+			case 'bool':
+				// for bools, we need to negate, but only if the option name specified negated version
+				if (negated) {
+					value = !value;
+				}
+				break;
+
 			case 'positiveInt':
 			case 'int':
 			case 'number':

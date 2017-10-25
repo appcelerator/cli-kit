@@ -1,4 +1,4 @@
-import { types } from './types';
+import { checkType, transformValue } from './types';
 
 /**
  * Defines a parsed argument.
@@ -12,22 +12,26 @@ export default class Argument {
 	 * @param {String} [params.name] - The name of the argument.
 	 * @param {Boolean} [params.regex] - A regular expression used to validate the value.
 	 * @param {Boolean} [params.required] - Marks the option value as required.
-	 * @param {String} [params.type] - The argument type to coerce the data type into.
+	 * @param {String|Array.<String>} [params.type] - The argument type to coerce the data type
+	 * into.
+	 * @access public
 	 */
 	constructor(params) {
 		/*
 		{ name: 'path', required: true, regex: /^\//, desc: 'the path to request' },
 		{ name: 'json', type: 'json', desc: 'an option JSON payload to send' }
 		*/
+
 		if (!params) {
 			params = {};
 		}
-		if (typeof params !== 'object' || Array.isArray(params)) {
-			throw new TypeError('Expected params to be an object');
-		}
 
-		if (params.type && !types[params.type]) {
-			throw new Error(`Unsupported type "${params.type}"`);
+		if (typeof params === 'string') {
+			params = {
+				name: params
+			};
+		} else if (typeof params !== 'object' || Array.isArray(params)) {
+			throw new TypeError('Expected params to be an object');
 		}
 
 		Object.assign(this, params);
@@ -35,7 +39,7 @@ export default class Argument {
 		// TODO: params.regex
 
 		this.required = !!params.required;
-		this.type     = params.type || 'string';
+		this.type     = checkType(params.type, 'string');
 	}
 
 	/**
@@ -43,11 +47,10 @@ export default class Argument {
 	 *
 	 * @param {*} value - The value to transform.
 	 * @returns {*}
+	 * @access public
 	 */
 	transform(value) {
-		if (typeof types[this.type].transform === 'function') {
-			value = types[this.type].transform(value);
-		}
+		value = transformValue(value, this.type);
 
 		switch (this.type) {
 			case 'positiveInt':

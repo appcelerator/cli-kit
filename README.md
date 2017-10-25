@@ -33,7 +33,7 @@ Everything you need to make awesome Command Line Interfaces.
 
 (The MIT License)
 
-Copyright (c) 2015-2017 Chris Barber
+Copyright (c) 2015-2017 Chris Barber and Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

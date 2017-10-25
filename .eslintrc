@@ -18,7 +18,7 @@
     ],
     "root": true,
     "rules": {
-        "array-bracket-spacing": [ "error", "always", { "objectsInArrays": false, "arraysInArrays": false } ],
+        "array-bracket-spacing": [ "error", "always" ],
         "brace-style": [ 2, "1tbs", { "allowSingleLine": true } ],
         "camelcase": 0,
         "curly": [ 2, "all" ],

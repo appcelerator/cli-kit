@@ -2,12 +2,12 @@ import Argument from './argument';
 import Arguments from './arguments';
 import Command from './command';
 import HookEmitter from 'hook-emitter';
+import logger from './logger';
 import Option from './option';
-import snooplogg from 'snooplogg';
 
 import { camelCase } from './util';
 
-const log = snooplogg.config({ theme: 'detailed' })('cli-kit:context').log;
+const { log } = logger('cli-kit:context');
 
 const optRE = /^(?:--|—)(?:([^=]+)(?:=([\s\S]*))?)?$/;
 const dashOpt = /^(?:-|—)(.+)$/;
@@ -26,8 +26,10 @@ export default class Context extends HookEmitter {
 	 * @param {Array<Object>} [opts.args] - An array of arguments.
 	 * @param {Boolean} [opts.camelCase=true] - Camel case option names.
 	 * @param {Object} [opts.commands] - A map of command names to command descriptors.
+	 * @param {String} [params.desc] - The description of the context used in the help display.
 	 * @param {Array<Object>|Object} [opts.options] - An array of options.
 	 * @param {Context} [opts.parent] - Parent context.
+	 * @param {String} [opts.program] - The name of the program.
 	 * @param {String} [opts.title] - Context title.
 	 * @access public
 	 */
@@ -376,5 +378,93 @@ export default class Context extends HookEmitter {
 					return $args;
 				});
 		})($args);
+	}
+
+	/**
+	 * Renders the help screen for this context including the parent contexts.
+	 *
+	 * @param {Function} log - The function to write output to.
+	 * @access public
+	 */
+	renderHelp(log) {
+		const add = (bucket, columns) => {
+			for (let i = 0, l = columns.length; i < l; i++) {
+				const len = columns[i] !== undefined && columns[i] !== null ? String(columns[i]).length : 0;
+				if (!bucket.maxWidths[i] || len > bucket.maxWidths[i]) {
+					bucket.maxWidths[i] = len;
+				}
+			}
+			bucket.list.push(columns);
+		};
+
+		const commands = {
+			list: [],
+			maxWidths: []
+		};
+		for (const name of Object.keys(this.commands)) {
+			const { desc, hidden } = this.commands[name];
+			if (!hidden) {
+				add(commands, [ name, desc ]);
+			}
+		}
+
+		const options = {
+			list: [],
+			maxWidths: []
+		};
+		for (const opt of this.options) {
+			if (!opt.hidden) {
+				if (opt.negate) {
+					add(options, [ `--no-${opt.name}`, opt.desc ]);
+				} else {
+					let s = '';
+					if (opt.short) {
+						s += `-${opt.short}`;
+					}
+					if (opt.long) {
+						s += (s.length ? ',' : '') + `--${opt.long}`;
+					}
+					if (opt.type !== 'bool') {
+						s += `=<${opt.hint || 'value'}>`;
+					}
+					add(options, [ s, opt.desc ]);
+				}
+			}
+		}
+
+		let usage = 'Usage: ';
+		if (this.parent) {
+			// add in the chain of commands
+			usage += (function walk(ctx) {
+				if (ctx.parent) {
+					return walk(ctx.parent) + ' ' + ctx.name;
+				}
+				return ctx.program || 'program';
+			}(this));
+		} else {
+			usage += `${this.program || 'program'}${commands.list.length ? ' <command>' : ''}`;
+		}
+		usage += options.list.length ? ' [options]' : '';
+		log(`${usage}\n`);
+
+		if (commands.list.length) {
+			log('Commands:');
+			const max = commands.maxWidths[0];
+			for (const line of commands.list) {
+				const [ cmd, desc ] = line;
+				log(`  ${cmd.padEnd(max)}  ${desc || ''}`);
+			}
+			log();
+		}
+
+		if (options.list.length) {
+			log('Options:');
+			const max = options.maxWidths[0];
+			for (const line of options.list) {
+				const [ opt, desc ] = line;
+				log(`  ${opt.padEnd(max)}  ${desc || ''}`);
+			}
+			log();
+		}
 	}
 }

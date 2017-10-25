@@ -37,17 +37,32 @@ gulp.task('build', ['clean-dist', 'lint-src'], () => {
 });
 
 gulp.task('docs', ['lint-src', 'clean-docs'], () => {
-	return gulp.src('src')
-		.pipe($.plumber())
-		.pipe($.debug({ title: 'docs' }))
-		.pipe($.esdoc({
-			// debug: true,
-			destination: docsDir,
-			plugins: [
-				{ name: 'esdoc-es7-plugin' }
-			],
-			title: manifest.name
-		}));
+	const esdoc = require('esdoc').default;
+
+	esdoc.generate({
+		// debug: true,
+		destination: docsDir,
+		plugins: [
+			{
+				name: 'esdoc-standard-plugin',
+				option: {
+					brand: {
+						title:       manifest.name,
+						description: manifest.description,
+						respository: 'https://github.com/cb1kenobi/cli-kit',
+						site:        'https://github.com/cb1kenobi/cli-kit'
+					}
+				}
+			},
+			{
+				name: 'esdoc-ecmascript-proposal-plugin',
+				option: {
+					all: true
+				}
+			}
+		],
+		source: './src'
+	});
 });
 
 /*
