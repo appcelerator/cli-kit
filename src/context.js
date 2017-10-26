@@ -205,7 +205,7 @@ export default class Context extends HookEmitter {
 		log(this.lookup.toString());
 
 		// the parse arg hook
-		const parseArg = this.hook('parseArg', ($args, ctx, arg, i, args) => {
+		const parseArg = this.hook('parseArg', async ($args, ctx, arg, i, args) => {
 			// if we have an unknown option, then we need to reconstruct it to
 			// make our regexes below work
 			if (arg && arg.type === 'unknown option') {
@@ -241,25 +241,31 @@ export default class Context extends HookEmitter {
 					if (m[2]) {
 						// --something=foo
 						args[i] = { type: 'option', option, value: option.transform(m[2], negated) };
-						return $args;
+					} else {
+						// if value is `null`, then we are missing the value
+						let value = null;
+
+						if (option.type === 'bool') {
+							value = !negated;
+						} else if (i + 1 < args.length) {
+							value = option.transform(args[i + 1]);
+							args[i + 1] = null;
+						}
+
+						args[i] = { type: 'option', option, value };
 					}
 
-					// if value is `null`, then we are missing the value
-					let value = null;
-
-					if (option.type === 'bool') {
-						value = !negated;
-					} else if (i + 1 < args.length) {
-						value = option.transform(args[i + 1]);
-						args[i + 1] = null;
+					if (typeof option.callback === 'function') {
+						const newValue = await option.callback(args[i].value);
+						if (newValue !== undefined) {
+							args[i].value = newValue;
+						}
 					}
-
-					args[i] = { type: 'option', option, value };
-					return $args;
+				} else {
+					// treat unknown options as flags
+					args[i] = { type: 'unknown option', orig: arg };
 				}
 
-				// treat unknown options as flags
-				args[i] = { type: 'unknown option', orig: arg };
 				return $args;
 			}
 
@@ -422,7 +428,7 @@ export default class Context extends HookEmitter {
 						s += `-${opt.short}`;
 					}
 					if (opt.long) {
-						s += (s.length ? ',' : '') + `--${opt.long}`;
+						s += (s.length ? ', ' : '') + `--${opt.long}`;
 					}
 					if (opt.type !== 'bool') {
 						s += `=<${opt.hint || 'value'}>`;

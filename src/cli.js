@@ -20,9 +20,12 @@ export default class CLI {
 	 * @param {Object} [opts.commands] - A map of command names to command descriptors.
 	 * @param {Boolean} [opts.default='help'] - The default command to execute.
 	 * @param {Boolean} [opts.help=true] - When `true`, enabled the built-in help command.
+	 * @param {Number} [opts.helpExitCode=1] - The exit code to return when the help command is
+	 * finished.
 	 * @param {String} [opts.name] - The name of the program.
 	 * @param {Array<Object>|Object} [opts.options] - An array of options.
 	 * @param {String} [opts.title='Global'] - The title for the global context.
+	 * @param {String} [opts.version] - The program version.
 	 * @access public
 	 */
 	constructor(opts = {}) {
@@ -36,7 +39,6 @@ export default class CLI {
 
 		// set the default command
 		this.default  = opts.default || 'help';
-		this.help     = opts.help !== false;
 
 		// context methods
 		this.argument = this.ctx.argument.bind(this.ctx);
@@ -49,14 +51,25 @@ export default class CLI {
 		this.off      = this.ctx.off.bind(this.ctx);
 
 		// add the built-in help
+		this.help = opts.help !== false;
 		if (this.help) {
 			if (!this.ctx.commands.help) {
-				this.command(help);
+				this.command(help(opts.helpExitCode));
 			}
 
 			if (!this.ctx.lookup.long.help) {
 				this.option('-h, --help');
 			}
+		}
+
+		if (opts.version && !this.ctx.lookup.long.version) {
+			this.option('-v, --version', {
+				callback() {
+					console.log(opts.version);
+					process.exit(0);
+				},
+				desc: 'outputs the appcd version'
+			});
 		}
 	}
 

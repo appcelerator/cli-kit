@@ -17,6 +17,7 @@ export default class Option {
 	 * @param {Object} [params] - Additional parameters.
 	 * @param {Object|Array<String>} [params.aliases] - An array of option aliases or an object with
 	 * `visible` and `hidden` arrays of aliases.
+	 * @param {Function} [params.callback] - A function to call when the option has been parsed.
 	 * @param {*} [params.default] - ???????
 	 * @param {String} [params.desc] - The description of the option used in the help display.
 	 * @param {String} [param.env] - The environment variable name to get a value from. If the
