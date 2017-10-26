@@ -27,9 +27,9 @@ export default class Context extends HookEmitter {
 	 * @param {Boolean} [opts.camelCase=true] - Camel case option names.
 	 * @param {Object} [opts.commands] - A map of command names to command descriptors.
 	 * @param {String} [params.desc] - The description of the context used in the help display.
+	 * @param {String} [opts.name] - The name of the context such as the program or the command name.
 	 * @param {Array<Object>|Object} [opts.options] - An array of options.
 	 * @param {Context} [opts.parent] - Parent context.
-	 * @param {String} [opts.program] - The name of the program.
 	 * @param {String} [opts.title] - Context title.
 	 * @access public
 	 */
@@ -436,13 +436,10 @@ export default class Context extends HookEmitter {
 		if (this.parent) {
 			// add in the chain of commands
 			usage += (function walk(ctx) {
-				if (ctx.parent) {
-					return walk(ctx.parent) + ' ' + ctx.name;
-				}
-				return ctx.program || 'program';
+				return (ctx.parent ? walk(ctx.parent) + ' ' : '') + ctx.name;
 			}(this));
 		} else {
-			usage += `${this.program || 'program'}${commands.list.length ? ' <command>' : ''}`;
+			usage += `${this.name}${commands.list.length ? ' <command>' : ''}`;
 		}
 		usage += options.list.length ? ' [options]' : '';
 		log(`${usage}\n`);

@@ -20,8 +20,8 @@ export default class CLI {
 	 * @param {Object} [opts.commands] - A map of command names to command descriptors.
 	 * @param {Boolean} [opts.default='help'] - The default command to execute.
 	 * @param {Boolean} [opts.help=true] - When `true`, enabled the built-in help command.
+	 * @param {String} [opts.name] - The name of the program.
 	 * @param {Array<Object>|Object} [opts.options] - An array of options.
-	 * @param {String} [opts.program] - The name of the program.
 	 * @param {String} [opts.title='Global'] - The title for the global context.
 	 * @access public
 	 */
@@ -30,6 +30,7 @@ export default class CLI {
 			throw new TypeError('Expected argument to be an object or Context');
 		}
 
+		opts.name || (opts.name = 'program');
 		opts.title || (opts.title = 'Global');
 		this.ctx = new Context(opts);
 
