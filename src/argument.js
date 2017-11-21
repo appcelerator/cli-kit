@@ -9,6 +9,8 @@ export default class Argument {
 	 *
 	 * @param {Object} [params] - Various parameters.
 	 * @param {String} [params.desc] - The description of the argument used in the help display.
+	 * @param {Boolean} [params.hidden=false] - When `true`, the argument is not displayed on the
+	 * help screen or auto-suggest.
 	 * @param {String} [params.name] - The name of the argument.
 	 * @param {Boolean} [params.regex] - A regular expression used to validate the value.
 	 * @param {Boolean} [params.required] - Marks the option value as required.
@@ -38,6 +40,7 @@ export default class Argument {
 
 		// TODO: params.regex
 
+		this.hidden   = !!params.hidden;
 		this.required = !!params.required;
 		this.type     = checkType(params.type, 'string');
 	}

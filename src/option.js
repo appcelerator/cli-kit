@@ -125,6 +125,7 @@ export default class Option {
 
 		this.camelCase = params.camelCase !== false;
 		this.count     = !!params.count;
+		this.hidden    = !!params.hidden;
 		this.hint      = params.hint || this.hint;
 		this.max       = params.max || null;
 		this.min       = params.min || null;

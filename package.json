@@ -1,6 +1,6 @@
 {
   "name": "cli-kit",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Everything you need to create awesome command line interfaces",
   "main": "./dist/index.js",
   "author": "Chris Barber <chris@cb1inc.com> (https://github.com/cb1kenobi)",
@@ -40,12 +40,12 @@
   },
   "dependencies": {
     "hook-emitter": "^2.1.0",
-    "snooplogg": "^1.8.0",
+    "snooplogg": "^1.9.1",
     "source-map-support": "^0.5.0"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
-    "babel-eslint": "^8.0.1",
+    "babel-eslint": "^8.0.2",
     "babel-plugin-istanbul": "^4.1.5",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-es2015-destructuring": "^6.23.0",
@@ -57,7 +57,7 @@
     "codeclimate-test-reporter": "^0.5.0",
     "coveralls": "^3.0.0",
     "del": "^3.0.0",
-    "esdoc": "^1.0.3",
+    "esdoc": "^1.0.4",
     "esdoc-ecmascript-proposal-plugin": "^1.0.0",
     "esdoc-standard-plugin": "^1.0.0",
     "eslint-plugin-security": "^1.4.0",
@@ -69,8 +69,8 @@
     "gulp-plumber": "^1.1.0",
     "gulp-util": "^3.0.8",
     "mocha": "^4.0.1",
-    "nyc": "^11.2.1",
-    "sinon": "^4.0.2",
+    "nyc": "^11.3.0",
+    "sinon": "^4.1.2",
     "sinon-chai": "^2.14.0"
   },
   "homepage": "https://github.com/cb1kenobi/cli-kit#readme",

@@ -297,8 +297,8 @@ export default class Context extends HookEmitter {
 				// 	return $args;
 				// }
 
-				args[i] = { type: 'unknown option', name: m[1] };
-				return $args;
+				// args[i] = { type: 'unknown option', name: m[1], orig: arg };
+				// return $args;
 			}
 
 			// check if command
@@ -414,6 +414,16 @@ export default class Context extends HookEmitter {
 			}
 		}
 
+		const args = {
+			list: [],
+			maxWidths: []
+		};
+		for (const { desc, hidden, name } of this.args) {
+			if (!hidden) {
+				add(args, [ `<${name}>`, desc ]);
+			}
+		}
+
 		const options = {
 			list: [],
 			maxWidths: []
@@ -444,30 +454,32 @@ export default class Context extends HookEmitter {
 			usage += (function walk(ctx) {
 				return (ctx.parent ? walk(ctx.parent) + ' ' : '') + ctx.name;
 			}(this));
+
+			usage += this.args
+				.filter(arg => !arg.hidden)
+				.map(arg => {
+					return arg.required ? ` <${arg.name}>` : ` [<${arg.name}>]`;
+				});
 		} else {
 			usage += `${this.name}${commands.list.length ? ' <command>' : ''}`;
 		}
 		usage += options.list.length ? ' [options]' : '';
 		log(`${usage}\n`);
 
-		if (commands.list.length) {
-			log('Commands:');
-			const max = commands.maxWidths[0];
-			for (const line of commands.list) {
-				const [ cmd, desc ] = line;
-				log(`  ${cmd.padEnd(max)}  ${desc || ''}`);
+		const list = (label, bucket) => {
+			if (bucket.list.length) {
+				log(`${label}:`);
+				const max = bucket.maxWidths[0];
+				for (const line of bucket.list) {
+					const [ name, desc ] = line;
+					log(`  ${name.padEnd(max)}  ${desc || ''}`);
+				}
+				log();
 			}
-			log();
-		}
+		};
 
-		if (options.list.length) {
-			log('Options:');
-			const max = options.maxWidths[0];
-			for (const line of options.list) {
-				const [ opt, desc ] = line;
-				log(`  ${opt.padEnd(max)}  ${desc || ''}`);
-			}
-			log();
-		}
+		list('Commands', commands);
+		list('Arguments', args);
+		list('Options', options);
 	}
 }

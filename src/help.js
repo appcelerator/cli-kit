@@ -6,8 +6,9 @@
  */
 export default function (exitCode = 1) {
 	return {
+		desc: 'displays the help screen',
 		name: 'help',
-		action: ({ contexts }) => {
+		action({ contexts }) {
 			// the first context is the help command, so just skip to the second context
 			contexts[1].renderHelp(console.log);
 			process.exit(exitCode);
