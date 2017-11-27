@@ -302,7 +302,7 @@ export default class Context extends HookEmitter {
 			}
 
 			// check if command
-			const cmd = this.lookup.commands[arg];
+			const cmd = $args.contexts[0].lookup.commands[arg];
 			if (cmd) {
 				log(`Found command: ${cmd.name}`);
 				args[i] = { type: 'command', command: cmd };
