@@ -4,9 +4,73 @@ import Context from '../dist/context';
 import Option from '../dist/option';
 
 describe('Context', () => {
+	it('should parse unknown "short boolean" as argument', async () => {
+		const ctx = new Context();
+		return ctx.parse([ '-b' ])
+			.then(({ argv, _ }) => {
+				expect(argv).to.deep.equal({});
+				expect(_).to.deep.equal([ '-b' ]);
+			});
+	});
 
-	it('should parse and call command', done => {
-		const ctx = new Context;
+	it('should parse unknown "short boolean" as option', async () => {
+		const ctx = new Context({ allowUnknownOptions: true });
+		return ctx.parse([ '-b' ])
+			.then(({ argv, _ }) => {
+				expect(argv).to.deep.equal({
+					b: true
+				});
+				expect(_).to.deep.equal([]);
+			});
+	});
+
+	it('should parse known "short boolean" as flag', async () => {
+		const ctx = new Context({
+			options: {
+				'-b': {}
+			}
+		});
+		return ctx.parse([ '-b' ])
+			.then(({ argv, _ }) => {
+				expect(argv).to.deep.equal({
+					b: true
+				});
+				expect(_).to.deep.equal([]);
+			});
+	});
+
+	it.only('should parse known "short boolean" as option', async () => {
+		const ctx = new Context({
+			options: {
+				'-b <value>': {}
+			}
+		});
+		return ctx.parse([ '-b', 'foo' ])
+			.then(({ argv, _ }) => {
+				expect(argv).to.deep.equal({
+					b: 'foo'
+				});
+				expect(_).to.deep.equal([]);
+			});
+	});
+
+	it('should parse known "short boolean" as option with equal sign', async () => {
+		const ctx = new Context({
+			options: {
+				'-b <value>': {}
+			}
+		});
+		return ctx.parse([ '-b=foo' ])
+			.then(({ argv, _ }) => {
+				expect(argv).to.deep.equal({
+					b: 'foo'
+				});
+				expect(_).to.deep.equal([]);
+			});
+	});
+
+	it('should parse and call command', async () => {
+		const ctx = new Context();
 
 		ctx.command('test', {
 			options: {
@@ -19,7 +83,7 @@ describe('Context', () => {
 			}
 		});
 
-		ctx.parse([ 'test', '--data', '{"abc": 123}', '--log-file', 'zap.txt', '--verbose' ])
+		return ctx.parse([ 'test', '--data', '{"abc": 123}', '--log-file', 'zap.txt', '--verbose' ])
 			.then(parsed => {
 				expect(parsed).to.be.instanceof(Arguments);
 
@@ -44,10 +108,7 @@ describe('Context', () => {
 				expect(parsed.args[3].option).to.be.instanceof(Option);
 				expect(parsed.args[3].option.name).to.equal('verbose');
 				expect(parsed.args[3].value).to.be.true;
-
-				done();
-			})
-			.catch(done);
+			});
 	});
 
 /*	describe('Long Options', () => {

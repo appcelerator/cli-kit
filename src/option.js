@@ -18,6 +18,8 @@ export default class Option {
 	 * @param {Object|Array<String>} [params.aliases] - An array of option aliases or an object with
 	 * `visible` and `hidden` arrays of aliases.
 	 * @param {Function} [params.callback] - A function to call when the option has been parsed.
+	 * @param {Boolean} [params.camelCase=true] - If option has a name or can derive a name from the
+	 * long option format, then it the name be camel cased.
 	 * @param {*} [params.default] - ???????
 	 * @param {String} [params.desc] - The description of the option used in the help display.
 	 * @param {String} [param.env] - The environment variable name to get a value from. If the
@@ -123,7 +125,7 @@ export default class Option {
 
 		// TODO: params.regex
 
-		this.camelCase = params.camelCase !== false;
+		this.camelCase = params.name || this.name ? params.camelCase !== false : false;
 		this.count     = !!params.count;
 		this.hidden    = !!params.hidden;
 		this.hint      = params.hint || this.hint;
@@ -154,6 +156,7 @@ export default class Option {
 	 * @param {*} value - The value to transform.
 	 * @param {Boolean} [negated] - Set to `true` if the parsed argument started with `no-`.
 	 * @returns {*}
+	 * @access public
 	 */
 	transform(value, negated) {
 		value = transformValue(value, this.type);

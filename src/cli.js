@@ -1,16 +1,16 @@
-import Arguments from './arguments';
 import Command from './command';
 import Context from './context';
 import help from './help';
 import logger from './logger';
-import snooplogg from 'snooplogg';
+
+import { Writable } from 'stream';
 
 const { log } = logger('cli-kit:cli');
 
 /**
  * Defines a CLI context and is responsible for parsing the command line arguments.
  */
-export default class CLI {
+export default class CLI extends Context {
 	/**
 	 * Created a CLI instance.
 	 *
@@ -33,39 +33,35 @@ export default class CLI {
 			throw new TypeError('Expected argument to be an object or Context');
 		}
 
+		opts.out || (opts.out = process.stdout);
+		if (!(opts.out instanceof Writable)) {
+			throw new TypeError('Expected output stream to be a writable stream');
+		}
+
 		opts.name || (opts.name = 'program');
 		opts.title || (opts.title = 'Global');
-		this.ctx = new Context(opts);
+
+		super(opts);
 
 		// set the default command
 		this.default  = opts.default || 'help';
 
-		// context methods
-		this.argument = this.ctx.argument.bind(this.ctx);
-		this.command  = this.ctx.command.bind(this.ctx);
-		this.option   = this.ctx.option.bind(this.ctx);
-
-		// hook emitter methods
-		this.on       = this.ctx.on.bind(this.ctx);
-		this.once     = this.ctx.once.bind(this.ctx);
-		this.off      = this.ctx.off.bind(this.ctx);
-
 		// add the built-in help
 		this.help = opts.help !== false;
 		if (this.help) {
-			if (!this.ctx.commands.help) {
+			if (!this.commands.help) {
 				this.command(help(opts.helpExitCode));
 			}
 
-			if (!this.ctx.lookup.long.help) {
+			if (!this.lookup.long.help) {
 				this.option('-h, --help');
 			}
 		}
 
-		if (opts.version && !this.ctx.lookup.long.version) {
+		if (opts.version && !this.lookup.long.version) {
 			this.option('-v, --version', {
 				callback() {
-					console.log(opts.version);
+					opts.out.write(`${opts.version}\n`);
 					process.exit(0);
 				},
 				desc: 'outputs the appcd version'
@@ -86,13 +82,13 @@ export default class CLI {
 			throw new TypeError('Expected args to be an array');
 		}
 
-		const $args = await this.ctx.parse(args ? args.slice() : process.argv.slice(2));
+		const $args = await this.parse(args ? args.slice() : process.argv.slice(2));
 
 		let cmd = this.help && $args.argv.help ? 'help' : $args.contexts[0];
 
 		// if there was no command found, then set the default command
 		if (!(cmd instanceof Command)) {
-			cmd = this.ctx.commands[this.default];
+			cmd = this.commands[this.default];
 			if (cmd) {
 				$args.contexts.unshift(cmd);
 			}

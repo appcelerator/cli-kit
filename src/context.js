@@ -1,11 +1,10 @@
 import Argument from './argument';
 import Arguments from './arguments';
+import camelCase from 'lodash.camelcase';
 import Command from './command';
 import HookEmitter from 'hook-emitter';
 import logger from './logger';
 import Option from './option';
-
-import { camelCase } from './util';
 
 const { log } = logger('cli-kit:context');
 
@@ -31,6 +30,9 @@ export default class Context extends HookEmitter {
 	 * @param {Array<Object>|Object} [opts.options] - An array of options.
 	 * @param {Context} [opts.parent] - Parent context.
 	 * @param {String} [opts.title] - Context title.
+	 * @param {Boolean} [opts.allowUnknownOptions=false] - When `true`, any unknown flags or options
+	 * will be treated as an option. When `false`, unknown flags/options will be treated as
+	 * arguments.
 	 * @access public
 	 */
 	constructor(opts = {}) {
@@ -56,30 +58,32 @@ export default class Context extends HookEmitter {
 		this.groups    = {};
 
 		// initialize the alias lookup tables
-		this.lookup = {
-			commands: {},
-			long:     {},
-			short:    {},
-			toString: () => {
-				let s = [];
-				if (Object.keys(this.lookup.commands).length) {
-					s.push('  Commands:');
-					for (const name of Object.keys(this.lookup.commands)) {
-						s.push(`    ${name} => ${this.lookup.commands[name].name}`);
+		Object.defineProperty(this, 'lookup', {
+			value: {
+				commands: {},
+				long:     {},
+				short:    {},
+				toString: () => {
+					let s = [];
+					if (Object.keys(this.lookup.commands).length) {
+						s.push('  Commands:');
+						for (const name of Object.keys(this.lookup.commands)) {
+							s.push(`    ${name} => ${this.lookup.commands[name].name}`);
+						}
 					}
+					if (Object.keys(this.lookup.long).length || Object.keys(this.lookup.short).length) {
+						s.push('  Options:');
+						for (const name of Object.keys(this.lookup.long)) {
+							s.push(`    --${name} => ${this.lookup.long[name].name}`);
+						}
+						for (const name of Object.keys(this.lookup.short)) {
+							s.push(`    -${name} => ${this.lookup.short[name].name}`);
+						}
+					}
+					return s.length ? `Context Lookup:\n${s.join('\n')}` : '';
 				}
-				if (Object.keys(this.lookup.long).length || Object.keys(this.lookup.short).length) {
-					s.push('  Options:');
-					for (const name of Object.keys(this.lookup.long)) {
-						s.push(`    --${name} => ${this.lookup.long[name].name}`);
-					}
-					for (const name of Object.keys(this.lookup.short)) {
-						s.push(`    -${name} => ${this.lookup.short[name].name}`);
-					}
-				}
-				return s.length ? `Context Lookup:\n${s.join('\n')}` : '';
 			}
-		};
+		});
 
 		this.camelCase = opts.camelCase !== false;
 
@@ -144,6 +148,7 @@ export default class Context extends HookEmitter {
 			throw new TypeError('Expected argument to be an object');
 		}
 
+		opts.allowUnknownOptions = this.allowUnknownOptions;
 		opts.parent = this;
 
 		log(`Adding command: ${name}`);
@@ -227,78 +232,57 @@ export default class Context extends HookEmitter {
 				return $args;
 			}
 
+			let option;
+			let negated = false;
+			let isFlag = false;
+
 			// check if long option
 			if (m) {
 				// --something or --something=foo
-				const negated = m[1].match(negateRegExp);
+				negated = m[1].match(negateRegExp);
 				const name = negated ? negated[1] : m[1];
-				const option = this.lookup.long[name];
-
-				if (option) {
-					log(`Found option: ${option.name}`);
-					log(`Negated? ${!!negated}`);
-
-					if (m[2]) {
-						// --something=foo
-						args[i] = { type: 'option', option, value: option.transform(m[2], negated) };
-					} else {
-						// if value is `null`, then we are missing the value
-						let value = null;
-
-						if (option.type === 'bool') {
-							value = !negated;
-						} else if (i + 1 < args.length) {
-							value = option.transform(args[i + 1]);
-							args[i + 1] = null;
-						}
-
-						args[i] = { type: 'option', option, value };
-					}
-
-					if (typeof option.callback === 'function') {
-						const newValue = await option.callback(args[i].value);
-						if (newValue !== undefined) {
-							args[i].value = newValue;
-						}
-					}
-				} else {
-					// treat unknown options as flags
-					args[i] = { type: 'unknown option', orig: arg };
-				}
-
-				return $args;
-			}
+				option = this.lookup.long[name];
 
 			// check if short option
-			if (m = arg.match(dashOpt)) {
-				// -x
+			} else if (m = arg.match(dashOpt)) {
+				option = this.lookup.short[m[1]];
+				isFlag = true;
+			}
 
-				// const option = this.lookup.short[m[1]];
-				// if (option) {
-				// 	log(`Found option: ${option.name}`);
-				//
-				// 	if (m[2]) {
-				// 		// --x=foo
-				// 		args[i] = { type: 'option', option, value: option.transform(m[2]) };
-				// 		return $args;
-				// 	}
-				//
-				// 	// if value is `null`, then we are missing the value
-				// 	let value = null;
-				//
-				// 	if (option.type === 'bool') {
-				// 		value = true;
-				// 	} else if (i + 1 < args.length) {
-				// 		value = option.transform(args[i + 1]);
-				// 		args[i + 1] = null;
-				// 	}
-				//
-				// 	args[i] = { type: 'option', option, value };
-				// 	return $args;
-				// }
+			if (option) {
+				log(`Found option: ${option.name} (${option.type})`);
+				log(`Negated? ${!!negated}`);
 
-				// args[i] = { type: 'unknown option', name: m[1], orig: arg };
-				// return $args;
+				if (m[2]) {
+					// --something=foo
+					// -x=foo
+					args[i] = { type: 'option', option, value: option.transform(m[2], negated) };
+				} else {
+					// if value is `null`, then we are missing the value
+					let value = null;
+
+					if (option.type === 'bool') {
+						value = isFlag || !negated;
+					} else if (i + 1 < args.length) {
+						value = option.transform(args[i + 1]);
+						args[i + 1] = null;
+					}
+
+					args[i] = { type: 'option', option, value };
+				}
+
+				if (typeof option.callback === 'function') {
+					const newValue = await option.callback(args[i].value);
+					if (newValue !== undefined) {
+						args[i].value = newValue;
+					}
+				}
+				return $args;
+
+			} else if (this.allowUnknownOptions) {
+				// treat unknown options as flags
+				args[i] = { type: 'unknown option', name: m[1], orig: arg };
+				return $args;
 			}
 
 			// check if command
@@ -341,7 +325,7 @@ export default class Context extends HookEmitter {
 					for (let i = $args.contexts.length; i; i--) {
 						for (const option of $args.contexts[i - 1].options) {
 							if (option.name) {
-								const name = option.camelCase === false || !this.camelCase ? option.name : camelCase(option.name);
+								const name = option.camelCase || this.camelCase ? camelCase(option.name) : option.name;
 								if (option.default !== undefined) {
 									$args.argv[name] = option.default;
 								} else if (option.type === 'bool') {
@@ -361,7 +345,7 @@ export default class Context extends HookEmitter {
 						if (typeof arg === 'object') {
 							switch (arg.type) {
 								case 'option':
-									$args.argv[arg.option.camelCase === false || !this.camelCase ? arg.option.name : camelCase(arg.option.name)] = arg.value;
+									$args.argv[arg.option.camelCase || this.camelCase ? camelCase(arg.option.name) : arg.option.name] = arg.value;
 									break;
 								case 'unknown option':
 									$args.argv[this.camelCase ? camelCase(arg.name) : arg.name] = true;
