@@ -2,18 +2,19 @@ import Argument from './argument';
 import Arguments from './arguments';
 import camelCase from 'lodash.camelcase';
 import Command from './command';
+import debug from './debug';
 import HookEmitter from 'hook-emitter';
-import logger from './logger';
 import Option from './option';
 
-const { log } = logger('cli-kit:context');
+const { log } = debug('cli-kit:context');
 
 const optRE = /^(?:--|—)(?:([^=]+)(?:=([\s\S]*))?)?$/;
-const dashOpt = /^(?:-|—)(.+)$/;
+const dashOpt = /^(?:-|—)(.+?)(?:=(.+))?$/;
 const negateRegExp = /^no-(.+)$/;
 
 /**
- * Defines a context for commands, options, and args.
+ * Defines a context that contains commands, options, and args. Serves as the
+ * base class for `CLI` and `Context` objects.
  *
  * @extends {HookEmitter}
  */
@@ -25,11 +26,12 @@ export default class Context extends HookEmitter {
 	 * @param {Array<Object>} [opts.args] - An array of arguments.
 	 * @param {Boolean} [opts.camelCase=true] - Camel case option names.
 	 * @param {Object} [opts.commands] - A map of command names to command descriptors.
-	 * @param {String} [params.desc] - The description of the context used in the help display.
+	 * @param {String} [params.desc] - The description of the CLI or command displayed in the help
+	 * output.
 	 * @param {String} [opts.name] - The name of the context such as the program or the command name.
 	 * @param {Array<Object>|Object} [opts.options] - An array of options.
 	 * @param {Context} [opts.parent] - Parent context.
-	 * @param {String} [opts.title] - Context title.
+	 * @param {String} [opts.title] - The context title.
 	 * @param {Boolean} [opts.allowUnknownOptions=false] - When `true`, any unknown flags or options
 	 * will be treated as an option. When `false`, unknown flags/options will be treated as
 	 * arguments.
@@ -109,7 +111,7 @@ export default class Context extends HookEmitter {
 					}
 				}
 			}
-		} else if (opts.options) {
+		} else if (typeof opts.options === 'object') {
 			for (const format of Object.keys(opts.options)) {
 				this.option(format, opts.options[format]);
 			}
@@ -122,41 +124,65 @@ export default class Context extends HookEmitter {
 		}
 	}
 
+	/**
+	 * Adds an argument to this context.
+	 *
+	 * @param {Argument|Object|String} arg - An `Argument` instance or params to pass into an
+	 * `Argument` constructor.
+	 * @returns {Context}
+	 * @access public
+	 */
 	argument(arg = {}) {
 		this.args.push(arg instanceof Argument ? arg : new Argument(arg));
+		return this;
 	}
 
-	command(name, opts) {
-		if (name && typeof name === 'object' && !Array.isArray(name) && name.name) {
-			opts = name;
-			name = opts.name;
+	/**
+	 * Adds a command to this context.
+	 *
+	 * @param {Command|Object|String} cmd - A `Command` instance, `Command` constructor options, or
+	 * a command name.
+	 * @param {Object} [opts] - When `cmd` is the command name, then this is the options to pass
+	 * into the `Command` constructor.
+	 * @returns {Context}
+	 * @access public
+	 */
+	command(cmd, opts) {
+		if (cmd instanceof Command) {
+			cmd.parent = this;
+		} else {
+			let name = cmd;
+			if (name && typeof name === 'object' && !Array.isArray(name)) {
+				opts = name;
+				name = opts.name;
+			}
+
+			if (!name || typeof name !== 'string') {
+				throw new TypeError('Expected name to be a non-empty string');
+			}
+
+			if (typeof opts === 'function') {
+				opts = {
+					action: opts
+				};
+			} else if (!opts) {
+				opts = {};
+			}
+
+			if (typeof opts !== 'object' || Array.isArray(opts)) {
+				throw new TypeError('Expected argument to be an object');
+			}
+
+			opts.allowUnknownOptions = this.allowUnknownOptions;
+			opts.parent = this;
+
+			cmd = new Command(name, opts);
 		}
 
-		if (!name || typeof name !== 'string') {
-			throw new TypeError('Expected name to be a non-empty string');
-		}
+		log(`Adding command: ${cmd.name}`);
+		this.commands[cmd.name] = cmd;
 
-		if (typeof opts === 'function') {
-			opts = {
-				action: opts
-			};
-		} else if (!opts) {
-			opts = {};
-		}
-
-		if (typeof opts !== 'object' || Array.isArray(opts)) {
-			throw new TypeError('Expected argument to be an object');
-		}
-
-		opts.allowUnknownOptions = this.allowUnknownOptions;
-		opts.parent = this;
-
-		log(`Adding command: ${name}`);
-
-		const cmd = new Command(name, opts);
-		this.commands[name] = cmd;
-
-		this.lookup.commands[name] = cmd;
+		this.lookup.commands[cmd.name] = cmd;
 		if (cmd.aliases) {
 			for (const alias of Object.keys(cmd.aliases)) {
 				if (!this.commands[alias]) {
@@ -168,16 +194,44 @@ export default class Context extends HookEmitter {
 		return this;
 	}
 
-	option(format, group, params) {
-		if (group && typeof group === 'object') {
-			params = group;
-			group = null;
+	/**
+	 * Adds an option to this context.
+	 *
+	 * @param {Option|String} optOrFormat - An `Option` instance or the option format.
+	 * @param {String} [group] - If `params` is present, then this value is the name of the group to
+	 * assign the option to. If `params` is not present, then this value will be treated as the
+	 * description.
+	 * @param {Object} [params] - When `optOrFormat` is a format string, then this argument is
+	 * passed into the `Option` constructor.
+	 * @returns {Context}
+	 * @access public
+	 *
+	 * @example
+	 *   ctx.option('--foo');
+	 *   ctx.option('--foo', 'enables foo mode');
+	 *   ctx.option('--foo', { desc: 'enables foo mode' });
+	 *   ctx.option('--foo', 'Silly Options', { desc: 'enables foo mode' });
+	 *   ctx.option(new Option('--foo'));
+	 *   ctx.option(new Option('--foo'), 'Silly Options');
+	 */
+	option(optOrFormat, group, params) {
+		if (group) {
+			if (typeof group === 'object') {
+				params = group;
+				group = null;
+			} else if (typeof group !== 'string') {
+				throw new TypeError('Expected group to be a non-empty string');
+			} else if (!params) {
+				params = { desc: group };
+				group = null;
+			}
 		}
 
-		const opt = new Option(format, params);
+		const opt = optOrFormat instanceof Option ? optOrFormat : new Option(optOrFormat, params);
+
 		this.options.push(opt);
 
-		this.groups[group || ''] = opt;
+		this.groups[group || opt.group || ''] = opt;
 
 		if (opt.long) {
 			this.lookup.long[opt.long] = opt;
@@ -199,6 +253,16 @@ export default class Context extends HookEmitter {
 		return this;
 	}
 
+	/**
+	 * Parses the arguments. This function recursively calls itself for each discovered sub-context.
+	 *
+	 * @param {Array.<String>|Arguments} $args - The first time this function is called, it is
+	 * passed in an array of strings, namely `process.argv` starting with the 3rd argument or an
+	 * arbitrary array of arguments. Each subsequent call will be passed an `Arguments` object
+	 * which keeps track of what has been parsed.
+	 * @returns {Promise.<Arguments>}
+	 * @access private
+	 */
 	parse($args) {
 		if (!($args instanceof Arguments)) {
 			$args = new Arguments($args);
@@ -353,7 +417,7 @@ export default class Context extends HookEmitter {
 							}
 						} else {
 							if (this.args[i]) {
-								$args._.push(this.args[i].transform(arg));
+								$args.argv[this.camelCase ? camelCase(this.args[i].name) : this.args[i].name] = this.args[i].transform(arg);
 							} else {
 								$args._.push(arg);
 							}
@@ -373,10 +437,16 @@ export default class Context extends HookEmitter {
 	/**
 	 * Renders the help screen for this context including the parent contexts.
 	 *
-	 * @param {Function} log - The function to write output to.
-	 * @access public
+	 * @param {WritableStream} out - The stream to write output to.
+	 * @access private
 	 */
-	renderHelp(log) {
+	renderHelp(out) {
+		let ctx = this;
+		while (ctx.parent) {
+			ctx = ctx.parent;
+		}
+		const width = Math.max(ctx.width || process.stdout.columns || 100, 40);
+
 		const add = (bucket, columns) => {
 			for (let i = 0, l = columns.length; i < l; i++) {
 				const len = columns[i] !== undefined && columns[i] !== null ? String(columns[i]).length : 0;
@@ -443,27 +513,87 @@ export default class Context extends HookEmitter {
 				.filter(arg => !arg.hidden)
 				.map(arg => {
 					return arg.required ? ` <${arg.name}>` : ` [<${arg.name}>]`;
-				});
+				})
+				.join('');
 		} else {
 			usage += `${this.name}${commands.list.length ? ' <command>' : ''}`;
 		}
 		usage += options.list.length ? ' [options]' : '';
-		log(`${usage}\n`);
+		out.write(`${usage}\n\n`);
+
+		if (this.desc) {
+			out.write(`${wrap(this.desc, width)}\n\n`);
+		}
 
 		const list = (label, bucket) => {
 			if (bucket.list.length) {
-				log(`${label}:`);
+				out.write(`${label}:\n`);
 				const max = bucket.maxWidths[0];
 				for (const line of bucket.list) {
-					const [ name, desc ] = line;
-					log(`  ${name.padEnd(max)}  ${desc || ''}`);
+					let [ name, desc ] = line;
+					name = `  ${name.padEnd(max)}`;
+					if (desc) {
+						out.write(`${name}  ${wrap(desc, width, name.length + 2)}\n`);
+					} else {
+						out.write(`${name}\n`);
+					}
 				}
-				log();
+				out.write('\n');
 			}
 		};
 
 		list('Commands', commands);
-		list('Arguments', args);
-		list('Options', options);
+		list(this.title ? `${this.title} arguments` : 'Arguments', args);
+		list(this.title ? `${this.title} options` : 'Options', options);
 	}
+}
+
+/**
+ * Inserts line breaks into a string so that the text does not exceed the specified width.
+ *
+ * @param {String} str - The string to line wrap.
+ * @param {Number} [width] - The width to break the lines; defaults to the terminal width.
+ * @param {Number} [indent] - The number of spaces to indent new lines.
+ * @returns {String}
+ */
+function wrap(str, width, indent) {
+	if (width <= 0) {
+		return str;
+	}
+
+	indent = ' '.repeat(indent || 0);
+
+	return str
+		.split(/\r?\n/)
+		.map(line => {
+			let i = 0;
+			let j = 0;
+			let k;
+			let next;
+
+			while (i < line.length) {
+				if (line.charAt(i) === '\u001b') {
+					// fast forward!
+					i += 5;
+				} else {
+					i++;
+					if (++j >= width) {
+						// backpedal
+						for (k = i; k >= 0; k--) {
+							if (/[ ,;!?]/.test(line[k]) || (/[.:]/.test(line[k]) && (k + 1 >= line.length || /[ \t\r\n]/.test(line[k + 1])))) {
+								if (k + 1 < line.length) {
+									line = line.substring(0, k) + '\n' + indent + line.substring(k + 1);
+									i = k + 1;
+									j = 0;
+								}
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			return line;
+		})
+		.join('\n');
 }

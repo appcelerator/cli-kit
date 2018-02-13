@@ -41,13 +41,26 @@ export function checkType(type, defaultValue) {
  * @returns {*}
  */
 export function transformValue(value, type) {
-	if (typeof types[type].transform === 'function') {
+	if (types[type] && typeof types[type].transform === 'function') {
 		value = types[type].transform(value);
 	}
 	return value;
 }
 
+/**
+ * Defines a option/argument data type and its transform function.
+ */
 export class Type {
+	/**
+	 * Creates the data type instance.
+	 *
+	 * @param {Object} opts - Various options.
+	 * @param {String} opts.name - The name of the data type.
+	 * @param {Function} [opts.transform] - A function that transforms the parsed option/argument
+	 * string value to the correct data type. By default, no transform is applied and values will
+	 * remain as strings.
+	 * @access public
+	 */
 	constructor(opts) {
 		if (!opts || typeof opts !== 'object' || Array.isArray(opts)) {
 			throw new TypeError('Expected opts to be an object');
@@ -66,23 +79,28 @@ export class Type {
 	}
 }
 
-export function addType(opts) {
+/**
+ * Registers a type.
+ *
+ * @param {Type|Object} opts - A `Type` instance or params for constructing a new `Type` instance.
+ */
+export function registerType(opts) {
 	if (!(opts instanceof Type)) {
 		opts = new Type(opts);
 	}
 	types[opts.name] = opts;
 }
 
-addType({
+registerType({
 	name: 'bool',
-	transform: value => {
+	transform(value) {
 		return value && value !== 'false';
 	}
 });
 
-addType({
+registerType({
 	name: 'date',
-	transform: value => {
+	transform(value) {
 		let date;
 
 		if (intRegExp.test(value)) {
@@ -102,9 +120,9 @@ addType({
 	}
 });
 
-addType({
+registerType({
 	name: 'file',
-	transform: value => {
+	transform(value) {
 		if (!value) {
 			throw new Error('Invalid file');
 		}
@@ -112,9 +130,9 @@ addType({
 	}
 });
 
-addType({
+registerType({
 	name: 'int',
-	transform: value => {
+	transform(value) {
 		let num;
 		if (!intRegExp.test(value) || isNaN(num = Number(value))) {
 			throw new Error('Value is not an integer');
@@ -123,9 +141,9 @@ addType({
 	}
 });
 
-addType({
+registerType({
 	name: 'json',
-	transform: value => {
+	transform(value) {
 		try {
 			return JSON.parse(value);
 		} catch (e) {
@@ -134,9 +152,9 @@ addType({
 	}
 });
 
-addType({
+registerType({
 	name: 'number',
-	transform: value => {
+	transform(value) {
 		let num = Number(value);
 		if (isNaN(num)) {
 			throw new Error('Value is not an integer');
@@ -145,9 +163,9 @@ addType({
 	}
 });
 
-addType({
+registerType({
 	name: 'positiveInt',
-	transform: value => {
+	transform(value) {
 		let num;
 		if (!intRegExp.test(value) || isNaN(num = Number(value)) || num < 0) {
 			throw new Error('Value is not a positive integer');
@@ -156,14 +174,13 @@ addType({
 	}
 });
 
-addType({
-	name: 'string',
-	transform: value => value
+registerType({
+	name: 'string'
 });
 
-addType({
+registerType({
 	name: 'yesno',
-	transform: value => {
+	transform(value) {
 		if (yesRegExp.test(value)) {
 			return true;
 		}

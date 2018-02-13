@@ -39,7 +39,7 @@ describe('Context', () => {
 			});
 	});
 
-	it.only('should parse known "short boolean" as option', async () => {
+	it('should parse known "short boolean" as option', async () => {
 		const ctx = new Context({
 			options: {
 				'-b <value>': {}

@@ -10,11 +10,12 @@ export default class Command extends Context {
 	 *
 	 * @param {String} name - The command name.
 	 * @param {Object} [params] - Various params.
-	 * @param {Array<Object>} [params.args] - An array of arguments.
+	 * @param {Function} [params.action] - A function to call when the command is found.
 	 * @param {Array<String>} [params.aliases] - An array of command aliases.
+	 * @param {Array<Object>} [params.args] - An array of arguments.
 	 * @param {Boolean} [params.camelCase=true] - Camel case option names.
 	 * @param {Array<Object>} [params.commands] - An array of commands.
-	 * @param {String} [params.desc] - The description of the command used in the help display.
+	 * @param {String} [params.desc] - The description of the command displayed in the help output.
 	 * @param {Boolean} [params.hidden=false] - When `true`, the command will not be displayed on
 	 * the help screen or auto-suggest.
 	 * @param {Array<Object>} [params.options] - An array of options definition objects.
@@ -49,11 +50,11 @@ export default class Command extends Context {
 			}
 		}
 
-		params.title || (params.title = name);
 		super(params);
 
-		this.name = name;
-		this.action = params.action;
+		this.action  = params.action;
 		this.aliases = aliases;
+		this.name    = name;
+		this.title   = params.title || name;
 	}
 }

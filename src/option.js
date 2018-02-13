@@ -5,6 +5,7 @@ const valueRegExp = /^(\[(?=.+\]$)|<(?=.+>$))(.+)[\]>]$/;
 const negateRegExp = /^no-(.+)$/;
 const aliasSepRegExp = /[ ,|]+/;
 const aliasRegExp = /^(?:-(.)|-{2}(.+))$/;
+const numberRegExp = /^\d+(\.\d*)?$/;
 
 /**
  * Defines an option and it's parameters.
@@ -15,11 +16,12 @@ export default class Option {
 	 *
 	 * @param {String} format - The option format containing the general info.
 	 * @param {Object} [params] - Additional parameters.
-	 * @param {Object|Array<String>} [params.aliases] - An array of option aliases or an object with
+	 * @param {Object|Array<String>|String} [params.aliases] - An array of aliases or an object with
 	 * `visible` and `hidden` arrays of aliases.
 	 * @param {Function} [params.callback] - A function to call when the option has been parsed.
 	 * @param {Boolean} [params.camelCase=true] - If option has a name or can derive a name from the
 	 * long option format, then it the name be camel cased.
+	 * @param {Boolean} [params.count] - ???????????????????????????????????????????????????? force type to boolean OR make "count" a type
 	 * @param {*} [params.default] - ???????
 	 * @param {String} [params.desc] - The description of the option used in the help display.
 	 * @param {String} [param.env] - The environment variable name to get a value from. If the
@@ -38,8 +40,8 @@ export default class Option {
 	 * @access public
 	 */
 	constructor(format, params) {
-		if (typeof format !== 'string') {
-			throw new TypeError('Expected format to be a string');
+		if (!format || typeof format !== 'string') {
+			throw new TypeError('Expected option format to be a non-empty string');
 		}
 		format = format.trim();
 
@@ -93,7 +95,7 @@ export default class Option {
 				initAliases(params.aliases.visible, 'visible');
 				initAliases(params.aliases.hidden);
 			} else {
-				throw new TypeError('Expected aliases to be an array of strings or an object with visible/hidden array of strings');
+				initAliases([ params.aliases ]);
 			}
 		}
 
@@ -116,11 +118,12 @@ export default class Option {
 		// check if we have a hint
 		if (hint) {
 			const value = hint.match(valueRegExp);
-			if (!value) {
-				throw new TypeError(`Invalid option format "${format}"`);
+			if (value) {
+				this.required = value[1] === '<';
+				this.hint = value[2].trim();
+			} else {
+				this.hint = hint;
 			}
-			this.required = value[1] === '<';
-			this.hint = value[2].trim();
 		}
 
 		// TODO: params.regex
@@ -135,7 +138,7 @@ export default class Option {
 		this.name      = params.name || this.name || (this.long ? `--${this.long}` : this.short ? `-${this.short}` : null);
 		this.order     = params.order || null;
 		this.required  = this.required === undefined ? !!params.required : this.required;
-		this.type      = checkType(params.type, hint || 'bool');
+		this.type      = checkType(params.type, this.hint || 'bool');
 
 		if (this.type !== 'bool') {
 			if (this.negate) {
@@ -179,6 +182,15 @@ export default class Option {
 					throw new Error(`Value must be less than or equal to ${this.max}`);
 				}
 				break;
+
+			default:
+				// check if value could be a number
+				if (numberRegExp.test(value)) {
+					const n = parseFloat(value);
+					if (!isNaN(n)) {
+						return n;
+					}
+				}
 		}
 
 		return value;
