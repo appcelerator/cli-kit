@@ -370,7 +370,7 @@ export default class Context extends HookEmitter {
 						.then($a => $a || $args);
 				}, Promise.resolve($args))
 				.then($args => $args.prune())
-				.then($args => {
+				.then(async ($args) => {
 					const cmd = $args.contexts[0];
 
 					if (cmd && cmd !== command) {
@@ -405,23 +405,49 @@ export default class Context extends HookEmitter {
 					// fill argv and _
 					log('Filling argv and _');
 					let i = 0;
-					for (const arg of $args.args) {
-						if (typeof arg === 'object') {
-							switch (arg.type) {
+					let name;
+					for (const parsedArg of $args.args) {
+						if (typeof parsedArg === 'object') {
+							switch (parsedArg.type) {
 								case 'option':
-									$args.argv[arg.option.camelCase || this.camelCase ? camelCase(arg.option.name) : arg.option.name] = arg.value;
+									name = parsedArg.option.camelCase || this.camelCase ? camelCase(parsedArg.option.name) : parsedArg.option.name;
+									$args.argv[name] = parsedArg.value;
 									break;
+
 								case 'unknown option':
-									$args.argv[this.camelCase ? camelCase(arg.name) : arg.name] = true;
+									name = parsedArg.camelCase || this.camelCase ? camelCase(parsedArg.name) : parsedArg.name;
+									$args.argv[name] = true;
 									break;
 							}
 						} else {
-							if (this.args[i]) {
-								$args.argv[this.camelCase ? camelCase(this.args[i].name) : this.args[i].name] = this.args[i].transform(arg);
+							const arg = this.args[i++];
+							if (arg) {
+								name = arg.camelCase || this.camelCase ? camelCase(arg.name) : arg.name;
+								let value = arg.transform(parsedArg);
+
+								if (typeof arg.callback === 'function') {
+									const newValue = await arg.callback(value);
+									if (newValue !== undefined) {
+										value = newValue;
+									}
+								}
+
+								if (arg.multiple) {
+									// if this arg gobbles up multiple parsed args, then we
+									// decrement `i` so that we never increment it and no further
+									// arguments will be applied
+									i--;
+									if (Array.isArray($args.argv[name])) {
+										$args.argv[name].push(value);
+									} else {
+										$args.argv[name] = [ value ];
+									}
+								} else {
+									$args.argv[name] = value;
+								}
 							} else {
-								$args._.push(arg);
+								$args._.push(parsedArg);
 							}
-							i++;
 						}
 					}
 

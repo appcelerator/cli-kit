@@ -101,12 +101,18 @@ const cli = new CLI({
 			// When `true`, hides the argument from usage string in the help output.
 			hidden: false,
 
+			// When `true`, captures all subsequent argument values into an array
+			multiple: false,
+
 			// Overrides the brackets and forces the argument to be required or optional.
 			required: false,
 
 			// There are several built-in types. See the "types" section below for more info.
 			type: 'string'
-		}
+		},
+
+		// Adding `...` will capture all subsequent argument values into an array
+		'arg4...'
 	],
 
 	// Global flag to camel case property names derived from multi-word options/arguments.
