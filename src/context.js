@@ -464,9 +464,12 @@ export default class Context extends HookEmitter {
 	 * Renders the help screen for this context including the parent contexts.
 	 *
 	 * @param {WritableStream} out - The stream to write output to.
+	 * @param {Boolean} recursing - Indicates that this function is being called by itself from a
+	 * sub-context and that the current context's usage, description, and commands should be
+	 * suppressed.
 	 * @access private
 	 */
-	renderHelp(out) {
+	renderHelp(out, recursing) {
 		let ctx = this;
 		while (ctx.parent) {
 			ctx = ctx.parent;
@@ -528,29 +531,6 @@ export default class Context extends HookEmitter {
 			}
 		}
 
-		let usage = 'Usage: ';
-		if (this.parent) {
-			// add in the chain of commands
-			usage += (function walk(ctx) {
-				return (ctx.parent ? walk(ctx.parent) + ' ' : '') + ctx.name;
-			}(this));
-
-			usage += this.args
-				.filter(arg => !arg.hidden)
-				.map(arg => {
-					return arg.required ? ` <${arg.name}>` : ` [<${arg.name}>]`;
-				})
-				.join('');
-		} else {
-			usage += `${this.name}${commands.list.length ? ' <command>' : ''}`;
-		}
-		usage += options.list.length ? ' [options]' : '';
-		out.write(`${usage}\n\n`);
-
-		if (this.desc) {
-			out.write(`${wrap(this.desc, width)}\n\n`);
-		}
-
 		const list = (label, bucket) => {
 			if (bucket.list.length) {
 				out.write(`${label}:\n`);
@@ -568,9 +548,40 @@ export default class Context extends HookEmitter {
 			}
 		};
 
-		list('Commands', commands);
+		if (!recursing) {
+			let usage = 'Usage: ';
+			if (this.parent) {
+				// add in the chain of commands
+				usage += (function walk(ctx) {
+					return (ctx.parent ? walk(ctx.parent) + ' ' : '') + ctx.name;
+				}(this));
+
+				usage += this.args
+					.filter(arg => !arg.hidden)
+					.map(arg => {
+						return arg.required ? ` <${arg.name}>` : ` [<${arg.name}>]`;
+					})
+					.join('');
+			} else {
+				usage += `${this.name}${commands.list.length ? ' <command>' : ''}`;
+			}
+			usage += options.list.length ? ' [options]' : '';
+			out.write(`${usage}\n\n`);
+
+			if (this.desc) {
+				out.write(`${wrap(this.desc.substring(0, 1).toUpperCase() + this.desc.substring(1), width)}\n\n`);
+			}
+
+			list('Commands', commands);
+		}
+
 		list(this.title ? `${this.title} arguments` : 'Arguments', args);
+
 		list(this.title ? `${this.title} options` : 'Options', options);
+
+		if (this.parent) {
+			this.parent.renderHelp(out, true);
+		}
 	}
 }
 
