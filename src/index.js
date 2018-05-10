@@ -8,5 +8,8 @@ export {
 	default as CLI
 } from './cli';
 
-export { Command } from './command';
-export { Option } from './option';
+export { default as Argument } from './argument';
+export { default as Command } from './command';
+export { default as Option } from './option';
+export { default as Extension } from './extension';
+export * from './util';

@@ -1,3 +1,5 @@
+import errors from './errors';
+
 const dateRegExp = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?Z?)?$/i;
 const intRegExp = /^[0-9-]+$/;
 const yesRegExp = /^y(es)?$/;
@@ -23,7 +25,7 @@ export const types = {};
  */
 export function checkType(type, defaultValue) {
 	if (type && !types[type]) {
-		throw new Error(`Unsupported type "${type}"`);
+		throw new errors.Error(`Unsupported type "${type}"`, 'ERR_UNSUPPORTED_TYPE', { type });
 	}
 
 	if (!type && defaultValue) {

@@ -1,3 +1,5 @@
+import { declareCLIKitClass } from './util';
+
 /**
  * A collection of parsed CLI arguments.
  */
@@ -30,6 +32,8 @@ export default class Arguments {
 				value: []
 			}
 		});
+
+		declareCLIKitClass(this, 'Arguments');
 	}
 
 	/**

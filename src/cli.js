@@ -2,7 +2,7 @@ import Command from './command';
 import Context from './context';
 import debug from './debug';
 
-import { Writable } from 'stream';
+import { declareCLIKitClass } from './util';
 
 const { log } = debug('cli-kit:cli');
 
@@ -14,18 +14,13 @@ export default class CLI extends Context {
 	 * Created a CLI instance.
 	 *
 	 * @param {Object} [opts] - Various options.
-	 * @param {Array<Object>} [opts.args] - An array of arguments.
-	 * @param {Boolean} [opts.camelCase=true] - Camel case option names.
-	 * @param {Object} [opts.commands] - A map of command names to command descriptors.
 	 * @param {Boolean} [opts.defaultCommand] - The default command to execute.
-	 * @param {String} [params.desc] - The description of the CLI displayed in the help output.
 	 * @param {Boolean} [opts.help=false] - When `true`, enables the built-in help command.
 	 * @param {Number} [opts.helpExitCode] - The exit code to return when the help command is
 	 * finished.
 	 * @param {String} [opts.name] - The name of the program.
-	 * @param {Array<Object>|Object} [opts.options] - An array of options.
-	 * @param {Writable} [opts.out=process.stdout] - A stream to write output such as the help
-	 * screen.
+	 * @param {Object|Writable} [opts.out=process.stdout] - A stream to write output such as the
+	 * help screen or an object with a `write()` method.
 	 * @param {String} [opts.title='Global'] - The title for the global context.
 	 * @param {String} [opts.version] - The program version.
 	 * @param {Number} [opts.width] - The number of characters to wrap long descriptions. Defaults
@@ -37,8 +32,7 @@ export default class CLI extends Context {
 			throw new TypeError('Expected argument to be an object or Context');
 		}
 
-		opts.out || (opts.out = process.stdout);
-		if (!(opts.out instanceof Writable)) {
+		if (opts.out && (typeof opts.out !== 'object' || typeof opts.out.write !== 'function')) {
 			throw new TypeError('Expected output stream to be a writable stream');
 		}
 
@@ -54,6 +48,7 @@ export default class CLI extends Context {
 		opts.title || (opts.title = 'Global');
 
 		super(opts);
+		declareCLIKitClass(this, 'CLI');
 
 		// set the default command
 		this.defaultCommand = opts.defaultCommand;
@@ -69,7 +64,7 @@ export default class CLI extends Context {
 				hidden: true,
 				action({ contexts }) {
 					// the first context is the help command, so just skip to the second context
-					contexts[1].renderHelp(opts.out);
+					contexts[1].renderHelp();
 					if (opts.helpExitCode !== undefined) {
 						process.exit(opts.helpExitCode);
 					}
@@ -108,10 +103,12 @@ export default class CLI extends Context {
 		let cmd = $args.contexts[0];
 
 		if (this.help && $args.argv.help) {
+			log('Selected help command');
 			cmd = this.commands.help;
 			$args.contexts.unshift(cmd);
 
-		} else if (!(cmd instanceof Command) && (this.commands[this.defaultCommand] instanceof Command)) {
+		} else if (!(cmd instanceof Command) && this.defaultCommand && (this.commands[this.defaultCommand] instanceof Command)) {
+			log(`Selected default command: ${this.defaultCommand}`);
 			cmd = this.commands[this.defaultCommand];
 			$args.contexts.unshift(cmd);
 		}

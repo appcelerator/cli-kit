@@ -1,4 +1,5 @@
 import { checkType, transformValue } from './types';
+import { declareCLIKitClass } from './util';
 
 /**
  * Tests if the name contains the required sequence (`<` and `>`).
@@ -47,47 +48,50 @@ export default class Argument {
 
 		let params = nameOrParams;
 
-		if (typeof nameOrParams === 'string') {
+		if (!params || (typeof params !== 'string' && typeof params !== 'object') || Array.isArray(params)) {
+			throw new TypeError('Expected argument params to be a non-empty string or an object');
+		}
+
+		if (typeof params === 'string') {
 			params = {
-				name: nameOrParams
+				name: params.trim()
 			};
-
-		} else if (!nameOrParams) {
-			params = {};
-
-		} else if (typeof nameOrParams !== 'object' || Array.isArray(nameOrParams)) {
-			throw new TypeError('Expected params to be an object');
 		}
 
 		if (!params.name || typeof params.name !== 'string') {
 			throw TypeError('Expected argument name to be a non-empty string');
 		}
 
-		// check if the name contains a required sequence
-		let m = params.name.match(requiredRegExp);
-		if (m) {
-			if (params.required === undefined && m[1]) {
-				params.required = true;
-			}
-			params.name = (m[1] || m[2]).trim() + (m[3] || '');
-		}
+		declareCLIKitClass(this, 'Argument');
 
-		// check if the name contains a multiple sequence
-		m = params.name.match(multipleRegExp);
-		if (m) {
-			if (params.multiple === undefined) {
-				params.multiple = true;
+		if (params.clikit instanceof Set && params.clikit.has('Argument')) {
+			// we're going to assume the name, required, and multiple are sane
+		} else {
+			// check if the name contains a required sequence
+			let m = params.name.match(requiredRegExp);
+			if (m) {
+				if (params.required === undefined && m[1]) {
+					params.required = true;
+				}
+				params.name = (m[1] || m[2]).trim() + (m[3] || '');
 			}
-			params.name = m[1].trim();
+
+			// check if the name contains a multiple sequence
+			m = params.name.match(multipleRegExp);
+			if (m) {
+				if (params.multiple === undefined) {
+					params.multiple = true;
+				}
+				params.name = m[1].trim();
+			}
 		}
 
 		Object.assign(this, params);
 
 		// TODO: params.regex
-
-		this.hidden   = !!params.hidden;
-		this.required = !!params.required;
-		this.type     = checkType(params.type, 'string');
+		this.hidden   = !!this.hidden;
+		this.required = !!this.required;
+		this.type     = checkType(this.type, 'string');
 	}
 
 	/**

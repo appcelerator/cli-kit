@@ -156,7 +156,8 @@ const cli = new CLI({
 
 	// The default command `exec()` should run if no command was found during parsing.
 	// If `help` is `true` and no default command is specified, it will default to displaying the
-	// help screen.
+	// help screen. If you want help, but do not want to default to the help command, then set the
+	// `defaultCommand` to `null`.
 	defaultCommand: undefined,
 
 	// The CLI description to print on the help screen between the usage and commands/options/args.
@@ -268,20 +269,42 @@ Adds an option or group of options to a `CLI` or `Command`.
 
 ## cli-kit vs other libraries
 
-> NOTE: Following data is incomplete and further research is required.
+> NOTE: Following data is incomplete and research is pending.
 
-|                                               | cli-kit            | commander.js       | yargs              | dashdash           | Caporal.js         | n-args             | meow               | nomnom             | optimist           | minimist           | inquirer           | promptly           | fields |
-| --------------------------------------------- | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ | ------------------ | ------ |
-| Actively maintained <br> (within last year)   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :warning:          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :white_check_mark: | :white_check_mark: | :x:    |
-| Parses command line arguments                 | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:    |
-| "command" support                             | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| "options" support                             | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| "flags" support                               | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| "argument" support                            | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| Value data type coercion                      | :white_check_mark: | :white_check_mark: | Numbers only       |
-| Custom option/argument validation             | Coming soon!       | :white_check_mark: |
-| Prompting support                             | Coming soon!       | :x:                |
-| Built-in prompt types                         | Coming soon!       | :x:                |
+### Parsers
+
+|                                               | cli-kit            | commander.js       | yargs              | Caporal.js         | n-args               | oclif              | meow               | dashdash                             | nomnom             | optimist           | minimist           | mri                |
+| --------------------------------------------- | ------------------ | ------------------ | ------------------ | ------------------ | -------------------- | ------------------ | ------------------ | ------------------------------------ | ------------------ | ------------------ | ------------------ | ------------------ |
+| Actively maintained <br> (within last year)   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:   |                    | :white_check_mark: | :warning: <br> Last release Nov 2016 | :x:                | :x:                | :x:                |                    |
+| Open Source                                   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                  | :white_check_mark: | :white_check_mark: | :white_check_mark:                   | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    |
+| Language                                      | JavaScript         | JavaScript         | JavaScript         | JavaScript         | JavaScript           | TypeScript         | JavaScript         | JavaScript                           | JavaScript         | JavaScript         | JavaScript         |                    |
+| Parse callbacks                               | :white_check_mark: |                    |                    |                    | :x:                  |                    |                    |                                      |                    |                    |                    |                    |
+| Command support                               | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    | :x:                  | :white_check_mark: |                    |                                      |                    |                    |                    |                    |
+| Options support                               | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    | :white_check_mark:   |                    |                    |                                      |                    |                    |                    |                    |
+| Option validation                             | Coming soon!       | :white_check_mark: |                    |                    | :white_check_mark:   |                    |                    |                                      |                    |                    |                    |                    |
+| Default values                                | :white_check_mark: |                    |                    |                    |                      |                    |                    |                                      |                    |                    |                    |                    |
+| Flags support                                 | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    | :x:                  |                    |                    |                                      |                    |                    |                    |                    |
+| Argument support                              | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    | :white_check_mark:   |                    |                    |                                      |                    |                    |                    |                    |
+| Argument validation                           | Coming soon!       | :white_check_mark: |                    |                    | :white_check_mark:   |                    |                    |                                      |                    |                    |                    |                    |
+| Dynamic command hierarchies                   | :white_check_mark: |                    |                    |                    |                      |                    |                    |                                      |                    |                    |                    |                    |
+| Automatic parsed value data type coercion     | :white_check_mark: | :white_check_mark: | Numbers only       |                    | Numbers and Booleans |                    |                    |                                      |                    |                    |                    |                    |
+| Parsed value transforming                     | Coming soon!       |                    |                    |                    |                      |                    |                    |                                      |                    |                    |                    |                    |
+| Auto-generated help screen                    | :white_check_mark: | :white_check_mark: |                    |                    | :x:                  |                    | :white_check_mark: |                                      |                    |                    |                    |                    |
+| Help exits with code                          | :white_check_mark: |                    |                    |                    |                      |                    | :white_check_mark: |                                      |                    |                    |                    |                    |
+| Internal hook system                          | :white_check_mark: |                    |                    |                    |                      |                    |                    |                                      |                    |                    |                    |                    |
+
+### Prompters
+
+|                                               | cli-kit            | Caporal.js         | oclif              | meow               | inquirer                              | promptly           | fields             |
+| --------------------------------------------- | ------------------ | ------------------ | ------------------ | ------------------ | ------------------------------------- | ------------------ | ------------------ |
+| Actively maintained <br> (within last year)   | :white_check_mark: | :white_check_mark: |                    | :white_check_mark: | :white_check_mark:                    | :white_check_mark: | :x:                |
+| Open Source                                   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:                    | :white_check_mark: | :white_check_mark: |
+| Language                                      | JavaScript         | JavaScript         | TypeScript         | JavaScript         | JavaScript                            | JavaScript         | JavaScript         |
+| Automatic prompt value data type coercion     | Coming soon!       |                    |                    |                    | :x:                                   |                    |                    |
+| Prompt value transforming                     | Coming soon!       |                    |                    |                    | :white_check_mark: <br> (via filters) |                    |                    |
+| Prompt value validation                       | Coming soon!       |                    |                    |                    | :white_check_mark:                    |                    |                    |
+| Built-in prompt types                         | Coming soon!       |                    |                    |                    | :white_check_mark:                    |                    | :white_check_mark: |
+| Internal hook system                          | :white_check_mark: |                    |                    |                    | :x:                                   |                    | :x:                |
 
 ## License
 

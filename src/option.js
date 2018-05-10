@@ -1,4 +1,5 @@
 import { checkType, transformValue } from './types';
+import { declareCLIKitClass } from './util';
 
 const formatRegExp = /^(?:-([^-])(?:[ ,|]+)?)?(?:--([^\s]+))?(?:\s+?(.+))?$/;
 const valueRegExp = /^(\[(?=.+\]$)|<(?=.+>$))(.+)[\]>]$/;
@@ -14,15 +15,17 @@ export default class Option {
 	/**
 	 * Creates an option descriptor.
 	 *
-	 * @param {String} format - The option format containing the general info.
+	 * @param {String|Object} format - The option format containing the general info or an `Option`
+	 * object to clone.
 	 * @param {Object} [params] - Additional parameters.
 	 * @param {Object|Array<String>|String} [params.aliases] - An array of aliases or an object with
 	 * `visible` and `hidden` arrays of aliases.
 	 * @param {Function} [params.callback] - A function to call when the option has been parsed.
 	 * @param {Boolean} [params.camelCase=true] - If option has a name or can derive a name from the
 	 * long option format, then it the name be camel cased.
-	 * @param {Boolean} [params.count] - ???????????????????????????????????????????????????? force type to boolean OR make "count" a type
-	 * @param {*} [params.default] - ???????
+	 * @param {Boolean} [params.count] - ?????????????????????????? force type to boolean OR make "count" a type
+	 * @param {*} [params.default] - A default value. Defaults to `undefined` unless the `type` is
+	 * set to `bool` and `negate` is `true`, then the default value will be set to `true`.
 	 * @param {String} [params.desc] - The description of the option used in the help display.
 	 * @param {String} [param.env] - The environment variable name to get a value from. If the
 	 * environment variable is set, it overrides the value parsed from the arguments.
@@ -31,18 +34,28 @@ export default class Option {
 	 * @param {String} [params.hint] - The hint label if the option expects a value.
 	 * @param {Number} [params.min] - When `type` is `int`, `number`, or `positiveInt`, then checks
 	 * that the option's value is at greater than or equal to the specified value.
-	 * @param {Boolean} [params.multiple] - ????????????????????????????????????????????????????
+	 * @param {Boolean} [params.multiple] - When `true`, if this option is parsed more than once,
+	 * the values are put in an array. When `false`, the last parsed value overwrites the previously
+	 * parsed value.
 	 * @param {String} [params.name] - The name of the option.
-	 * @param {Boolean} [params.negate] - When `true`, ??????????
+	 * @param {Boolean} [params.negate] - When `true`, it will automatically prepend `no-` to the
+	 * option name on the help screen and convert the value from truthy to `false` or falsey to
+	 * `true`.
 	 * @param {Boolean} [params.required] - Marks the option value as required.
 	 * @param {String|Array.<String>} [params.type] - The option type to coerce the data type into.
 	 * @param {Function} [params.validate] - A function to call to validate the option value.
 	 * @access public
 	 */
 	constructor(format, params) {
+		if (format && typeof format === 'object' && format.clikit instanceof Set && format.clikit.has('Option')) {
+			params = format;
+			format = format.format;
+		}
+
 		if (!format || typeof format !== 'string') {
 			throw new TypeError('Expected option format to be a non-empty string');
 		}
+
 		format = format.trim();
 
 		if (!params) {
@@ -100,8 +113,10 @@ export default class Option {
 		}
 
 		Object.assign(this, params);
+		declareCLIKitClass(this, 'Option');
 
 		// initialize the param values
+		this.format   = format;
 		this.aliases  = aliases;
 		this.long     = null;
 		this.negate   = false;
@@ -138,9 +153,9 @@ export default class Option {
 		this.name      = params.name || this.name || (this.long ? `--${this.long}` : this.short ? `-${this.short}` : null);
 		this.order     = params.order || null;
 		this.required  = this.required === undefined ? !!params.required : this.required;
-		this.type      = checkType(params.type, this.hint || 'bool');
+		this.datatype  = checkType(params.type, this.hint || 'bool');
 
-		if (this.type !== 'bool') {
+		if (this.datatype !== 'bool') {
 			if (this.negate) {
 				throw new Error('Negate requires option to be a bool');
 			}
@@ -150,7 +165,7 @@ export default class Option {
 			}
 		}
 
-		this.default   = params.default || (this.type === 'bool' && this.negate ? true : undefined);
+		this.default = params.default || (this.datatype === 'bool' && this.negate ? true : undefined);
 	}
 
 	/**
@@ -162,9 +177,9 @@ export default class Option {
 	 * @access public
 	 */
 	transform(value, negated) {
-		value = transformValue(value, this.type);
+		value = transformValue(value, this.datatype);
 
-		switch (this.type) {
+		switch (this.datatype) {
 			case 'bool':
 				// for bools, we need to negate, but only if the option name specified negated version
 				if (negated) {
