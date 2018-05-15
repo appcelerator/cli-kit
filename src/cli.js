@@ -77,8 +77,9 @@ export default class CLI extends Context {
 
 		if (params.version && !this.lookup.short.v && !this.lookup.long.version) {
 			this.option('-v, --version', {
-				callback() {
-					params.out.write(`${params.version}\n`);
+				callback: () => {
+					const out = this.outputStream || process.stdout;
+					out.write(`${params.version}\n`);
 					process.exit(0);
 				},
 				desc: 'outputs the appcd version'
