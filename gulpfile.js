@@ -2,6 +2,7 @@
 
 const $ = require('gulp-load-plugins')();
 const del = require('del');
+const fs = require('fs-extra');
 const gulp = require('gulp');
 const manifest = require('./package.json');
 const path = require('path');
@@ -10,7 +11,7 @@ const spawnSync = require('child_process').spawnSync;
 const coverageDir = path.join(__dirname, 'coverage');
 const distDir = path.join(__dirname, 'dist');
 const docsDir = path.join(__dirname, 'docs');
-const testDistDir = path.join(__dirname, 'test', 'fixtures', 'cli-kit-ext', 'node_modules', 'cli-kit', 'dist');
+const testCLIKitDir = path.join(__dirname, 'test', 'fixtures', 'cli-kit-ext', 'node_modules', 'cli-kit');
 
 /*
  * Clean tasks
@@ -23,12 +24,14 @@ gulp.task('clean-dist', done => { del([distDir]).then(() => done()) });
 
 gulp.task('clean-docs', done => { del([docsDir]).then(() => done()) });
 
-gulp.task('clean-test-dist', done => { del([testDistDir]).then(() => done()) });
+gulp.task('clean-test-dist', done => { del([testCLIKitDir]).then(() => done()) });
 
 /*
  * build tasks
  */
 gulp.task('build', ['clean-dist', 'clean-test-dist', 'lint-src'], () => {
+	fs.copySync(path.join(__dirname, 'package.json'), path.resolve(testCLIKitDir, 'package.json'));
+
 	return gulp
 		.src('src/**/*.js')
 		.pipe($.plumber())
@@ -39,7 +42,7 @@ gulp.task('build', ['clean-dist', 'clean-test-dist', 'lint-src'], () => {
 		}))
 		.pipe($.sourcemaps.write())
 		.pipe(gulp.dest(distDir))
-		.pipe(gulp.dest(testDistDir));
+		.pipe(gulp.dest(path.join(testCLIKitDir, 'dist')));
 });
 
 gulp.task('docs', ['lint-src', 'clean-docs'], () => {
