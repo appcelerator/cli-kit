@@ -163,15 +163,7 @@ describe('Extension', () => {
 			const extensionPath = path.join(__dirname, 'fixtures', 'no-main');
 			expect(() => {
 				new Extension({ extensionPath });
-			}).to.throw(Error, `Invalid extension: ${extensionPath}`);
-		});
-
-		it('should ignore invalid cli-kit Node packages', async () => {
-			const extensionPath = path.join(__dirname, 'fixtures', 'no-obj-export');
-			const extension = new Extension({ extensionPath, ignoreInvalidExtensions: true });
-
-			const output = await runCLI(extension, [ 'foo' ]);
-			expect(output).to.equal(`Invalid extension: ${extensionPath}\n`);
+			}).to.throw(Error, `Unable to find extension's main file: ${extensionPath}`);
 		});
 	});
 });

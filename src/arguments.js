@@ -1,3 +1,5 @@
+import E from './errors';
+
 import { declareCLIKitClass } from './util';
 
 /**
@@ -12,7 +14,7 @@ export default class Arguments {
 	 */
 	constructor(args) {
 		if (args && !Array.isArray(args)) {
-			throw new TypeError('Expected args to be an array');
+			throw E.INVALID_ARGUMENT('Expected args to be an array', { name: 'args', scope: 'Arguments.constructor', value: args });
 		}
 
 		Object.defineProperties(this, {

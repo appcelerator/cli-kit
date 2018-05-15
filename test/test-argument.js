@@ -57,8 +57,8 @@ describe('Arguments', () => {
 			} catch (err) {
 				expect(err).to.be.instanceof(Error);
 				expect(err.message).to.equal('Unsupported type "bar"');
-				expect(err.code).to.equal('ERR_UNSUPPORTED_TYPE');
-				expect(err.meta.type).to.equal('bar');
+				expect(err.code).to.equal('ERR_INVALID_DATA_TYPE');
+				expect(err.meta.value).to.equal('bar');
 			}
 		});
 

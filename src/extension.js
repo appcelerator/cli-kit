@@ -1,5 +1,6 @@
 import Command from './command';
 import debug from './debug';
+import E from './errors';
 import fs from 'fs';
 import path from 'path';
 import which from 'which';
@@ -32,7 +33,7 @@ export default class Extension extends Command {
 	 */
 	constructor(params = {}) {
 		if (!params || typeof params !== 'object' || Array.isArray(params)) {
-			throw new TypeError('Expected parameters to be an object or Context');
+			throw E.INVALID_ARGUMENT('Expected parameters to be an object or Context', { name: 'params', scope: 'Extension.constructor', value: params });
 		}
 
 		let { extensionPath, name, parent } = params;
@@ -41,7 +42,7 @@ export default class Extension extends Command {
 		let isCLIKitExtension = false;
 
 		if (!extensionPath || typeof extensionPath !== 'string') {
-			throw new TypeError('Expected extension path to be a non-empty string');
+			throw E.INVALID_ARGUMENT('Expected extension path to be a non-empty string', { extensionPath, name: 'params.extensionPath', scope: 'Extension.constructor', value: extensionPath });
 		}
 
 		name = String(name || '').trim();
@@ -56,7 +57,7 @@ export default class Extension extends Command {
 				// check if we have a JavaScript file or Node.js module
 				pkg = findPackage(extensionPath);
 				if (!pkg.main) {
-					throw new Error(`Invalid extension: ${extensionPath}`);
+					throw E.INVALID_EXTENSION(`Unable to find extension's main file: ${extensionPath}`);
 				}
 
 				// if there's not an explicit name, then fall back to the name in the package
@@ -73,19 +74,13 @@ export default class Extension extends Command {
 					}
 
 					if (ctx && typeof ctx === 'object') {
-						isCLIKitExtension = ctx.clikit instanceof Set && (ctx.clikit.has('CLI') || ctx.clikit.has('Command'));
-						params = ctx;
-						params.parent = parent;
-
-						log(`Loaded ${highlight(pkg.main)} ${note(`(${isCLIKitExtension ? '' : 'not '}cli-kit enabled)`)}`);
-
-						if (Array.isArray(pkg.json.aliases)) {
-							params.aliases = pkg.json.aliases;
+						if (ctx.clikit instanceof Set && (ctx.clikit.has('CLI') || ctx.clikit.has('Command'))) {
+							isCLIKitExtension = true;
+							params = ctx;
+							params.parent = parent;
+							log(`Loaded cli-kit enable extension: ${highlight(pkg.main)}`);
 						}
 
-						if (pkg.json.description) {
-							params.desc = pkg.json.description;
-						}
 					} else if (params.ignoreInvalidExtensions || (params.parent && params.parent.get('ignoreInvalidExtensions', false))) {
 						params.action = () => {
 							const out = this.outputStream || process.stdout;
@@ -93,8 +88,16 @@ export default class Extension extends Command {
 						};
 
 					} else {
-						throw new Error(`Invalid extension: ${extensionPath}`);
+						throw E.INVALID_EXTENSION(`Extension does not export an object: ${extensionPath}`, { extensionPath, name: 'extension.ctx', scope: 'Extension.constructor', value: ctx });
 					}
+				}
+
+				if (Array.isArray(pkg.json.aliases)) {
+					params.aliases = pkg.json.aliases;
+				}
+
+				if (pkg.json.description) {
+					params.desc = pkg.json.description;
 				}
 			}
 		}
@@ -105,20 +108,8 @@ export default class Extension extends Command {
 		this.executable    = executable;
 		this.pkg           = pkg;
 
-		if (pkg && pkg.clikit) {
-			if (!isCLIKitExtension) {
-				if (this.get('ignoreInvalidExtensions', false)) {
-					this.action = () => {
-						const out = this.outputStream || process.stdout;
-						out.write(`Invalid extension: ${extensionPath}\n`);
-					};
-
-				} else {
-					throw new Error(`Invalid extension: ${extensionPath}`);
-				}
-			}
-
-			log(`Loaded extension as cli-kit enabled Node package: ${highlight(extensionPath)}`);
+		if (isCLIKitExtension) {
+			// nothing to do
 
 		} else if (pkg) {
 			this.executable = process.execPath;
@@ -137,7 +128,7 @@ export default class Extension extends Command {
 			log(`Loaded invalid extension: ${highlight(extensionPath)}`);
 
 		} else {
-			throw new Error(`Extension not found: ${extensionPath}`);
+			throw E.INVALID_EXTENSION(`Extension not found: ${extensionPath}`, { extensionPath, name: 'extension', scope: 'Extension.constructor', value: extensionPath });
 		}
 	}
 
@@ -151,7 +142,7 @@ export default class Extension extends Command {
 	run(args) {
 		return new Promise((resolve, reject) => {
 			if (!this.executable) {
-				return reject(new Error('No executable to run'));
+				return reject(E.NO_EXECUTABLE('No executable to run', { name: 'executable', scope: 'Extension.run', value: this.executable }));
 			}
 
 			const out = this.outputStream;

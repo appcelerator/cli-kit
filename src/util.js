@@ -1,4 +1,5 @@
 import fs from 'fs';
+import E from './errors';
 import path from 'path';
 import pkgDir from 'pkg-dir';
 
@@ -41,14 +42,23 @@ export function findPackage(searchPath) {
 	}
 
 	if (root) {
+		const file = path.join(root, 'package.json');
+		let contents;
+
 		try {
-			json = JSON.parse(fs.readFileSync(path.join(root, 'package.json')));
+			contents = fs.readFileSync(file);
 		} catch (e) {
-			throw new Error(`Failed to parse package.json: ${e.message}`);
+			throw E.INVALID_PACKAGE_JSON(`Unable to open package.json: ${e.message}`, { file, name: 'package.json', scope: 'util.findPackage' });
+		}
+
+		try {
+			json = JSON.parse(contents);
+		} catch (e) {
+			throw E.INVALID_JSON(`Failed to parse package.json: ${e.message}`, { file, name: 'package.json.bad.syntax', scope: 'util.findPackage', value: contents });
 		}
 
 		if (typeof json !== 'object') {
-			throw new TypeError('Invalid package.json: expected object');
+			throw E.INVALID_PACKAGE_JSON('Invalid package.json: expected object', { file, name: 'package.json.no.object', scope: 'util.findPackage', value: json });
 		}
 
 		if (json.clikit || json['cli-kit']) {

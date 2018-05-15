@@ -1,9 +1,10 @@
-import errors from './errors';
+import E from './errors';
 
 const dateRegExp = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?Z?)?$/i;
+const hexRegExp = /^0x[A-Fa-f0-9]+$/;
 const intRegExp = /^[0-9-]+$/;
-const yesRegExp = /^y(es)?$/;
-const noRegExp = /^no?$/;
+const noRegExp = /^no?$/i;
+const yesRegExp = /^y(es)?$/i;
 
 /**
  * Options/args have a type. Generally they are either a `bool` (flag) or
@@ -25,7 +26,7 @@ export const types = {};
  */
 export function checkType(type, defaultValue) {
 	if (type && !types[type]) {
-		throw new errors.Error(`Unsupported type "${type}"`, 'ERR_UNSUPPORTED_TYPE', { type });
+		throw E.INVALID_DATA_TYPE(`Unsupported type "${type}"`, { name: 'type', scope: 'types.checkType', types: Object.keys(types), value: type });
 	}
 
 	if (!type && defaultValue) {
@@ -56,41 +57,41 @@ export class Type {
 	/**
 	 * Creates the data type instance.
 	 *
-	 * @param {Object} opts - Various options.
-	 * @param {String} opts.name - The name of the data type.
-	 * @param {Function} [opts.transform] - A function that transforms the parsed option/argument
+	 * @param {Object} params - Various options.
+	 * @param {String} params.name - The name of the data type.
+	 * @param {Function} [params.transform] - A function that transforms the parsed option/argument
 	 * string value to the correct data type. By default, no transform is applied and values will
 	 * remain as strings.
 	 * @access public
 	 */
-	constructor(opts) {
-		if (!opts || typeof opts !== 'object' || Array.isArray(opts)) {
-			throw new TypeError('Expected opts to be an object');
+	constructor(params) {
+		if (!params || typeof params !== 'object' || Array.isArray(params)) {
+			throw E.TYPE_ERROR('Expected params to be an object', { name: 'params', scope: 'Type.constructor', value: params });
 		}
 
-		if (!opts.name) {
-			throw new Error('Missing type name');
+		if (!params.name || typeof params.name !== 'string') {
+			throw E.TYPE_ERROR('Missing type name', { name: 'params.name', scope: 'Type.constructor', value: params.name });
 		}
 
-		if (opts.transform && typeof opts.transform !== 'function') {
-			throw new TypeError('Expected transform to be a function');
+		if (params.transform && typeof params.transform !== 'function') {
+			throw E.TYPE_ERROR('Expected transform to be a function', { name: 'params.transform', scope: 'Type.constructor', value: params.transform });
 		}
 
-		this.name = opts.name;
-		this.transform = opts.transform;
+		this.name = params.name;
+		this.transform = params.transform;
 	}
 }
 
 /**
  * Registers a type.
  *
- * @param {Type|Object} opts - A `Type` instance or params for constructing a new `Type` instance.
+ * @param {Type|Object} params - A `Type` instance or params for constructing a new `Type` instance.
  */
-export function registerType(opts) {
-	if (!(opts instanceof Type)) {
-		opts = new Type(opts);
+export function registerType(params) {
+	if (!(params instanceof Type)) {
+		params = new Type(params);
 	}
-	types[opts.name] = opts;
+	types[params.name] = params;
 }
 
 registerType({
@@ -115,7 +116,7 @@ registerType({
 		}
 
 		if (!date || date.toString() === 'Invalid date') {
-			throw new Error('Invalid date');
+			throw E.INVALID_DATE('Invalid date', { name: 'date', scope: 'types.date.transform', value: date });
 		}
 
 		return date;
@@ -126,7 +127,7 @@ registerType({
 	name: 'file',
 	transform(value) {
 		if (!value) {
-			throw new Error('Invalid file');
+			throw E.EMPTY_STRING('Invalid file', { name: 'file', scope: 'types.file.transform', value });
 		}
 		return value;
 	}
@@ -136,8 +137,8 @@ registerType({
 	name: 'int',
 	transform(value) {
 		let num;
-		if (!intRegExp.test(value) || isNaN(num = Number(value))) {
-			throw new Error('Value is not an integer');
+		if ((!hexRegExp.test(value) && !intRegExp.test(value)) || isNaN(num = Number(value))) {
+			throw E.INVALID_NUMBER('Value is not an integer', { name: 'int', scope: 'types.int.transform', value });
 		}
 		return num;
 	}
@@ -149,7 +150,7 @@ registerType({
 		try {
 			return JSON.parse(value);
 		} catch (e) {
-			throw new Error(`Invalid json: ${e.message}`);
+			throw E.INVALID_JSON(`Invalid json: ${e.message}`, { name: 'json', scope: 'types.json.transform', value });
 		}
 	}
 });
@@ -159,7 +160,7 @@ registerType({
 	transform(value) {
 		let num = Number(value);
 		if (isNaN(num)) {
-			throw new Error('Value is not an integer');
+			throw E.INVALID_NUMBER('Value is not an number', { name: 'number', scope: 'types.number.transform', value });
 		}
 		return num;
 	}
@@ -169,8 +170,8 @@ registerType({
 	name: 'positiveInt',
 	transform(value) {
 		let num;
-		if (!intRegExp.test(value) || isNaN(num = Number(value)) || num < 0) {
-			throw new Error('Value is not a positive integer');
+		if ((!hexRegExp.test(value) && !intRegExp.test(value)) || isNaN(num = Number(value)) || num < 0) {
+			throw E.INVALID_NUMBER('Value is not a positive integer', { name: 'positiveInt', scope: 'types.positiveInt.transform', value });
 		}
 		return num;
 	}
@@ -189,6 +190,6 @@ registerType({
 		if (noRegExp.test(value)) {
 			return false;
 		}
-		throw new Error('Value must be "yes" or "no"');
+		throw E.NOT_YES_NO('Value must be "yes" or "no"', 'ERR_INVALID_YES_NO', { name: 'yesno', scope: 'types.yesno.transform', value });
 	}
 });

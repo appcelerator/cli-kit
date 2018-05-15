@@ -1,3 +1,5 @@
+import E from './errors';
+
 import { checkType, transformValue } from './types';
 import { declareCLIKitClass } from './util';
 
@@ -49,7 +51,7 @@ export default class Argument {
 		let params = nameOrParams;
 
 		if (!params || (typeof params !== 'string' && typeof params !== 'object') || Array.isArray(params)) {
-			throw new TypeError('Expected argument params to be a non-empty string or an object');
+			throw E.INVALID_ARGUMENT('Expected argument params to be a non-empty string or an object', { name: 'params', scope: 'Argument.constructor', value: params });
 		}
 
 		if (typeof params === 'string') {
@@ -59,7 +61,7 @@ export default class Argument {
 		}
 
 		if (!params.name || typeof params.name !== 'string') {
-			throw TypeError('Expected argument name to be a non-empty string');
+			throw E.INVALID_ARGUMENT('Expected argument name to be a non-empty string', { name: 'params.name', scope: 'Argument.constructor', value: params.name });
 		}
 
 		declareCLIKitClass(this, 'Argument');
@@ -89,6 +91,7 @@ export default class Argument {
 		Object.assign(this, params);
 
 		// TODO: params.regex
+
 		this.hidden   = !!this.hidden;
 		this.required = !!this.required;
 		this.type     = checkType(this.type, 'string');
@@ -109,10 +112,10 @@ export default class Argument {
 			case 'int':
 			case 'number':
 				if (this.min !== null && value < this.min) {
-					throw new Error(`Value must be greater than or equal to ${this.min}`);
+					throw E.RANGE_ERROR(`Value must be greater than or equal to ${this.min}`, { max: this.max, min: this.min, name: `transform.${this.type}`, scope: 'Argument.transform', value });
 				}
 				if (this.max !== null && value > this.max) {
-					throw new Error(`Value must be less than or equal to ${this.max}`);
+					throw E.RANGE_ERROR(`Value must be less than or equal to ${this.max}`, { max: this.max, min: this.min, name: `transform.${this.type}`, scope: 'Argument.transform', value });
 				}
 				break;
 		}

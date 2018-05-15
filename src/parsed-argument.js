@@ -1,3 +1,5 @@
+import E from './errors';
+
 /**
  * Encapsulates a parsed argument.
  */
@@ -11,11 +13,11 @@ export default class ParsedArgument {
 	 */
 	constructor(type, data) {
 		if (!type || typeof type !== 'string') {
-			throw new TypeError('Expected parsed argument type to be a non-empty string');
+			throw E.INVALID_ARGUMENT('Expected parsed argument type to be a non-empty string', { name: 'type', scope: 'ParsedArgument.constructor', value: type });
 		}
 
 		if (data && typeof data !== 'object') {
-			throw new TypeError('Expected parsed argument data to be an object');
+			throw E.INVALID_ARGUMENT('Expected parsed argument data to be an object', { name: 'data', scope: 'ParsedArgument.constructor', value: data });
 		}
 
 		this.type = type;

@@ -2,12 +2,16 @@ import Argument from './argument';
 import Arguments from './arguments';
 import camelCase from 'lodash.camelcase';
 import debug from './debug';
+import E from './errors';
 import HookEmitter from 'hook-emitter';
 import Option from './option';
 import ParsedArgument from './parsed-argument';
 
 import { declareCLIKitClass, wrap } from './util';
 
+/**
+ * `Command` and `Extension` are lazy loaded due to circular references.
+ */
 let Command;
 let Extension;
 
@@ -29,7 +33,7 @@ export default class Context extends HookEmitter {
 	/**
 	 * Constructs a context instance.
 	 *
-	 * @param {Object} [params] - Various options.
+	 * @param {Object} [params] - Various parameters.
 	 * @param {Array<Object>} [params.args] - An array of arguments.
 	 * @param {Boolean} [params.camelCase=true] - Camel case option names.
 	 * @param {Object} [params.commands] - A map of command names to command descriptors.
@@ -48,24 +52,24 @@ export default class Context extends HookEmitter {
 	 * @access public
 	 */
 	constructor(params = {}) {
-		if (params.clikit instanceof Set && !params.clikit.has('Context')) {
-			throw new TypeError('Expected parameters to be an object, CLI, Command, or Context');
+		if (!params || typeof params !== 'object' || (params.clikit instanceof Set && !params.clikit.has('Context'))) {
+			throw E.INVALID_ARGUMENT('Expected parameters to be an object, CLI, Command, or Context', { name: 'params.clikit', value: params.clikit });
 		}
 
 		if (params.args && !Array.isArray(params.args)) {
-			throw new TypeError('Expected args to be an array');
+			throw E.INVALID_ARGUMENT('Expected args to be an array', { name: 'params.args', value: params.args });
 		}
 
 		if (params.commands && (typeof params.commands !== 'object' || Array.isArray(params.commands))) {
-			throw new TypeError('Expected commands to be an object');
+			throw E.INVALID_ARGUMENT('Expected commands to be an object', { name: 'params.commands', value: params.commands });
 		}
 
 		if (params.options && typeof params.options !== 'object') {
-			throw new TypeError('Expected options to be an object or an array');
+			throw E.INVALID_ARGUMENT('Expected options to be an object or an array', { name: 'params.options', value: params.options });
 		}
 
 		if (params.extensions && typeof params.extensions !== 'object') {
-			throw new TypeError('Expected extensions to be an object or an array');
+			throw E.INVALID_ARGUMENT('Expected extensions to be an object or an array', { name: 'params.extensions', value: params.extensions });
 		}
 
 		super();
@@ -134,7 +138,7 @@ export default class Context extends HookEmitter {
 				let group = null;
 				for (const groupOrOption of params.options) {
 					if (!groupOrOption || (typeof groupOrOption !== 'string' && typeof groupOrOption !== 'object') || Array.isArray(groupOrOption)) {
-						throw new TypeError('Expected options array element to be a string or an object');
+						throw E.INVALID_ARGUMENT('Expected options array element to be a string or an object', { name: 'params.options', scope: 'Context.constructor', value: groupOrOption });
 					}
 					if (typeof groupOrOption === 'string') {
 						group = groupOrOption;
@@ -171,7 +175,7 @@ export default class Context extends HookEmitter {
 	/**
 	 * Adds an argument to this context.
 	 *
-	 * @param {Argument|Object|String} arg - An `Argument` instance or params to pass into an
+	 * @param {Argument|Object|String} arg - An `Argument` instance or options to pass into an
 	 * `Argument` constructor.
 	 * @returns {Context}
 	 * @access public
@@ -186,12 +190,12 @@ export default class Context extends HookEmitter {
 	 *
 	 * @param {Command|Object|String} cmd - A `Command` instance, `Command` constructor options, or
 	 * a command name.
-	 * @param {Object} [opts] - When `cmd` is the command name, then this is the options to pass
+	 * @param {Object} [params] - When `cmd` is the command name, then this is the options to pass
 	 * into the `Command` constructor.
 	 * @returns {Context}
 	 * @access public
 	 */
-	command(cmd, opts) {
+	command(cmd, params) {
 		if (!Command) {
 			Command = require('./command').default;
 		}
@@ -201,26 +205,26 @@ export default class Context extends HookEmitter {
 		} else {
 			let name = cmd;
 			if (name && typeof name === 'object' && !Array.isArray(name)) {
-				opts = name;
-				name = opts.name;
+				params = name;
+				name = params.name;
 			}
 
-			if (typeof opts === 'function') {
-				opts = {
-					action: opts
+			if (typeof params === 'function') {
+				params = {
+					action: params
 				};
-			} else if (!opts) {
-				opts = {};
+			} else if (!params) {
+				params = {};
 			}
 
-			if (typeof opts !== 'object' || Array.isArray(opts)) {
-				throw new TypeError('Expected command options to be an object');
+			if (typeof params !== 'object' || Array.isArray(params)) {
+				throw E.INVALID_ARGUMENT('Expected command options to be an object', { name: 'params', value: params });
 			}
 
-			opts.allowUnknownOptions = this.allowUnknownOptions;
-			opts.parent = this;
+			params.allowUnknownOptions = this.allowUnknownOptions;
+			params.parent = this;
 
-			cmd = new Command(name, opts);
+			cmd = new Command(name, params);
 		}
 
 		log(`Adding command: ${highlight(cmd.name)}`);
@@ -253,7 +257,7 @@ export default class Context extends HookEmitter {
 				params = group;
 				group = null;
 			} else if (typeof group !== 'string') {
-				throw new TypeError('Expected group to be a non-empty string');
+				throw E(TypeError, 'Expected group to be a non-empty string', E.INVALID_ARGUMENT, { name: 'group', value: group });
 			} else if (!params) {
 				params = { desc: group };
 				group = null;
@@ -305,6 +309,11 @@ export default class Context extends HookEmitter {
 		if (ext instanceof Extension) {
 			ext.parent = this;
 		} else {
+			if (ext && typeof ext === 'object') {
+				name = ext.name;
+				ext = ext.path;
+			}
+
 			ext = new Extension({
 				extensionPath: ext,
 				name,
@@ -386,7 +395,7 @@ export default class Context extends HookEmitter {
 					// if value is `null`, then we are missing the value
 					let value = null;
 
-					if (option.datatype === 'bool') {
+					if (option.isFlag && option.datatype === 'bool') {
 						value = isFlag || !negated;
 					} else if (i + 1 < args.length) {
 						value = option.transform(args[i + 1]);
@@ -524,10 +533,7 @@ export default class Context extends HookEmitter {
 					// check for missing arguments
 					for (const len = this.args.length; i < len; i++) {
 						if (this.args[i].required) {
-							const err = new Error(`Missing required argument "${this.args[i].name}"`);
-							err.code = 'ERR_MISSING_REQUIRED_ARGUMENT';
-							err.meta = this.args[i];
-							throw err;
+							throw E.MISSING_REQUIRED_ARGUMENT(`Missing required argument "${this.args[i].name}"`, { name: 'args', scope: 'Context.parse', value: this.args[i] });
 						}
 					}
 
@@ -617,8 +623,8 @@ export default class Context extends HookEmitter {
 			list: [],
 			maxWidths: []
 		};
-		for (const [ group, opts ] of Object.entries(this.options)) {
-			for (const opt of opts) {
+		for (const [ group, params ] of Object.entries(this.options)) {
+			for (const opt of params) {
 				if (!opt.hidden) {
 					if (opt.negate) {
 						add(options, [ `--no-${opt.name}`, opt.desc ]);
