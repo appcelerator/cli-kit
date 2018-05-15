@@ -1,0 +1,5 @@
+{
+  "name": "cli-kit-extension",
+  "main": "./main",
+  "cli-kit": {}
+}

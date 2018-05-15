@@ -4,111 +4,179 @@ import Context from '../dist/context';
 import Option from '../dist/option';
 
 describe('Context', () => {
-	it('should parse unknown "short boolean" as argument', async () => {
-		const ctx = new Context();
-		return ctx.parse([ '-b' ])
-			.then(({ argv, _ }) => {
-				expect(argv).to.deep.equal({});
-				expect(_).to.deep.equal([ '-b' ]);
-			});
-	});
+	describe('Constructor', () => {
+		it('should error if passed an invalid cli-kit object', () => {
+			const opt = new Option('--foo');
 
-	it('should parse unknown "short boolean" as option', async () => {
-		const ctx = new Context({ allowUnknownOptions: true });
-		return ctx.parse([ '-b' ])
-			.then(({ argv, _ }) => {
-				expect(argv).to.deep.equal({
-					b: true
-				});
-				expect(_).to.deep.equal([]);
-			});
-	});
-
-	it('should parse known "short boolean" as flag', async () => {
-		const ctx = new Context({
-			options: {
-				'-b': {}
-			}
-		});
-		return ctx.parse([ '-b' ])
-			.then(({ argv, _ }) => {
-				expect(argv).to.deep.equal({
-					b: true
-				});
-				expect(_).to.deep.equal([]);
-			});
-	});
-
-	it('should parse known "short boolean" as option', async () => {
-		const ctx = new Context({
-			options: {
-				'-b <value>': {}
-			}
-		});
-		return ctx.parse([ '-b', 'foo' ])
-			.then(({ argv, _ }) => {
-				expect(argv).to.deep.equal({
-					b: 'foo'
-				});
-				expect(_).to.deep.equal([]);
-			});
-	});
-
-	it('should parse known "short boolean" as option with equal sign', async () => {
-		const ctx = new Context({
-			options: {
-				'-b <value>': {}
-			}
-		});
-		return ctx.parse([ '-b=foo' ])
-			.then(({ argv, _ }) => {
-				expect(argv).to.deep.equal({
-					b: 'foo'
-				});
-				expect(_).to.deep.equal([]);
-			});
-	});
-
-	it('should parse and call command', async () => {
-		const ctx = new Context();
-
-		ctx.command('test', {
-			options: {
-				'--data <json>': { type: 'json' },
-				'--log-file <file>':  { type: 'file' },
-				'--verbose': {}
-			},
-			action: cmd => {
-				//
-			}
+			expect(() => {
+				new Context(opt);
+			}).to.throw(TypeError, 'Expected parameters to be an object, CLI, Command, or Context');
 		});
 
-		return ctx.parse([ 'test', '--data', '{"abc": 123}', '--log-file', 'zap.txt', '--verbose' ])
-			.then(parsed => {
-				expect(parsed).to.be.instanceof(Arguments);
+		it('should error if args is invalid', () => {
+			expect(() => {
+				new Context({
+					args: 123
+				});
+			}).to.throw(TypeError, 'Expected args to be an array');
 
-				expect(parsed.args).to.be.an.instanceof(Array);
-				expect(parsed.args).to.have.lengthOf(4);
+			expect(() => {
+				new Context({
+					args: 'foo'
+				});
+			}).to.throw(TypeError, 'Expected args to be an array');
+		});
 
-				expect(parsed.args[0].type).to.equal('command');
-				expect(parsed.args[0].command).to.be.instanceof(Command);
-				expect(parsed.args[0].command.name).to.equal('test');
+		it('should error if commands is invalid', () => {
+			expect(() => {
+				new Context({
+					commands: 123
+				});
+			}).to.throw(TypeError, 'Expected commands to be an object');
 
-				expect(parsed.args[1].type).to.equal('option');
-				expect(parsed.args[1].option).to.be.instanceof(Option);
-				expect(parsed.args[1].option.name).to.equal('data');
-				expect(parsed.args[1].value).to.deep.equal({ abc: 123 });
+			expect(() => {
+				new Context({
+					commands: 'foo'
+				});
+			}).to.throw(TypeError, 'Expected commands to be an object');
+		});
 
-				expect(parsed.args[2].type).to.equal('option');
-				expect(parsed.args[2].option).to.be.instanceof(Option);
-				expect(parsed.args[2].option.name).to.equal('log-file');
-				expect(parsed.args[2].value).to.equal('zap.txt');
+		it('should error if options is invalid', () => {
+			expect(() => {
+				new Context({
+					options: 123
+				});
+			}).to.throw(TypeError, 'Expected options to be an object or an array');
 
-				expect(parsed.args[3].type).to.equal('option');
-				expect(parsed.args[3].option).to.be.instanceof(Option);
-				expect(parsed.args[3].option.name).to.equal('verbose');
-				expect(parsed.args[3].value).to.be.true;
+			expect(() => {
+				new Context({
+					options: 'foo'
+				});
+			}).to.throw(TypeError, 'Expected options to be an object or an array');
+		});
+
+		it('should error if extensions is invalid', () => {
+			expect(() => {
+				new Context({
+					extensions: 123
+				});
+			}).to.throw(TypeError, 'Expected extensions to be an object or an array');
+
+			expect(() => {
+				new Context({
+					extensions: 'foo'
+				});
+			}).to.throw(TypeError, 'Expected extensions to be an object or an array');
+		});
+	});
+
+	describe('Parsing', () => {
+		it('should parse unknown "short boolean" as argument', async () => {
+			const ctx = new Context();
+			return ctx.parse([ '-b' ])
+				.then(({ argv, _ }) => {
+					expect(argv).to.deep.equal({});
+					expect(_).to.deep.equal([ '-b' ]);
+				});
+		});
+
+		it('should parse unknown "short boolean" as option', async () => {
+			const ctx = new Context({ allowUnknownOptions: true });
+			return ctx.parse([ '-b' ])
+				.then(({ argv, _ }) => {
+					expect(argv).to.deep.equal({
+						b: true
+					});
+					expect(_).to.deep.equal([]);
+				});
+		});
+
+		it('should parse known "short boolean" as flag', async () => {
+			const ctx = new Context({
+				options: {
+					'-b': {}
+				}
 			});
+			return ctx.parse([ '-b' ])
+				.then(({ argv, _ }) => {
+					expect(argv).to.deep.equal({
+						b: true
+					});
+					expect(_).to.deep.equal([]);
+				});
+		});
+
+		it('should parse known "short boolean" as option', async () => {
+			const ctx = new Context({
+				options: {
+					'-b <value>': {}
+				}
+			});
+			return ctx.parse([ '-b', 'foo' ])
+				.then(({ argv, _ }) => {
+					expect(argv).to.deep.equal({
+						b: 'foo'
+					});
+					expect(_).to.deep.equal([]);
+				});
+		});
+
+		it('should parse known "short boolean" as option with equal sign', async () => {
+			const ctx = new Context({
+				options: {
+					'-b <value>': {}
+				}
+			});
+			return ctx.parse([ '-b=foo' ])
+				.then(({ argv, _ }) => {
+					expect(argv).to.deep.equal({
+						b: 'foo'
+					});
+					expect(_).to.deep.equal([]);
+				});
+		});
+
+		it('should parse and call command', async () => {
+			const ctx = new Context();
+
+			ctx.command('test', {
+				options: {
+					'--data <json>': { type: 'json' },
+					'--log-file <file>':  { type: 'file' },
+					'--verbose': {}
+				},
+				action: cmd => {
+					//
+				}
+			});
+
+			return ctx.parse([ 'test', '--data', '{"abc": 123}', '--log-file', 'zap.txt', '--verbose' ])
+				.then(parsed => {
+					expect(parsed).to.be.instanceof(Arguments);
+
+					expect(parsed.args).to.be.an.instanceof(Array);
+					expect(parsed.args).to.have.lengthOf(4);
+
+					expect(parsed.args[0].type).to.equal('command');
+					expect(parsed.args[0].command).to.be.instanceof(Command);
+					expect(parsed.args[0].command.name).to.equal('test');
+
+					expect(parsed.args[1].type).to.equal('option');
+					expect(parsed.args[1].option).to.be.instanceof(Option);
+					expect(parsed.args[1].option.name).to.equal('data');
+					expect(parsed.args[1].value).to.deep.equal({ abc: 123 });
+
+					expect(parsed.args[2].type).to.equal('option');
+					expect(parsed.args[2].option).to.be.instanceof(Option);
+					expect(parsed.args[2].option.name).to.equal('log-file');
+					expect(parsed.args[2].value).to.equal('zap.txt');
+
+					expect(parsed.args[3].type).to.equal('option');
+					expect(parsed.args[3].option).to.be.instanceof(Option);
+					expect(parsed.args[3].option.name).to.equal('verbose');
+					expect(parsed.args[3].value).to.be.true;
+				});
+		});
 	});
 
 /*	describe('Long Options', () => {

@@ -1,3 +1,7 @@
+import E from './errors';
+
+import { declareCLIKitClass } from './util';
+
 /**
  * A collection of parsed CLI arguments.
  */
@@ -10,7 +14,7 @@ export default class Arguments {
 	 */
 	constructor(args) {
 		if (args && !Array.isArray(args)) {
-			throw new TypeError('Expected args to be an array');
+			throw E.INVALID_ARGUMENT('Expected args to be an array', { name: 'args', scope: 'Arguments.constructor', value: args });
 		}
 
 		Object.defineProperties(this, {
@@ -30,6 +34,8 @@ export default class Arguments {
 				value: []
 			}
 		});
+
+		declareCLIKitClass(this, 'Arguments');
 	}
 
 	/**

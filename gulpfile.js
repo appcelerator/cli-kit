@@ -2,6 +2,7 @@
 
 const $ = require('gulp-load-plugins')();
 const del = require('del');
+const fs = require('fs-extra');
 const gulp = require('gulp');
 const manifest = require('./package.json');
 const path = require('path');
@@ -10,6 +11,7 @@ const spawnSync = require('child_process').spawnSync;
 const coverageDir = path.join(__dirname, 'coverage');
 const distDir = path.join(__dirname, 'dist');
 const docsDir = path.join(__dirname, 'docs');
+const testCLIKitDir = path.join(__dirname, 'test', 'fixtures', 'cli-kit-ext', 'node_modules', 'cli-kit');
 
 /*
  * Clean tasks
@@ -22,18 +24,25 @@ gulp.task('clean-dist', done => { del([distDir]).then(() => done()) });
 
 gulp.task('clean-docs', done => { del([docsDir]).then(() => done()) });
 
+gulp.task('clean-test-dist', done => { del([testCLIKitDir]).then(() => done()) });
+
 /*
  * build tasks
  */
-gulp.task('build', ['clean-dist', 'lint-src'], () => {
+gulp.task('build', ['clean-dist', 'clean-test-dist', 'lint-src'], () => {
+	fs.copySync(path.join(__dirname, 'package.json'), path.resolve(testCLIKitDir, 'package.json'));
+
 	return gulp
 		.src('src/**/*.js')
 		.pipe($.plumber())
 		.pipe($.debug({ title: 'build' }))
+		.pipe($.sourcemaps.init())
 		.pipe($.babel({
-			sourceMaps: 'inline'
+			sourceRoot: 'src'
 		}))
-		.pipe(gulp.dest(distDir));
+		.pipe($.sourcemaps.write())
+		.pipe(gulp.dest(distDir))
+		.pipe(gulp.dest(path.join(testCLIKitDir, 'dist')));
 });
 
 gulp.task('docs', ['lint-src', 'clean-docs'], () => {
@@ -83,10 +92,10 @@ gulp.task('lint-test', () => lint('test/**/test-*.js'));
 /*
  * test tasks
  */
-gulp.task('test', ['build', 'lint-test'], () => runTests());
-gulp.task('test-only', ['lint-test'], () => runTests());
-gulp.task('coverage', ['clean-coverage', 'lint-src', 'lint-test'], () => runTests(true));
-gulp.task('coverage-only', ['clean-coverage', 'lint-test'], () => runTests(true));
+gulp.task('test', ['build', 'lint-test', 'build'], () => runTests());
+gulp.task('test-only', ['lint-test', 'build'], () => runTests());
+gulp.task('coverage', ['clean-coverage', 'lint-src', 'lint-test', 'build'], () => runTests(true));
+gulp.task('coverage-only', ['clean-coverage', 'lint-test', 'build'], () => runTests(true));
 
 function runTests(cover) {
 	const args = [];

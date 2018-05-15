@@ -1,8 +1,9 @@
 import Command from './command';
 import Context from './context';
 import debug from './debug';
+import E from './errors';
 
-import { Writable } from 'stream';
+import { declareCLIKitClass } from './util';
 
 const { log } = debug('cli-kit:cli');
 
@@ -13,53 +14,48 @@ export default class CLI extends Context {
 	/**
 	 * Created a CLI instance.
 	 *
-	 * @param {Object} [opts] - Various options.
-	 * @param {Array<Object>} [opts.args] - An array of arguments.
-	 * @param {Boolean} [opts.camelCase=true] - Camel case option names.
-	 * @param {Object} [opts.commands] - A map of command names to command descriptors.
-	 * @param {Boolean} [opts.defaultCommand] - The default command to execute.
-	 * @param {String} [params.desc] - The description of the CLI displayed in the help output.
-	 * @param {Boolean} [opts.help=false] - When `true`, enables the built-in help command.
-	 * @param {Number} [opts.helpExitCode] - The exit code to return when the help command is
+	 * @param {Object} [params] - Various options.
+	 * @param {Boolean} [params.defaultCommand] - The default command to execute.
+	 * @param {Boolean} [params.help=false] - When `true`, enables the built-in help command.
+	 * @param {Number} [params.helpExitCode] - The exit code to return when the help command is
 	 * finished.
-	 * @param {String} [opts.name] - The name of the program.
-	 * @param {Array<Object>|Object} [opts.options] - An array of options.
-	 * @param {Writable} [opts.out=process.stdout] - A stream to write output such as the help
-	 * screen.
-	 * @param {String} [opts.title='Global'] - The title for the global context.
-	 * @param {String} [opts.version] - The program version.
-	 * @param {Number} [opts.width] - The number of characters to wrap long descriptions. Defaults
+	 * @param {String} [params.name] - The name of the program.
+	 * @param {Object|Writable} [params.out=process.stdout] - A stream to write output such as the
+	 * help screen or an object with a `write()` method.
+	 * @param {String} [params.title='Global'] - The title for the global context.
+	 * @param {String} [params.version] - The program version.
+	 * @param {Number} [params.width] - The number of characters to wrap long descriptions. Defaults
 	 * to `process.stdout.columns` if exists, otherwise `100`. Must be at least `40`.
 	 * @access public
 	 */
-	constructor(opts = {}) {
-		if (typeof opts !== 'object' || Array.isArray(opts)) {
-			throw new TypeError('Expected argument to be an object or Context');
+	constructor(params = {}) {
+		if (typeof params !== 'object' || Array.isArray(params)) {
+			throw E.INVALID_ARGUMENT('Expected argument to be an object or Context', { name: 'params', scope: 'CLI.constructor', value: params });
 		}
 
-		opts.out || (opts.out = process.stdout);
-		if (!(opts.out instanceof Writable)) {
-			throw new TypeError('Expected output stream to be a writable stream');
+		if (params.out && (typeof params.out !== 'object' || typeof params.out.write !== 'function')) {
+			throw E.INVALID_ARGUMENT('Expected output stream to be a writable stream', { name: 'params.out', scope: 'CLI.constructor', value: params.out });
 		}
 
-		if (opts.helpExitCode !== undefined && typeof opts.helpExitCode !== 'number') {
-			throw new TypeError('Expected help exit code to be a number');
+		if (params.helpExitCode !== undefined && typeof params.helpExitCode !== 'number') {
+			throw E.INVALID_ARGUMENT('Expected help exit code to be a number', { name: 'params.helpExitCode', scope: 'CLI.constructor', value: params.helpExitCode });
 		}
 
-		if (opts.width !== undefined && typeof opts.width !== 'number') {
-			throw new TypeError('Expected width to be a number');
+		if (params.width !== undefined && typeof params.width !== 'number') {
+			throw E.INVALID_ARGUMENT('Expected width to be a number', { name: 'params.width', scope: 'CLI.constructor', value: params.width });
 		}
 
-		opts.name || (opts.name = 'program');
-		opts.title || (opts.title = 'Global');
+		params.name || (params.name = 'program');
+		params.title || (params.title = 'Global');
 
-		super(opts);
+		super(params);
+		declareCLIKitClass(this, 'CLI');
 
 		// set the default command
-		this.defaultCommand = opts.defaultCommand;
+		this.defaultCommand = params.defaultCommand;
 
 		// add the built-in help
-		this.help = !!opts.help;
+		this.help = !!params.help;
 		if (this.help) {
 			if (this.defaultCommand === undefined) {
 				this.defaultCommand = 'help';
@@ -69,9 +65,9 @@ export default class CLI extends Context {
 				hidden: true,
 				action({ contexts }) {
 					// the first context is the help command, so just skip to the second context
-					contexts[1].renderHelp(opts.out);
-					if (opts.helpExitCode !== undefined) {
-						process.exit(opts.helpExitCode);
+					contexts[1].renderHelp();
+					if (params.helpExitCode !== undefined) {
+						process.exit(params.helpExitCode);
 					}
 				}
 			});
@@ -79,10 +75,10 @@ export default class CLI extends Context {
 			this.option('-h, --help', 'displays the help screen');
 		}
 
-		if (opts.version && !this.lookup.short.v && !this.lookup.long.version) {
+		if (params.version && !this.lookup.short.v && !this.lookup.long.version) {
 			this.option('-v, --version', {
 				callback() {
-					opts.out.write(`${opts.version}\n`);
+					params.out.write(`${params.version}\n`);
 					process.exit(0);
 				},
 				desc: 'outputs the appcd version'
@@ -100,7 +96,7 @@ export default class CLI extends Context {
 	 */
 	async exec(unparsedArgs) {
 		if (unparsedArgs && !Array.isArray(unparsedArgs)) {
-			throw new TypeError('Expected args to be an array');
+			throw E.INVALID_ARGUMENT('Expected arguments to be an array', { name: 'args', scope: 'CLI.exec', value: unparsedArgs });
 		}
 
 		const $args = await this.parse(unparsedArgs ? unparsedArgs.slice() : process.argv.slice(2));
@@ -108,10 +104,12 @@ export default class CLI extends Context {
 		let cmd = $args.contexts[0];
 
 		if (this.help && $args.argv.help) {
+			log('Selected help command');
 			cmd = this.commands.help;
 			$args.contexts.unshift(cmd);
 
-		} else if (!(cmd instanceof Command) && (this.commands[this.defaultCommand] instanceof Command)) {
+		} else if (!(cmd instanceof Command) && this.defaultCommand && (this.commands[this.defaultCommand] instanceof Command)) {
+			log(`Selected default command: ${this.defaultCommand}`);
 			cmd = this.commands[this.defaultCommand];
 			$args.contexts.unshift(cmd);
 		}

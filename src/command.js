@@ -1,5 +1,8 @@
 import Context from './context';
+import E from './errors';
 import Option from './option';
+
+import { declareCLIKitClass } from './util';
 
 /**
  * Defines a command and its options and arguments.
@@ -9,52 +12,75 @@ export default class Command extends Context {
 	 * Constructs a command instance.
 	 *
 	 * @param {String} name - The command name.
-	 * @param {Object} [params] - Various params.
+	 * @param {Object} [params] - Various command options.
 	 * @param {Function} [params.action] - A function to call when the command is found.
-	 * @param {Array<String>} [params.aliases] - An array of command aliases.
-	 * @param {Array<Object>} [params.args] - An array of arguments.
-	 * @param {Boolean} [params.camelCase=true] - Camel case option names.
-	 * @param {Array<Object>} [params.commands] - An array of commands.
-	 * @param {String} [params.desc] - The description of the command displayed in the help output.
-	 * @param {Boolean} [params.hidden=false] - When `true`, the command will not be displayed on
-	 * the help screen or auto-suggest.
-	 * @param {Array<Object>} [params.options] - An array of options definition objects.
-	 * @param {Context} [params.parent] - Parent context.
-	 * @param {String} [params.title] - Context title.
+	 * @param {Array.<String>} [params.aliases] - An array of command aliases.
 	 * @access public
 	 */
 	constructor(name, params = {}) {
 		if (!name || typeof name !== 'string') {
-			throw new TypeError('Expected name to be a string');
+			throw E.INVALID_ARGUMENT('Expected name to be a non-empty string', { name: 'name', scope: 'Command.constructor', value: name });
 		}
 
-		if (typeof params !== 'object' || Array.isArray(params)) {
-			throw new TypeError('Expected argument to be an object or Context');
+		if (!params || typeof params !== 'object' || Array.isArray(params)) {
+			throw E.INVALID_ARGUMENT('Expected command options to be an object', { name: 'params', scope: 'Command.constructor', value: params });
+		}
+
+		if (params.clikit instanceof Set) {
+			// params is a cli-kit object
+			if (params.clikit.has('CLI')) {
+				if (params.title === 'Global') {
+					delete params.title;
+				}
+
+				const { defaultCommand } = params;
+				params.action = (...args) => {
+					if (defaultCommand === 'help' && this.get('help')) {
+						this.renderHelp();
+						const helpExitCode = this.get('helpExitCode', params.helpExitCode);
+						if (helpExitCode !== undefined) {
+							process.exit(helpExitCode);
+						}
+					} else {
+						const cmd = defaultCommand && this.commands[defaultCommand];
+						if (cmd) {
+							return cmd.action(...args);
+						}
+					}
+				};
+			} else if (!params.clikit.has('Command')) {
+				// must be a command or extension
+				throw E.INVALID_CLIKIT_OBJECT('Expected command options to be a CLI or Command object', { name: 'params.clikit', scope: 'Command.constructor', value: params.clikit });
+			}
+
+		} else {
+			// not a cli-kit object
+
+			// process the aliases
+			const aliases = {};
+			if (params.aliases) {
+				if (!Array.isArray(params.aliases)) {
+					throw E.INVALID_ARGUMENT('Expected command aliases to be an array of strings', { name: 'params.aliases', scope: 'Command.constructor', value: params.aliases });
+				}
+				for (const alias of params.aliases) {
+					if (!alias || typeof alias !== 'string') {
+						throw E.INVALID_ARGUMENT('Expected command aliases to be an array of strings', { name: 'params.aliases.alias', scope: 'Command.constructor', value: alias });
+					}
+					aliases[alias] = 1;
+				}
+			}
+			params.aliases = aliases;
 		}
 
 		if (params.action && typeof params.action !== 'function') {
-			throw new TypeError('Expected action to be a function');
+			throw E.INVALID_ARGUMENT('Expected command action to be a function', { name: 'params.action', scope: 'Command.constructor', value: params.action });
 		}
 
-		// process the aliases
-		const aliases = {};
-		if (params.aliases) {
-			if (!Array.isArray(params.aliases)) {
-				throw new TypeError('Expected aliases to be an array of strings');
-			}
-			for (const alias of params.aliases) {
-				if (!alias || typeof alias !== 'string') {
-					throw new TypeError('Expected aliases to be an array of strings');
-				}
-				aliases[alias] = 1;
-			}
-		}
+		params.title || (params.title = name);
+
+		params.name = name.replace(/[^A-Za-z0-9_-]+/g, '_');
 
 		super(params);
-
-		this.action  = params.action;
-		this.aliases = aliases;
-		this.name    = name;
-		this.title   = params.title || name;
+		declareCLIKitClass(this, 'Command');
 	}
 }

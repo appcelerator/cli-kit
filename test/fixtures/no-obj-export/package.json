@@ -1,0 +1,5 @@
+{
+  "name": "foo",
+  "main": "./main",
+  "cli-kit": {}
+}
