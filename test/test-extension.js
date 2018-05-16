@@ -50,20 +50,21 @@ describe('Extension', () => {
 	describe('Executable Extensions', () => {
 		it('should wire up extension that is a native binary', async () => {
 			const extension = new Extension({
-				extensionPath: 'date'
+				extensionPath: 'ping'
 			});
-			expect(extension.name).to.equal('date');
+			expect(extension.name).to.equal('ping');
 			expect(extension.pkg).to.be.null;
 
-			if (process.platform !== 'win32') {
-				expect(extension.executable).to.equal('/bin/date');
+			if (process.platform === 'win32') {
+				expect(extension.executable.toLowerCase()).to.equal(path.join(process.env.SystemRoot, 'system32', 'ping.exe').toLowerCase());
+			} else {
+				expect(extension.executable).to.equal('/bin/ping');
 			}
 
-			const argv = process.platform === 'win32' ? [ 'date', '/T' ] : [ 'date', '+%a %m/%d/%y' ];
-			const output = (await runCLI(extension, argv)).trim().split(' ')[1];
+			const argv = process.platform === 'win32' ? [ 'ping', '/?' ] : [ 'ping', '--help' ];
+			const output = await runCLI(extension, argv);
 
-			const d = new Date();
-			expect(output).to.equal(`${d.getMonth() < 9 ? '0' : ''}${d.getMonth() + 1}/${d.getDate() < 10 ? '0' : ''}${d.getDate()}/${String(d.getFullYear()).substring(2)}`);
+			expect(output).to.match(/usage: ping/i);
 		});
 	});
 
@@ -117,7 +118,10 @@ describe('Extension', () => {
 	});
 
 	describe('JavaScript Extensions', () => {
-		it('should run a JavaScript file', async () => {
+		it('should run a JavaScript file', async function () {
+			this.slow(4000);
+			this.timeout(5000);
+
 			const extension = new Extension({
 				extensionPath: path.join(__dirname, 'fixtures', 'simple', 'simple.js')
 			});
@@ -127,7 +131,10 @@ describe('Extension', () => {
 			expect(output).to.equal(`${process.version} foo bar\n`);
 		});
 
-		it('should run a simple Node.js module', async () => {
+		it('should run a simple Node.js module', async function () {
+			this.slow(4000);
+			this.timeout(5000);
+
 			const extension = new Extension({
 				extensionPath: path.join(__dirname, 'fixtures', 'simple-module')
 			});
