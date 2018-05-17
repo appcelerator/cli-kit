@@ -27,11 +27,11 @@ describe('Commands', () => {
 		it('should error if command options are invalid', () => {
 			expect(() => {
 				new Command('foo', 123);
-			}).to.throw(TypeError, 'Expected command options to be an object');
+			}).to.throw(TypeError, 'Expected command parameters to be an object');
 
 			expect(() => {
 				new Command('foo', 'bar');
-			}).to.throw(TypeError, 'Expected command options to be an object');
+			}).to.throw(TypeError, 'Expected command parameters to be an object');
 
 			expect(() => {
 				new CLI({
@@ -39,7 +39,7 @@ describe('Commands', () => {
 						'': 123
 					}
 				});
-			}).to.throw(TypeError, 'Expected command options to be an object');
+			}).to.throw(TypeError, 'Expected command parameters to be an object');
 		});
 
 		it('should error if action is not a function', () => {

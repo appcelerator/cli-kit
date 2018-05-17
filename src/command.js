@@ -23,7 +23,7 @@ export default class Command extends Context {
 		}
 
 		if (!params || typeof params !== 'object' || Array.isArray(params)) {
-			throw E.INVALID_ARGUMENT('Expected command options to be an object', { name: 'params', scope: 'Command.constructor', value: params });
+			throw E.INVALID_ARGUMENT('Expected command parameters to be an object', { name: 'params', scope: 'Command.constructor', value: params });
 		}
 
 		if (params.clikit instanceof Set) {

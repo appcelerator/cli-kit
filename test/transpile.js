@@ -62,7 +62,8 @@ if (process.env.COVERAGE) {
 	const distGRegExp = /([/\\])dist([/\\])/g;
 
 	Module._resolveFilename = function (request, parent, isMain) {
-		if (distRegExp.test(request) && parent && (parent.id.startsWith(cwd) || parent.id.startsWith(realcwd))) {
+		const parentId = parent && path.resolve(parent.id);
+		if (distRegExp.test(request) && parentId && (parentId.startsWith(cwd) || parentId.startsWith(realcwd))) {
 			request = request.replace(distGRegExp, (m, q1, q2) => `${q1}src${q2}`);
 		}
 		return originalResolveFilename(request, parent, isMain);

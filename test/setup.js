@@ -43,5 +43,5 @@ global.expectThrow = function expectThrow(fn, meta) {
 		return;
 	}
 
-	throw new Error(`Expected function to throw ${type.name || type}`);
+	throw new Error(`Expected function to throw ${meta.type.name || meta.type}`);
 };

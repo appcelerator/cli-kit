@@ -58,13 +58,12 @@ describe('Extension', () => {
 			if (process.platform === 'win32') {
 				expect(extension.executable.toLowerCase()).to.equal(path.join(process.env.SystemRoot, 'system32', 'ping.exe').toLowerCase());
 			} else {
-				expect(extension.executable).to.equal('/bin/ping');
+				expect(extension.executable).to.match(/^\/s?bin\/ping$/);
 			}
 
-			const argv = process.platform === 'win32' ? [ 'ping', '/?' ] : [ 'ping', '--help' ];
-			const output = await runCLI(extension, argv);
+			const output = await runCLI(extension, [ 'ping' ], true);
 
-			expect(output).to.match(/usage: ping/i);
+			expect(output).to.match(/usage: ping/im);
 		});
 	});
 
@@ -175,12 +174,12 @@ describe('Extension', () => {
 	});
 });
 
-async function runCLI(extension, argv) {
+async function runCLI(extension, argv, noHelp) {
 	const out = new WritableStream();
 
 	const cli = new CLI({
 		extensions: [ extension ],
-		help: true,
+		help: !noHelp,
 		name: 'test-cli',
 		out
 	});

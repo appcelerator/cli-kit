@@ -30,7 +30,7 @@ export default class CLI extends Context {
 	 */
 	constructor(params = {}) {
 		if (typeof params !== 'object' || Array.isArray(params)) {
-			throw E.INVALID_ARGUMENT('Expected argument to be an object or Context', { name: 'params', scope: 'CLI.constructor', value: params });
+			throw E.INVALID_ARGUMENT('Expected CLI parameters to be an object or Context', { name: 'params', scope: 'CLI.constructor', value: params });
 		}
 
 		if (params.out && (typeof params.out !== 'object' || typeof params.out.write !== 'function')) {
@@ -66,6 +66,8 @@ export default class CLI extends Context {
 				action({ contexts }) {
 					// the first context is the help command, so just skip to the second context
 					contexts[1].renderHelp();
+
+					// istanbul ignore if
 					if (params.helpExitCode !== undefined) {
 						process.exit(params.helpExitCode);
 					}

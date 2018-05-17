@@ -113,6 +113,7 @@ function runTests(cover) {
 		args.push(
 			'--cache', 'false',
 			'--exclude', 'test',
+			'--exclude', '!test/examples',
 			'--instrument', 'false',
 			'--source-map', 'false',
 			// supported reporters:
@@ -125,6 +126,7 @@ function runTests(cover) {
 			'--show-process-tree',
 			process.execPath // need to specify node here so that spawn-wrap works
 		);
+
 		process.env.FORCE_COLOR = 1;
 		process.env.COVERAGE = 1;
 	}

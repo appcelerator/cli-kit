@@ -155,13 +155,7 @@ export default class Extension extends Command {
 			child.stdout.on('data', data => stdout.write(data.toString()));
 			child.stderr.on('data', data => stderr.write(data.toString()));
 
-			child.on('close', code => {
-				if (code) {
-					reject(code);
-				} else {
-					resolve();
-				}
-			});
+			child.on('close', (code = 0) => resolve({ code }));
 		});
 	}
 }

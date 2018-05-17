@@ -218,7 +218,7 @@ export default class Context extends HookEmitter {
 			}
 
 			if (typeof params !== 'object' || Array.isArray(params)) {
-				throw E.INVALID_ARGUMENT('Expected command options to be an object', { name: 'params', value: params });
+				throw E.INVALID_ARGUMENT('Expected command parameters to be an object', { name: 'params', value: params });
 			}
 
 			params.allowUnknownOptions = this.allowUnknownOptions;
