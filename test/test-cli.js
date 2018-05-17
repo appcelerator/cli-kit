@@ -146,8 +146,8 @@ describe('CLI', () => {
 
 		describe('Version', () => {
 			it('should output the version', function () {
-				this.slow(4000);
-				this.timeout(5000);
+				this.slow(9000);
+				this.timeout(10000);
 
 				const { status, stdout } = spawnSync(process.execPath, [ path.join(__dirname, 'examples', 'version-test', 'ver.js'), '--version' ]);
 				expect(status).to.equal(0);
