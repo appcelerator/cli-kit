@@ -53,23 +53,23 @@ export default class Context extends HookEmitter {
 	 */
 	constructor(params = {}) {
 		if (!params || typeof params !== 'object' || (params.clikit instanceof Set && !params.clikit.has('Context'))) {
-			throw E.INVALID_ARGUMENT('Expected parameters to be an object, CLI, Command, or Context', { name: 'params.clikit', value: params.clikit });
+			throw E.INVALID_ARGUMENT('Expected parameters to be an object, CLI, Command, or Context', { name: 'params.clikit', scope: 'Context.constructor', value: params.clikit });
 		}
 
 		if (params.args && !Array.isArray(params.args)) {
-			throw E.INVALID_ARGUMENT('Expected args to be an array', { name: 'params.args', value: params.args });
+			throw E.INVALID_ARGUMENT('Expected args to be an array', { name: 'params.args', scope: 'Context.constructor', value: params.args });
 		}
 
 		if (params.commands && (typeof params.commands !== 'object' || Array.isArray(params.commands))) {
-			throw E.INVALID_ARGUMENT('Expected commands to be an object', { name: 'params.commands', value: params.commands });
+			throw E.INVALID_ARGUMENT('Expected commands to be an object', { name: 'params.commands', scope: 'Context.constructor', value: params.commands });
 		}
 
 		if (params.options && typeof params.options !== 'object') {
-			throw E.INVALID_ARGUMENT('Expected options to be an object or an array', { name: 'params.options', value: params.options });
+			throw E.INVALID_ARGUMENT('Expected options to be an object or an array', { name: 'params.options', scope: 'Context.constructor', value: params.options });
 		}
 
 		if (params.extensions && typeof params.extensions !== 'object') {
-			throw E.INVALID_ARGUMENT('Expected extensions to be an object or an array', { name: 'params.extensions', value: params.extensions });
+			throw E.INVALID_ARGUMENT('Expected extensions to be an object or an array', { name: 'params.extensions', scope: 'Context.constructor', value: params.extensions });
 		}
 
 		super();
@@ -218,7 +218,7 @@ export default class Context extends HookEmitter {
 			}
 
 			if (typeof params !== 'object' || Array.isArray(params)) {
-				throw E.INVALID_ARGUMENT('Expected command parameters to be an object', { name: 'params', value: params });
+				throw E.INVALID_ARGUMENT('Expected command parameters to be an object', { name: 'params', scope: 'Context.command', value: params });
 			}
 
 			params.allowUnknownOptions = this.allowUnknownOptions;
@@ -257,7 +257,7 @@ export default class Context extends HookEmitter {
 				params = group;
 				group = null;
 			} else if (typeof group !== 'string') {
-				throw E(TypeError, 'Expected group to be a non-empty string', E.INVALID_ARGUMENT, { name: 'group', value: group });
+				throw E.INVALID_ARGUMENT('Expected group to be a non-empty string', { name: 'group',  scope: 'Context.command', value: group });
 			} else if (!params) {
 				params = { desc: group };
 				group = null;
@@ -554,6 +554,10 @@ export default class Context extends HookEmitter {
 	 * @access private
 	 */
 	registerCommand(cmd) {
+		if (this.commands[cmd.name]) {
+			throw E.ALREADY_EXISTS(`Command "${cmd.name}" already exists`, { name: 'cmd',  scope: 'Context.registerCommand', value: cmd });
+		}
+
 		this.commands[cmd.name] = cmd;
 
 		this.lookup.commands[cmd.name] = cmd;
@@ -571,13 +575,15 @@ export default class Context extends HookEmitter {
 	/**
 	 * Renders the help screen for this context including the parent contexts.
 	 *
-	 * @param {WritableStream} [out] - The stream to write output to.
-	 * @param {Boolean} [recursing] - Indicates that this function is being called by itself from a
-	 * sub-context and that the current context's usage, description, and commands should be
+	 * @param {Object} [params] - Various parameters.
+	 * @param {Error} [params.err] - An optional error to render before the help output.
+	 * @param {WritableStream} [params.out] - The stream to write output to.
+	 * @param {Boolean} [params.recursing] - Indicates that this function is being called by itself
+	 * from a sub-context and that the current context's usage, description, and commands should be
 	 * suppressed.
 	 * @access private
 	 */
-	renderHelp(out, recursing) {
+	renderHelp({ err, out, recursing }) {
 		if (!out) {
 			out = this.outputStream || process.stdout;
 		}
@@ -602,7 +608,7 @@ export default class Context extends HookEmitter {
 			list: [],
 			maxWidths: []
 		};
-		for (const name of Object.keys(this.commands)) {
+		for (const name of Object.keys(this.commands).sort()) {
 			const { desc, hidden } = this.commands[name];
 			if (!hidden) {
 				add(commands, [ name, desc ]);
@@ -662,6 +668,10 @@ export default class Context extends HookEmitter {
 			}
 		};
 
+		if (err) {
+			out.write(`${err.toString()}\n\n`);
+		}
+
 		if (!recursing) {
 			let usage = 'Usage: ';
 			if (this.parent) {
@@ -695,7 +705,10 @@ export default class Context extends HookEmitter {
 		list(this.title ? `${this.title} options` : 'Options', options);
 
 		if (this.parent) {
-			this.parent.renderHelp(out, true);
+			this.parent.renderHelp({
+				out,
+				recursing: true
+			});
 		}
 	}
 

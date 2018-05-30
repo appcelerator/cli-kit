@@ -1,6 +1,7 @@
 const errors = {};
 export default errors;
 
+createError('ALREADY_EXISTS',              Error,      'A object with the same name has already been registered and would overwrite the existing object');
 createError('CONFLICT',                    Error,      'A parameter conflicts with the value of another parameter');
 createError('EMPTY_STRING',                Error,      'A string value was undefined, null, empty, or false');
 createError('INVALID_ARGUMENT',            TypeError,  'A function argument is undefined or the incorrect data type');

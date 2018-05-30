@@ -171,6 +171,54 @@ describe('Extension', () => {
 				new Extension({ extensionPath });
 			}).to.throw(Error, `Unable to find extension's main file: ${extensionPath}`);
 		});
+
+		it('should ignore a cli-kit extension that has bad syntax', async () => {
+			const extension = new Extension({
+				extensionPath: path.join(__dirname, 'fixtures', 'bad-cli-kit-ext'),
+				ignoreInvalidExtensions: true
+			});
+
+			let output = await runCLI(extension, []);
+			expect(output).to.equal([
+				'Usage: test-cli <command> [options]',
+				'',
+				'Commands:',
+				'  bad-cli-kit-extension',
+				'',
+				'Global options:',
+				'  -h, --help  displays the help screen',
+				'',
+				''
+			].join('\n'));
+
+			output = await runCLI(extension, [ 'bad-cli-kit-extension' ]);
+
+			expect(output).to.equal([
+				'Bad extension: bad-cli-kit-extension',
+				'  SyntaxError: Unexpected token )',
+				'  /Users/chris/projects/cli-kit/test/fixtures/bad-cli-kit-ext/main.js:3',
+				'  });',
+				'   ^',
+				''
+			].join('\n'));
+		});
+
+		it('should error if a cli-kit extension that has bad syntax', () => {
+			const extensionPath = path.join(__dirname, 'fixtures', 'bad-cli-kit-ext');
+
+			expectThrow(() => {
+				new Extension({
+					extensionPath
+				});
+			}, {
+				type:  Error,
+				msg:   'Bad extension: bad-cli-kit-extension',
+				code:  'ERR_INVALID_EXTENSION',
+				name:  'pkg',
+				scope: 'Extension.constructor',
+				extensionPath
+			});
+		});
 	});
 });
 

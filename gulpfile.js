@@ -1,7 +1,6 @@
 'use strict';
 
 const $ = require('gulp-load-plugins')();
-const del = require('del');
 const fs = require('fs-extra');
 const gulp = require('gulp');
 const manifest = require('./package.json');
@@ -18,13 +17,13 @@ const testCLIKitDir = path.join(__dirname, 'test', 'fixtures', 'cli-kit-ext', 'n
  */
 gulp.task('clean', ['clean-coverage', 'clean-dist', 'clean-docs']);
 
-gulp.task('clean-coverage', done => { del([coverageDir]).then(() => done()) });
+gulp.task('clean-coverage', cb => fs.remove(coverageDir, cb));
 
-gulp.task('clean-dist', done => { del([distDir]).then(() => done()) });
+gulp.task('clean-dist', cb => fs.remove(distDir, cb));
 
-gulp.task('clean-docs', done => { del([docsDir]).then(() => done()) });
+gulp.task('clean-docs', cb => fs.remove(docsDir, cb));
 
-gulp.task('clean-test-dist', done => { del([testCLIKitDir]).then(() => done()) });
+gulp.task('clean-test-dist', cb => fs.remove(testCLIKitDir, cb));
 
 /*
  * build tasks

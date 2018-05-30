@@ -67,25 +67,51 @@ export default class Extension extends Command {
 
 				if (pkg.clikit) {
 					log(`Requiring ${highlight(pkg.main)}`);
-					let ctx = require(pkg.main);
+					let ctx;
+					let err;
+
+					try {
+						ctx = require(pkg.main);
+					} catch (e) {
+						err = e;
+					}
 
 					if (ctx && ctx.__esModule) {
 						ctx = ctx.default;
 					}
 
+					isCLIKitExtension = true;
+
 					if (ctx && typeof ctx === 'object') {
 						if (ctx.clikit instanceof Set && (ctx.clikit.has('CLI') || ctx.clikit.has('Command'))) {
-							isCLIKitExtension = true;
 							params = ctx;
 							params.parent = parent;
-							log(`Loaded cli-kit enable extension: ${highlight(pkg.main)}`);
+							log(`Loaded cli-kit enable extension: ${highlight(pkg.json.name)}`);
+						} else {
+							isCLIKitExtension = false;
 						}
 
 					} else if (params.ignoreInvalidExtensions || (params.parent && params.parent.get('ignoreInvalidExtensions', false))) {
 						params.action = () => {
 							const out = this.outputStream || process.stdout;
-							out.write(`Invalid extension: ${extensionPath}\n`);
+							if (err) {
+								out.write(`Bad extension: ${pkg.json.name}\n`);
+								out.write(`  ${err.toString()}\n`);
+								let { stack } = err;
+								const p = stack.indexOf('\n\n');
+								if (p !== -1) {
+									stack = stack.substring(0, p).trim();
+								}
+								for (const line of stack.split('\n')) {
+									out.write(`  ${line}\n`);
+								}
+							} else {
+								out.write(`Invalid extension: ${pkg.json.name}\n`);
+							}
 						};
+
+					} else if (err) {
+						throw E.INVALID_EXTENSION(`Bad extension: ${pkg.json.name}`, { err, extensionPath, name: 'pkg', scope: 'Extension.constructor', value: pkg });
 
 					} else {
 						throw E.INVALID_EXTENSION(`Extension does not export an object: ${extensionPath}`, { extensionPath, name: 'extension.ctx', scope: 'Extension.constructor', value: ctx });

@@ -1,6 +1,8 @@
 import Arguments from '../dist/arguments';
 import CLI from '../dist/index';
 
+import { WritableStream } from 'memory-streams';
+
 describe('Arguments', () => {
 	describe('Constructor', () => {
 		it('should error if args is not an array', () => {
@@ -15,6 +17,40 @@ describe('Arguments', () => {
 			expect(() => {
 				new Arguments({});
 			}).to.throw(TypeError, 'Expected args to be an array');
+		});
+	});
+
+	describe('Validation', () => {
+		it('should show help when missing required argument', async () => {
+			const out = new WritableStream();
+
+			const cli = new CLI({
+				args: [
+					{
+						name: 'foo',
+						required: true
+					}
+				],
+				help: true,
+				name: 'test-cli',
+				out
+			});
+
+			await cli.exec([]);
+
+			expect(out.toString()).to.equal([
+				'Error: Missing required argument "foo"',
+				'',
+				'Usage: test-cli [options] <foo>',
+				'',
+				'Global arguments:',
+				'  foo',
+				'',
+				'Global options:',
+				'  -h, --help  displays the help screen',
+				'',
+				''
+			].join('\n'));
 		});
 	});
 

@@ -15,6 +15,7 @@ export default class CLI extends Context {
 	 * Created a CLI instance.
 	 *
 	 * @param {Object} [params] - Various options.
+	 * @param {String|Function} [params.banner] - A banner to display
 	 * @param {Boolean} [params.defaultCommand] - The default command to execute.
 	 * @param {Boolean} [params.help=false] - When `true`, enables the built-in help command.
 	 * @param {Number} [params.helpExitCode] - The exit code to return when the help command is
@@ -22,6 +23,8 @@ export default class CLI extends Context {
 	 * @param {String} [params.name] - The name of the program.
 	 * @param {Object|Writable} [params.out=process.stdout] - A stream to write output such as the
 	 * help screen or an object with a `write()` method.
+	 * @param {Boolean} [params.showHelpOnError=true] - If an error occurs and `help` is enabled,
+	 * then display the error before the help information.
 	 * @param {String} [params.title='Global'] - The title for the global context.
 	 * @param {String} [params.version] - The program version.
 	 * @param {Number} [params.width] - The number of characters to wrap long descriptions. Defaults
@@ -63,9 +66,9 @@ export default class CLI extends Context {
 
 			this.command('help', {
 				hidden: true,
-				action({ contexts }) {
+				action({ contexts, err }) {
 					// the first context is the help command, so just skip to the second context
-					contexts[1].renderHelp();
+					contexts[1].renderHelp({ err });
 
 					// istanbul ignore if
 					if (params.helpExitCode !== undefined) {
@@ -102,26 +105,38 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected arguments to be an array', { name: 'args', scope: 'CLI.exec', value: unparsedArgs });
 		}
 
-		const $args = await this.parse(unparsedArgs ? unparsedArgs.slice() : process.argv.slice(2));
+		try {
+			const $args = await this.parse(unparsedArgs ? unparsedArgs.slice() : process.argv.slice(2));
 
-		let cmd = $args.contexts[0];
+			let cmd = $args.contexts[0];
 
-		if (this.help && $args.argv.help) {
-			log('Selected help command');
-			cmd = this.commands.help;
-			$args.contexts.unshift(cmd);
+			if (this.help && $args.argv.help) {
+				log('Selected help command');
+				cmd = this.commands.help;
+				$args.contexts.unshift(cmd);
 
-		} else if (!(cmd instanceof Command) && this.defaultCommand && (this.commands[this.defaultCommand] instanceof Command)) {
-			log(`Selected default command: ${this.defaultCommand}`);
-			cmd = this.commands[this.defaultCommand];
-			$args.contexts.unshift(cmd);
+			} else if (!(cmd instanceof Command) && this.defaultCommand && (this.commands[this.defaultCommand] instanceof Command)) {
+				log(`Selected default command: ${this.defaultCommand}`);
+				cmd = this.commands[this.defaultCommand];
+				$args.contexts.unshift(cmd);
+			}
+
+			// execute the command
+			if (cmd && typeof cmd.action === 'function') {
+				return await cmd.action($args) || $args;
+			}
+
+			return $args;
+		} catch (err) {
+			const help = this.help && this.showHelpOnError !== false && this.commands.help;
+			if (help) {
+				return await help.action({
+					contexts: [ help, this ],
+					err
+				});
+			}
+
+			throw err;
 		}
-
-		// execute the command
-		if (cmd && typeof cmd.action === 'function') {
-			return await cmd.action($args) || $args;
-		}
-
-		return $args;
 	}
 }

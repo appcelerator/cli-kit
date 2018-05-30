@@ -2,7 +2,7 @@ import CLI, { Argument } from '../dist/index';
 
 import { WritableStream } from 'memory-streams';
 
-describe('Arguments', () => {
+describe('Argument', () => {
 	describe('Constructor', () => {
 		it('should error if argument params is invalid', () => {
 			expect(() => {
@@ -188,7 +188,6 @@ describe('Arguments', () => {
 					}
 				],
 				defaultCommand: null,
-				help: true,
 				out: new WritableStream()
 			});
 

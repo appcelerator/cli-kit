@@ -2,7 +2,6 @@ import CLI from '../dist/index';
 import path from 'path';
 
 import { spawnSync } from 'child_process';
-import { WritableStream } from 'memory-streams';
 
 describe('CLI', () => {
 	describe('Constructor', () => {
@@ -90,6 +89,24 @@ describe('CLI', () => {
 				name:  'params.width',
 				scope: 'CLI.constructor',
 				value: 'foo'
+			});
+		});
+
+		it('should error if when adding an existing command', () => {
+			expectThrow(() => {
+				const cli = new CLI({
+					commands: {
+						foo: {}
+					}
+				});
+
+				cli.command('foo');
+			}, {
+				type:  Error,
+				msg:   'Command "foo" already exists',
+				code:  'ERR_ALREADY_EXISTS',
+				name:  'cmd',
+				scope: 'Context.registerCommand'
 			});
 		});
 	});
