@@ -46,19 +46,20 @@ export function findPackage(searchPath) {
 		let contents;
 
 		try {
-			contents = fs.readFileSync(file);
+			contents = fs.readFileSync(file, 'utf8');
 		} catch (e) {
-			throw E.INVALID_PACKAGE_JSON(`Unable to open package.json: ${e.message}`, { file, name: 'package.json', scope: 'util.findPackage' });
+			// istanbul ignore next
+			throw E.INVALID_PACKAGE_JSON(`Unable to open package.json: ${e.message}`, { name: 'package.json', scope: 'util.findPackage', value: file });
 		}
 
 		try {
 			json = JSON.parse(contents);
 		} catch (e) {
-			throw E.INVALID_JSON(`Failed to parse package.json: ${e.message}`, { file, name: 'package.json.bad.syntax', scope: 'util.findPackage', value: contents });
+			throw E.INVALID_PACKAGE_JSON(`Failed to parse package.json: ${e.message}`, { file, name: 'package.json.bad', scope: 'util.findPackage', value: contents });
 		}
 
 		if (typeof json !== 'object') {
-			throw E.INVALID_PACKAGE_JSON('Invalid package.json: expected object', { file, name: 'package.json.no.object', scope: 'util.findPackage', value: json });
+			throw E.INVALID_PACKAGE_JSON('Invalid package.json: expected object', { file, name: 'package.json.invalid', scope: 'util.findPackage', value: json });
 		}
 
 		if (json.clikit || json['cli-kit']) {
@@ -85,7 +86,7 @@ export function findPackage(searchPath) {
 			}
 		}
 	} else {
-		root = path.dirname(main);
+		root = main ? path.dirname(main) : null;
 	}
 
 	return { clikit, json, main, root };
@@ -129,23 +130,21 @@ export function wrap(str, width, indent) {
 			let k;
 			let next;
 
+			// remove escape characters
+			line = line.replace(/\u001b\[J/g, ''); // eslint-disable-line no-control-regex
+
 			while (i < line.length) {
-				if (line.charAt(i) === '\u001b') {
-					// fast forward!
-					i += 5;
-				} else {
-					i++;
-					if (++j >= width) {
-						// backpedal
-						for (k = i; k >= 0; k--) {
-							if (/[ ,;!?]/.test(line[k]) || (/[.:]/.test(line[k]) && (k + 1 >= line.length || /[ \t\r\n]/.test(line[k + 1])))) {
-								if (k + 1 < line.length) {
-									line = line.substring(0, k) + '\n' + indent + line.substring(k + 1);
-									i = k + 1;
-									j = 0;
-								}
-								break;
+				i++;
+				if (++j >= width) {
+					// backpedal
+					for (k = i; k >= 0; k--) {
+						if (/[ ,;!?]/.test(line.charAt(k)) || (/[.:]/.test(line.charAt(k)) && (k + 1 >= line.length || /[ \t\r\n]/.test(line.charAt(k + 1))))) {
+							if (k + 1 < line.length) {
+								line = `${line.substring(0, k)}\n${indent}${line.substring(k + 1)}`;
+								i = k + 1;
+								j = 0;
 							}
+							break;
 						}
 					}
 				}

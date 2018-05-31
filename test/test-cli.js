@@ -2,6 +2,7 @@ import CLI from '../dist/index';
 import path from 'path';
 
 import { spawnSync } from 'child_process';
+import { WritableStream } from 'memory-streams';
 
 describe('CLI', () => {
 	describe('Constructor', () => {
@@ -108,6 +109,134 @@ describe('CLI', () => {
 				name:  'cmd',
 				scope: 'Context.registerCommand'
 			});
+		});
+	});
+
+	describe('Banner', () => {
+		it('should throw error if banner is not a string or function', () => {
+			expectThrow(() => {
+				new CLI({
+					banner: {}
+				});
+			}, {
+				type:  TypeError,
+				msg:   'Expected banner to be a string or function',
+				code:  'ERR_INVALID_ARGUMENT',
+				name:  'params.banner',
+				scope: 'CLI.constructor'
+			});
+
+			expectThrow(() => {
+				new CLI({
+					banner: null
+				});
+			}, {
+				type:  TypeError,
+				msg:   'Expected banner to be a string or function',
+				code:  'ERR_INVALID_ARGUMENT',
+				name:  'params.banner',
+				scope: 'CLI.constructor'
+			});
+		});
+
+		it('should display a banner before command output', async () => {
+			const banner = 'My Amazing CLI, version 1.2.3\nCopyright (c) 2018, Me';
+			const out = new WritableStream();
+			const cli = new CLI({
+				banner,
+				help: true,
+				name: 'test-cli',
+				out
+			});
+
+			await cli.exec([]);
+
+			expect(out.toString()).to.equal([
+				'My Amazing CLI, version 1.2.3',
+				'Copyright (c) 2018, Me',
+				'',
+				'Usage: test-cli [options]',
+				'',
+				'Global options:',
+				'  -h, --help  displays the help screen',
+				'',
+				''
+			].join('\n'));
+		});
+
+		it('should display a banner when running a command', async () => {
+			const banner = 'My Amazing CLI, version 1.2.3\nCopyright (c) 2018, Me\n\n';
+			const out = new WritableStream();
+			const cli = new CLI({
+				banner,
+				commands: {
+					foo() {
+						out.write('Testing... 1, 2, 3\n');
+					}
+				},
+				name: 'test-cli',
+				out
+			});
+
+			await cli.exec([ 'foo' ]);
+
+			expect(out.toString()).to.equal([
+				'My Amazing CLI, version 1.2.3',
+				'Copyright (c) 2018, Me',
+				'',
+				'Testing... 1, 2, 3',
+				''
+			].join('\n'));
+		});
+
+		it('should not display a banner when outputting JSON', async () => {
+			const banner = 'My Amazing CLI, version 1.2.3\nCopyright (c) 2018, Me\n\n';
+			const out = new WritableStream();
+			const cli = new CLI({
+				banner,
+				commands: {
+					foo() {
+						out.write(' ' + JSON.stringify({ foo: 'bar', baz: 123 }, null, '  '));
+					}
+				},
+				name: 'test-cli',
+				out
+			});
+
+			await cli.exec([ 'foo' ]);
+
+			expect(out.toString()).to.equal([
+				' {',
+				'  "foo": "bar",',
+				'  "baz": 123',
+				'}'
+			].join('\n'));
+		});
+
+		it('should not display a banner when outputting XML', async () => {
+			const banner = 'My Amazing CLI, version 1.2.3\nCopyright (c) 2018, Me\n\n';
+			const out = new WritableStream();
+			const xml = [
+				'',
+				'<?xml version="1.0"?>',
+				'<foo>',
+				'  <bar>baz</bar>',
+				'</foo>'
+			].join('\n');
+			const cli = new CLI({
+				banner,
+				commands: {
+					foo() {
+						out.write(xml);
+					}
+				},
+				name: 'test-cli',
+				out
+			});
+
+			await cli.exec([ 'foo' ]);
+
+			expect(out.toString()).to.equal(xml);
 		});
 	});
 

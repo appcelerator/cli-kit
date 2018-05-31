@@ -173,8 +173,9 @@ describe('Extension', () => {
 		});
 
 		it('should ignore a cli-kit extension that has bad syntax', async () => {
+			const extensionPath = path.join(__dirname, 'fixtures', 'bad-cli-kit-ext');
 			const extension = new Extension({
-				extensionPath: path.join(__dirname, 'fixtures', 'bad-cli-kit-ext'),
+				extensionPath,
 				ignoreInvalidExtensions: true
 			});
 
@@ -196,7 +197,7 @@ describe('Extension', () => {
 			expect(output).to.equal([
 				'Bad extension: bad-cli-kit-extension',
 				'  SyntaxError: Unexpected token )',
-				'  /Users/chris/projects/cli-kit/test/fixtures/bad-cli-kit-ext/main.js:3',
+				`  ${path.join(extensionPath, 'main.js')}:3`,
 				'  });',
 				'   ^',
 				''

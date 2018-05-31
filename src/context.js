@@ -581,9 +581,10 @@ export default class Context extends HookEmitter {
 	 * @param {Boolean} [params.recursing] - Indicates that this function is being called by itself
 	 * from a sub-context and that the current context's usage, description, and commands should be
 	 * suppressed.
+	 * @returns {Promise}
 	 * @access private
 	 */
-	renderHelp({ err, out, recursing }) {
+	async renderHelp({ err, out, recursing }) {
 		if (!out) {
 			out = this.outputStream || process.stdout;
 		}
@@ -705,7 +706,7 @@ export default class Context extends HookEmitter {
 		list(this.title ? `${this.title} options` : 'Options', options);
 
 		if (this.parent) {
-			this.parent.renderHelp({
+			await this.parent.renderHelp({
 				out,
 				recursing: true
 			});

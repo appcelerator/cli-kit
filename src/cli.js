@@ -15,7 +15,8 @@ export default class CLI extends Context {
 	 * Created a CLI instance.
 	 *
 	 * @param {Object} [params] - Various options.
-	 * @param {String|Function} [params.banner] - A banner to display
+	 * @param {String|Function} [params.banner] - A banner or a function that returns the banner
+	 * to be displayed before each command.
 	 * @param {Boolean} [params.defaultCommand] - The default command to execute.
 	 * @param {Boolean} [params.help=false] - When `true`, enables the built-in help command.
 	 * @param {Number} [params.helpExitCode] - The exit code to return when the help command is
@@ -48,6 +49,10 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected width to be a number', { name: 'params.width', scope: 'CLI.constructor', value: params.width });
 		}
 
+		if (params.banner !== undefined && typeof params.banner !== 'string' && typeof params.banner !== 'function') {
+			throw E.INVALID_ARGUMENT('Expected banner to be a string or function', { name: 'params.banner', scope: 'CLI.constructor', value: params.banner });
+		}
+
 		params.name || (params.name = 'program');
 		params.title || (params.title = 'Global');
 
@@ -66,9 +71,9 @@ export default class CLI extends Context {
 
 			this.command('help', {
 				hidden: true,
-				action({ contexts, err }) {
+				async action({ contexts, err }) {
 					// the first context is the help command, so just skip to the second context
-					contexts[1].renderHelp({ err });
+					await contexts[1].renderHelp({ err });
 
 					// istanbul ignore if
 					if (params.helpExitCode !== undefined) {
@@ -83,7 +88,7 @@ export default class CLI extends Context {
 		if (params.version && !this.lookup.short.v && !this.lookup.long.version) {
 			this.option('-v, --version', {
 				callback: () => {
-					const out = this.outputStream || process.stdout;
+					const out = this.get('out', process.stdout);
 					out.write(`${params.version}\n`);
 					process.exit(0);
 				},
@@ -105,9 +110,40 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected arguments to be an array', { name: 'args', scope: 'CLI.exec', value: unparsedArgs });
 		}
 
+		let { banner } = this;
+		banner = banner && String(typeof banner === 'function' ? await banner() : banner).trim();
+		const out = this.get('out', process.stdout);
+		const originalWrite = out.write;
+
+		// if we have a banner, then override write() so we can immediately write the banner
+		if (banner) {
+			const dataRegExp = /^\s*[<{]/;
+
+			out.write = function write(chunk, encoding, cb) {
+				if (typeof encoding === 'function') {
+					cb = encoding;
+					encoding = null;
+				}
+
+				if (typeof cb !== 'function') {
+					cb = () => {};
+				}
+
+				// restore the original write;
+				out.write = originalWrite;
+
+				if (encoding === 'base64' || encoding === 'binary' || encoding === 'hex') {
+					// noop
+				} else if (!dataRegExp.test(chunk)) {
+					originalWrite.call(out, `${banner}\n\n`);
+				}
+
+				return originalWrite.call(out, chunk, encoding, cb);
+			};
+		}
+
 		try {
 			const $args = await this.parse(unparsedArgs ? unparsedArgs.slice() : process.argv.slice(2));
-
 			let cmd = $args.contexts[0];
 
 			if (this.help && $args.argv.help) {
@@ -137,6 +173,10 @@ export default class CLI extends Context {
 			}
 
 			throw err;
+		} finally {
+			if (banner) {
+				out.write = originalWrite;
+			}
 		}
 	}
 }
