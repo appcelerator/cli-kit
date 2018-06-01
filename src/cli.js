@@ -208,7 +208,7 @@ export default class CLI extends Context {
 
 			// execute the command
 			if (cmd && typeof cmd.action === 'function') {
-				result = await cmd.action($args);
+				result = await cmd.action.call(this, $args);
 			}
 
 			return result || $args;
