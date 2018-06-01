@@ -107,6 +107,7 @@ describe('Extension', () => {
 				'cli-kit-extension options:',
 				'  --baz=<value>  set baz',
 				'  -a, --append',
+				'  --no-color     disable colors',
 				'',
 				'Global options:',
 				'  -h, --help  displays the help screen',
@@ -227,6 +228,7 @@ async function runCLI(extension, argv, noHelp) {
 	const out = new WritableStream();
 
 	const cli = new CLI({
+		colors: false,
 		extensions: [ extension ],
 		help: !noHelp,
 		name: 'test-cli',

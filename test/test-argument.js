@@ -103,6 +103,7 @@ describe('Argument', () => {
 				args: [
 					'foo'
 				],
+				colors: false,
 				help: true,
 				out
 			});
@@ -133,6 +134,7 @@ describe('Argument', () => {
 						required: true
 					}
 				],
+				colors: false,
 				help: true,
 				out
 			});

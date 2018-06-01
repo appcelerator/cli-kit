@@ -31,6 +31,7 @@ describe('Arguments', () => {
 						required: true
 					}
 				],
+				colors: false,
 				help: true,
 				name: 'test-cli',
 				out

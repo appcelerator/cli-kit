@@ -144,6 +144,7 @@ describe('CLI', () => {
 			const out = new WritableStream();
 			const cli = new CLI({
 				banner,
+				colors: false,
 				help: true,
 				name: 'test-cli',
 				out
@@ -158,7 +159,8 @@ describe('CLI', () => {
 				'Usage: test-cli [options]',
 				'',
 				'Global options:',
-				'  -h, --help  displays the help screen',
+				'  -h, --help   displays the help screen',
+				'  --no-banner  suppress the banner',
 				'',
 				''
 			].join('\n'));
@@ -295,7 +297,7 @@ describe('CLI', () => {
 				this.slow(9000);
 				this.timeout(10000);
 
-				const { status, stdout } = spawnSync(process.execPath, [ path.join(__dirname, 'examples', 'version-test', 'ver.js'), '--version' ]);
+				const { status, stdout, stderr } = spawnSync(process.execPath, [ path.join(__dirname, 'examples', 'version-test', 'ver.js'), '--version' ]);
 				expect(status).to.equal(0);
 				expect(stdout.toString()).to.equal('1.2.3\n');
 			});

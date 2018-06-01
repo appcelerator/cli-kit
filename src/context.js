@@ -621,6 +621,10 @@ export default class Context extends HookEmitter {
 	 * @access private
 	 */
 	style(type, str) {
+		if (!this.get('colors', true)) {
+			return str;
+		}
+
 		const style = this.get('styles', {})[type];
 
 		if (!style || style === 'default') {

@@ -187,8 +187,10 @@ export default class CLI extends Context {
 			};
 		}
 
+		let $args;
+
 		try {
-			const $args = await this.parse(unparsedArgs ? unparsedArgs.slice() : process.argv.slice(2));
+			$args = await this.parse(unparsedArgs ? unparsedArgs.slice() : process.argv.slice(2));
 			let cmd = $args.contexts[0];
 
 			if (this.help && $args.argv.help) {
@@ -215,7 +217,7 @@ export default class CLI extends Context {
 
 			if (help) {
 				return await help.action({
-					contexts: [ help, ...(err.contexts || [ this ]) ],
+					contexts: [ help, ...(err.contexts || ($args && $args.contexts) || [ this ]) ],
 					err
 				});
 			}
