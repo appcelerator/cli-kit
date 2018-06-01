@@ -126,7 +126,7 @@ export default class CLI extends Context {
 					out.write(`${params.version}\n`);
 					process.exit(0);
 				},
-				desc: 'outputs the appcd version'
+				desc: 'outputs the version'
 			});
 		}
 
