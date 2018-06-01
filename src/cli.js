@@ -17,11 +17,16 @@ export default class CLI extends Context {
 	 * @param {Object} [params] - Various options.
 	 * @param {String|Function} [params.banner] - A banner or a function that returns the banner
 	 * to be displayed before each command.
+	 * @param {Boolean} [params.colors=true] - Enables colors, specifically on the help screen.
 	 * @param {Boolean} [params.defaultCommand] - The default command to execute.
 	 * @param {Boolean} [params.help=false] - When `true`, enables the built-in help command.
 	 * @param {Number} [params.helpExitCode] - The exit code to return when the help command is
 	 * finished.
 	 * @param {String} [params.name] - The name of the program.
+	 * @param {Boolean} [params.hideNoBannerOption=false] - When `true` and a `banner` is specified, it
+	 * does not add the `--no-banner` option.
+	 * @param {Boolean} [params.hideNoColorOption=false] - When `true` and `colors` is enabled, it does
+	 * not add the `--no-color` option.
 	 * @param {Object|Writable} [params.out=process.stdout] - A stream to write output such as the
 	 * help screen or an object with a `write()` method.
 	 * @param {Boolean} [params.showHelpOnError=true] - If an error occurs and `help` is enabled,
@@ -53,8 +58,15 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected banner to be a string or function', { name: 'params.banner', scope: 'CLI.constructor', value: params.banner });
 		}
 
+		params.colors = params.colors !== false;
 		params.name || (params.name = 'program');
 		params.title || (params.title = 'Global');
+
+		// extract params that we don't want mixed in
+		const { extensions, hideNoBannerOption, hideNoColorOption } = params;
+		delete params.extensions;
+		delete params.hideNoBannerOption;
+		delete params.hideNoColorOption;
 
 		super(params);
 		declareCLIKitClass(this, 'CLI');
@@ -85,15 +97,48 @@ export default class CLI extends Context {
 			this.option('-h, --help', 'displays the help screen');
 		}
 
+		// add the --no-banner flag
+		if (this.banner && !hideNoBannerOption) {
+			this.showBanner = true;
+
+			this.option('--no-banner', {
+				callback: value => {
+					this.showBanner = value;
+				},
+				desc: 'suppress the banner'
+			});
+		}
+
+		// add the --no-colors flag
+		if (this.colors && !hideNoColorOption) {
+			this.option('--no-color', {
+				aliases: [ '--no-colors' ],
+				desc: 'disable colors'
+			});
+		}
+
+		// add the --version flag
 		if (params.version && !this.lookup.short.v && !this.lookup.long.version) {
 			this.option('-v, --version', {
 				callback: () => {
+					this.showBanner = false;
 					const out = this.get('out', process.stdout);
 					out.write(`${params.version}\n`);
 					process.exit(0);
 				},
 				desc: 'outputs the appcd version'
 			});
+		}
+
+		// add the extensions now that the auto-generated options exist
+		if (Array.isArray(extensions)) {
+			for (const extensionPath of extensions) {
+				this.extension(extensionPath);
+			}
+		} else if (typeof extensions === 'object') {
+			for (const name of Object.keys(extensions)) {
+				this.extension(extensions[name], name);
+			}
 		}
 	}
 
@@ -110,7 +155,7 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected arguments to be an array', { name: 'args', scope: 'CLI.exec', value: unparsedArgs });
 		}
 
-		let { banner } = this;
+		let banner = this.get('banner');
 		banner = banner && String(typeof banner === 'function' ? await banner() : banner).trim();
 		const out = this.get('out', process.stdout);
 		const originalWrite = out.write;
@@ -119,7 +164,7 @@ export default class CLI extends Context {
 		if (banner) {
 			const dataRegExp = /^\s*[<{]/;
 
-			out.write = function write(chunk, encoding, cb) {
+			out.write = (chunk, encoding, cb) => {
 				if (typeof encoding === 'function') {
 					cb = encoding;
 					encoding = null;
@@ -134,7 +179,7 @@ export default class CLI extends Context {
 
 				if (encoding === 'base64' || encoding === 'binary' || encoding === 'hex') {
 					// noop
-				} else if (!dataRegExp.test(chunk)) {
+				} else if (this.get('showBanner', true) && !dataRegExp.test(chunk)) {
 					originalWrite.call(out, `${banner}\n\n`);
 				}
 
@@ -157,17 +202,20 @@ export default class CLI extends Context {
 				$args.contexts.unshift(cmd);
 			}
 
+			let result;
+
 			// execute the command
 			if (cmd && typeof cmd.action === 'function') {
-				return await cmd.action($args) || $args;
+				result = await cmd.action($args);
 			}
 
-			return $args;
+			return result || $args;
 		} catch (err) {
 			const help = this.help && this.showHelpOnError !== false && this.commands.help;
+
 			if (help) {
 				return await help.action({
-					contexts: [ help, this ],
+					contexts: [ help, ...(err.contexts || [ this ]) ],
 					err
 				});
 			}

@@ -8,6 +8,7 @@ import Option from './option';
 import ParsedArgument from './parsed-argument';
 
 import { declareCLIKitClass, wrap } from './util';
+import { defaultStyles } from './styles';
 
 /**
  * `Command` and `Extension` are lazy loaded due to circular references.
@@ -15,13 +16,14 @@ import { declareCLIKitClass, wrap } from './util';
 let Command;
 let Extension;
 
+const { chalk } = debug;
 const { log } = debug('cli-kit:context');
 const { highlight, note } = debug.styles;
 
 const dashOpt = /^(?:-|—)(.+?)(?:=(.+))?$/;
 const negateRegExp = /^no-(.+)$/;
 const optRE = /^(?:--|—)(?:([^=]+)(?:=([\s\S]*))?)?$/;
-const propIgnoreRegExp = /^_events|_links|args|commands|lookup|options$/;
+const propIgnoreRegExp = /^_events|_links|args|commands|lookup|options|styles$/;
 
 /**
  * Defines a context that contains commands, options, and args. Serves as the
@@ -39,12 +41,13 @@ export default class Context extends HookEmitter {
 	 * @param {Object} [params.commands] - A map of command names to command descriptors.
 	 * @param {String} [params.desc] - The description of the CLI or command displayed in the help
 	 * output.
-	 * @param {String} [params.name] - The name of the context such as the program or the command name.
-	 * @param {Array<Object>|Object} [params.options] - An array of options.
-	 * @param {Context} [params.parent] - The parent context.
 	 * @param {Object|Array.<String>} [params.extensions] - An map of extension names to extension
 	 * paths or an array of extension paths. A extension path is either a path to a directory
 	 * containing a Node.js module, a path to a .js file, or the name of a executable.
+	 * @param {String} [params.name] - The name of the context such as the program or the command name.
+	 * @param {Array<Object>|Object} [params.options] - An array of options.
+	 * @param {Context} [params.parent] - The parent context.
+	 * @param {Object} [params.styles] - A map of style overrides.
 	 * @param {String} [params.title] - The context title.
 	 * @param {Boolean} [params.allowUnknownOptions=false] - When `true`, any unknown flags or options
 	 * will be treated as an option. When `false`, unknown flags/options will be treated as
@@ -72,6 +75,10 @@ export default class Context extends HookEmitter {
 			throw E.INVALID_ARGUMENT('Expected extensions to be an object or an array', { name: 'params.extensions', scope: 'Context.constructor', value: params.extensions });
 		}
 
+		if (params.styles && typeof params.styles !== 'object') {
+			throw E.INVALID_ARGUMENT('Expected styles to be an object', { name: 'params.styles', scope: 'CLI.constructor', value: params.styles });
+		}
+
 		super();
 
 		const ignoreOut = params.clikit instanceof Set && params.clikit.has('Context');
@@ -81,11 +88,14 @@ export default class Context extends HookEmitter {
 				this[prop] = params[prop];
 			}
 		}
+
 		declareCLIKitClass(this, 'Context');
 
 		this.args     = [];
 		this.commands = {};
 		this.options  = {};
+
+		this.styles = Object.assign({}, defaultStyles, params.styles);
 
 		// initialize the alias lookup tables
 		Object.defineProperty(this, 'lookup', {
@@ -127,9 +137,33 @@ export default class Context extends HookEmitter {
 		}
 
 		if (params.clikit instanceof Set && (params.clikit.has('CLI') || params.clikit.has('Command'))) {
+			// the options are coming from an existing CLI or Command object, so we need to copy
+			// them into this context, but only if they option does not already exist in a parent
+			// context
+			const isCLI = params.clikit.has('CLI');
 			for (const [ group, options ] of Object.entries(params.options)) {
-				for (const opt of options) {
-					this.option(opt, group);
+				for (const option of options) {
+					let add = true;
+
+					if (isCLI) {
+						// scan all parents to see if this flag is a dupe
+						let found = false;
+						for (let p = this.parent; p && !found; p = p.parent) {
+							for (const opts of Object.values(p.options)) {
+								for (const opt of opts) {
+									if (opt.name === option.name) {
+										found = true;
+										break;
+									}
+								}
+							}
+						}
+						add = !found;
+					}
+
+					if (add) {
+						this.option(option, group);
+					}
 				}
 			}
 		} else {
@@ -161,6 +195,7 @@ export default class Context extends HookEmitter {
 			}
 		}
 
+		// load extensions... this must happen last
 		if (Array.isArray(params.extensions)) {
 			for (const extensionPath of params.extensions) {
 				this.extension(extensionPath);
@@ -431,7 +466,7 @@ export default class Context extends HookEmitter {
 			return $args;
 		});
 
-		return this.hook('parse', $args => {
+		const hook = this.hook('parse', $args => {
 			log(`Parsing: ${highlight($args.args.map(a => a.toString()).join(', '))}`);
 
 			const lookup = this.lookup.toString();
@@ -543,7 +578,12 @@ export default class Context extends HookEmitter {
 
 					return $args;
 				});
-		})($args);
+		});
+
+		return hook($args).catch(err => {
+			err.contexts = $args.contexts;
+			throw err;
+		});
 	}
 
 	/**
@@ -573,6 +613,36 @@ export default class Context extends HookEmitter {
 	}
 
 	/**
+	 * Applies the specified style to the string.
+	 *
+	 * @param {String} type - The style type to apply.
+	 * @param {String} str - The string to apply the style to.
+	 * @returns {String}
+	 * @access private
+	 */
+	style(type, str) {
+		const style = this.get('styles', {})[type];
+
+		if (!style || style === 'default') {
+			return str;
+		}
+
+		if (Array.isArray(style)) {
+			return style.length >= 3 ? chalk.rgb.apply(chalk, style)(str) : str;
+		}
+
+		for (const s of style.split('.')) {
+			if (s.charAt(0) === '#') {
+				str = chalk.hex(s)(str);
+			} else {
+				str = chalk.keyword(s)(str);
+			}
+		}
+
+		return str;
+	}
+
+	/**
 	 * Renders the help screen for this context including the parent contexts.
 	 *
 	 * @param {Object} [params] - Various parameters.
@@ -584,7 +654,7 @@ export default class Context extends HookEmitter {
 	 * @returns {Promise}
 	 * @access private
 	 */
-	async renderHelp({ err, out, recursing }) {
+	async renderHelp({ err, out, recursing } = {}) {
 		if (!out) {
 			out = this.outputStream || process.stdout;
 		}
@@ -652,17 +722,17 @@ export default class Context extends HookEmitter {
 			}
 		}
 
-		const list = (label, bucket) => {
+		const list = (heading, bucket) => {
 			if (bucket.list.length) {
-				out.write(`${label}:\n`);
+				out.write(`${this.style('heading', heading)}:\n`);
 				const max = bucket.maxWidths[0];
 				for (const line of bucket.list) {
 					let [ name, desc ] = line;
 					if (desc) {
 						name = `  ${name.padEnd(max)}`;
-						out.write(`${name}  ${wrap(desc, width, name.length + 2)}\n`);
+						out.write(`${this.style('key', name)}  ${this.style('desc', wrap(desc, width, name.length + 2))}\n`);
 					} else {
-						out.write(`  ${name}\n`);
+						out.write(`  ${this.style('key', name)}\n`);
 					}
 				}
 				out.write('\n');
@@ -670,11 +740,11 @@ export default class Context extends HookEmitter {
 		};
 
 		if (err) {
-			out.write(`${err.toString()}\n\n`);
+			out.write(`${this.style('error', err.toString())}\n\n`);
 		}
 
 		if (!recursing) {
-			let usage = 'Usage: ';
+			let usage = '';
 			if (this.parent) {
 				// add in the chain of commands
 				usage += (function walk(ctx) {
@@ -692,10 +762,10 @@ export default class Context extends HookEmitter {
 				})
 				.join('');
 
-			out.write(`${usage}\n\n`);
+			out.write(`Usage: ${this.style('usage', usage)}\n\n`);
 
 			if (this.desc) {
-				out.write(`${wrap(this.desc.substring(0, 1).toUpperCase() + this.desc.substring(1), width)}\n\n`);
+				out.write(`${this.style('desc', wrap(this.desc.substring(0, 1).toUpperCase() + this.desc.substring(1), width))}\n\n`);
 			}
 
 			list('Commands', commands);
@@ -723,8 +793,8 @@ export default class Context extends HookEmitter {
 	 */
 	get(name, defaultValue) {
 		let value = this[name];
-		for (let p = this.parent; value === undefined && p; p = p.parent) {
-			value = p.get(name);
+		for (let p = this.parent; p; p = p.parent) {
+			value = p.get(name, value);
 		}
 		return value !== undefined ? value : defaultValue;
 	}

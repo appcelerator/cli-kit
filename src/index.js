@@ -3,6 +3,11 @@ if (!Error.prepareStackTrace) {
 	require('source-map-support/register');
 }
 
+import snooplogg from 'snooplogg';
+
+export { snooplogg };
+export const { chalk, humanize, moment, pluralize, symbols } = snooplogg;
+
 export {
 	default,
 	default as CLI
