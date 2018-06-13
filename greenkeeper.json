@@ -1,0 +1,17 @@
+{
+  "groups": {
+    "default": {
+      "packages": [
+        "package.json",
+        "test/fixtures/bad-cli-kit-ext/package.json",
+        "test/fixtures/bad-pkg-json/package.json",
+        "test/fixtures/cli-kit-ext/package.json",
+        "test/fixtures/invalid-pkg-json/package.json",
+        "test/fixtures/main-subdir/package.json",
+        "test/fixtures/no-main/package.json",
+        "test/fixtures/no-obj-export/package.json",
+        "test/fixtures/simple-module/package.json"
+      ]
+    }
+  }
+}
