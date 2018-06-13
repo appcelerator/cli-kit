@@ -2,6 +2,8 @@
 
 # cli-kit
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/cb1kenobi/cli-kit.svg)](https://greenkeeper.io/)
+
 [![NPM Version][npm-image]][npm-url]
 [![NPM Downloads][downloads-image]][downloads-url]
 [![Travis CI Build][travis-image]][travis-url]
