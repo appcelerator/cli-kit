@@ -460,7 +460,12 @@ export default class Context extends HookEmitter {
 				log(`Found command: ${highlight(cmd.name)}`);
 				args[i] = new ParsedArgument('command', { command: cmd });
 				$args.contexts.unshift(cmd);
+				$args.hasCommand = true;
 				return $args;
+			} else if (!cmd && Object.keys(this.commands).length) {
+				log(`Did not find command ${highlight(arg)}`);
+				$args.enteredUnknownCommand = true;
+				$args.unknownCommand = arg;
 			}
 
 			return $args;
@@ -565,10 +570,12 @@ export default class Context extends HookEmitter {
 						}
 					}
 
-					// check for missing arguments
-					for (const len = this.args.length; i < len; i++) {
-						if (this.args[i].required) {
-							throw E.MISSING_REQUIRED_ARGUMENT(`Missing required argument "${this.args[i].name}"`, { name: 'args', scope: 'Context.parse', value: this.args[i] });
+					// check for missing arguments if help is not specifiec
+					if (!$args.argv.help) {
+						for (const len = this.args.length; i < len; i++) {
+							if (this.args[i].required) {
+								throw E.MISSING_REQUIRED_ARGUMENT(`Missing required argument "${this.args[i].name}"`, { name: 'args', scope: 'Context.parse', value: this.args[i] });
+							}
 						}
 					}
 
@@ -659,8 +666,12 @@ export default class Context extends HookEmitter {
 	 * @access private
 	 */
 	async renderHelp({ err, out, recursing } = {}) {
-		if (!out) {
-			out = this.outputStream || process.stdout;
+		if (!out && this.outputStream) {
+			out = this.outputStream;
+		} else if (!out && err) {
+			out = process.stderr;
+		} else if (!out && !err) {
+			out = process.stdout;
 		}
 
 		let ctx = this;
