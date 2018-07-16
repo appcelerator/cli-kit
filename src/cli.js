@@ -88,8 +88,10 @@ export default class CLI extends Context {
 					await contexts[1].renderHelp({ err });
 
 					// istanbul ignore if
-					if (params.helpExitCode !== undefined) {
-						process.exit(params.helpExitCode);
+					if (err) {
+						process.exitCode = 1;
+					} else if (params.helpExitCode !== undefined) {
+						process.exitCode = params.helpExitCode;
 					}
 				}
 			});
