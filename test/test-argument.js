@@ -108,7 +108,7 @@ describe('Argument', () => {
 				out
 			});
 
-			await cli.exec();
+			await cli.exec([ '--help' ]);
 
 			expect(out.toString()).to.equal([
 				'Usage: program [options] [<foo>]',
@@ -139,7 +139,7 @@ describe('Argument', () => {
 				out
 			});
 
-			await cli.exec();
+			await cli.exec([ '--help' ]);
 
 			expect(out.toString()).to.equal([
 				'Usage: program [options] <foo>',

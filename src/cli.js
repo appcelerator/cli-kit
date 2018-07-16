@@ -195,6 +195,9 @@ export default class CLI extends Context {
 			$args = await this.parse(unparsedArgs ? unparsedArgs.slice() : process.argv.slice(2));
 			let cmd = $args.contexts[0];
 
+			if (!(cmd instanceof Command) && $args.enteredUnknownCommand) {
+				throw new Error(`Unknown command ${$args.unknownCommand}`);
+			}
 			if (this.help && $args.argv.help) {
 				log('Selected help command');
 				cmd = this.commands.help;

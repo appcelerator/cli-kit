@@ -460,7 +460,12 @@ export default class Context extends HookEmitter {
 				log(`Found command: ${highlight(cmd.name)}`);
 				args[i] = new ParsedArgument('command', { command: cmd });
 				$args.contexts.unshift(cmd);
+				$args.hasCommand = true;
 				return $args;
+			} else if (!cmd && Object.keys(this.commands).length) {
+				log(`Did not find command ${highlight(arg)}`);
+				$args.enteredUnknownCommand = true;
+				$args.unknownCommand = arg;
 			}
 
 			return $args;
