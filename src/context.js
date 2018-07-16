@@ -570,10 +570,12 @@ export default class Context extends HookEmitter {
 						}
 					}
 
-					// check for missing arguments
-					for (const len = this.args.length; i < len; i++) {
-						if (this.args[i].required) {
-							throw E.MISSING_REQUIRED_ARGUMENT(`Missing required argument "${this.args[i].name}"`, { name: 'args', scope: 'Context.parse', value: this.args[i] });
+					// check for missing arguments if help is not specifiec
+					if (!$args.argv.help) {
+						for (const len = this.args.length; i < len; i++) {
+							if (this.args[i].required) {
+								throw E.MISSING_REQUIRED_ARGUMENT(`Missing required argument "${this.args[i].name}"`, { name: 'args', scope: 'Context.parse', value: this.args[i] });
+							}
 						}
 					}
 
