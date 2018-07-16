@@ -659,8 +659,12 @@ export default class Context extends HookEmitter {
 	 * @access private
 	 */
 	async renderHelp({ err, out, recursing } = {}) {
-		if (!out) {
-			out = this.outputStream || process.stdout;
+		if (!out && this.outputStream) {
+			out = this.outputStream;
+		} else if (!out && err) {
+			out = process.stderr;
+		} else if (!out && !err) {
+			out = process.stdout;
 		}
 
 		let ctx = this;
