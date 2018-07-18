@@ -97,13 +97,12 @@ export default class Parser {
 			// gather the default option values and environment variable values
 			const env = this.applyDefaults();
 
-			// fill argv and _
+			// loop over the parsed args and fill in the `argv` and `_`
 			log('Filling argv and _');
 			let i = 0;
-			let name;
 			let extra = [];
-
 			for (const parsedArg of this.args) {
+				let name;
 				if (parsedArg instanceof ParsedArgument) {
 					switch (parsedArg.type) {
 						case 'extra':
@@ -121,7 +120,7 @@ export default class Parser {
 							break;
 					}
 				} else {
-					const arg = this.args[i++];
+					const arg = ctx.args[i++];
 					if (arg) {
 						name = arg.camelCase || ctx.get('camelCase') ? camelCase(arg.name) : arg.name;
 						let value = arg.transform(parsedArg);

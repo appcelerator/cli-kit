@@ -179,34 +179,29 @@ export default class CLI extends Context {
 			log('Parsing complete');
 			log(cmd.name);
 
-			// if (!(cmd instanceof Command) && parser.enteredUnknownCommand) {
-			// 	throw new Error(`Unknown command ${parser.unknownCommand}`);
-			// }
+			if (this.help && parser.argv.help) {
+				log('Selected help command');
+				cmd = this.commands.help;
+				parser.contexts.unshift(cmd);
 
-			// if (this.help && parser.argv.help) {
-			// 	log('Selected help command');
-			// 	cmd = this.commands.help;
-			// 	parser.contexts.unshift(cmd);
-			//
-			// } else if (!(cmd instanceof Command) && this.defaultCommand && (this.commands[this.defaultCommand] instanceof Command)) {
-			// 	log(`Selected default command: ${this.defaultCommand}`);
-			// 	cmd = this.commands[this.defaultCommand];
-			// 	parser.contexts.unshift(cmd);
-			// }
-			//
+			} else if (!(cmd instanceof Command) && this.defaultCommand && (this.commands[this.defaultCommand] instanceof Command)) {
+				log(`Selected default command: ${this.defaultCommand}`);
+				cmd = this.commands[this.defaultCommand];
+				parser.contexts.unshift(cmd);
+			}
 
-			const result = { argv, _ };
-			return cmd && typeof cmd.action === 'function' ? await cmd.action(result) : result;
+			return cmd && typeof cmd.action === 'function' ? await cmd.action(parser) : parser;
 		} catch (err) {
-			console.log(err);
-			// const help = this.help && this.showHelpOnError !== false && this.commands.help;
-			//
-			// if (help) {
-			// 	return await help.action({
-			// 		contexts: [ help, ...(err.contexts || parser.contexts || [ this ]) ],
-			// 		err
-			// 	});
-			// }
+			log(err);
+
+			const help = this.help && this.showHelpOnError !== false && this.commands.help;
+
+			if (help) {
+				return await help.action({
+					contexts: [ help, ...(err.contexts || parser.contexts || [ this ]) ],
+					err
+				});
+			}
 
 			throw err;
 		}
