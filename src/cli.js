@@ -1,9 +1,10 @@
+import Parser from './parser';
 import Command from './command';
 import Context from './context';
 import debug from './debug';
 import E from './errors';
 
-import { declareCLIKitClass } from './util';
+import { declareCLIKitClass, WriteInterceptor } from './util';
 
 const { log } = debug('cli-kit:cli');
 
@@ -157,81 +158,57 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected arguments to be an array', { name: 'args', scope: 'CLI.exec', value: unparsedArgs });
 		}
 
+		let interceptor;
 		let banner = this.get('banner');
 		banner = banner && String(typeof banner === 'function' ? await banner() : banner).trim();
-		const out = this.get('out', process.stdout);
-		const originalWrite = out.write;
 
 		// if we have a banner, then override write() so we can immediately write the banner
 		if (banner) {
-			const dataRegExp = /^\s*[<{]/;
-
-			out.write = (chunk, encoding, cb) => {
-				if (typeof encoding === 'function') {
-					cb = encoding;
-					encoding = null;
-				}
-
-				if (typeof cb !== 'function') {
-					cb = () => {};
-				}
-
-				// restore the original write;
-				out.write = originalWrite;
-
-				if (encoding === 'base64' || encoding === 'binary' || encoding === 'hex') {
-					// noop
-				} else if (this.get('showBanner', true) && !dataRegExp.test(chunk)) {
-					originalWrite.call(out, `${banner}\n\n`);
-				}
-
-				return originalWrite.call(out, chunk, encoding, cb);
-			};
+			interceptor = new WriteInterceptor(
+				[ this.get('out'), process.stdout, process.stderr ],
+				() => this.get('showBanner', true) && banner
+			);
 		}
 
-		let $args;
+		const parser = new Parser();
 
 		try {
-			$args = await this.parse(unparsedArgs ? unparsedArgs.slice() : process.argv.slice(2));
-			let cmd = $args.contexts[0];
+			const { argv, _, contexts } = await parser.parse(unparsedArgs || process.argv.slice(2), this);
+			let cmd = contexts[0];
 
-			if (!(cmd instanceof Command) && $args.enteredUnknownCommand) {
-				throw new Error(`Unknown command ${$args.unknownCommand}`);
-			}
-			if (this.help && $args.argv.help) {
-				log('Selected help command');
-				cmd = this.commands.help;
-				$args.contexts.unshift(cmd);
+			log('Parsing complete');
+			log(cmd.name);
 
-			} else if (!(cmd instanceof Command) && this.defaultCommand && (this.commands[this.defaultCommand] instanceof Command)) {
-				log(`Selected default command: ${this.defaultCommand}`);
-				cmd = this.commands[this.defaultCommand];
-				$args.contexts.unshift(cmd);
-			}
+			// if (!(cmd instanceof Command) && parser.enteredUnknownCommand) {
+			// 	throw new Error(`Unknown command ${parser.unknownCommand}`);
+			// }
 
-			let result;
+			// if (this.help && parser.argv.help) {
+			// 	log('Selected help command');
+			// 	cmd = this.commands.help;
+			// 	parser.contexts.unshift(cmd);
+			//
+			// } else if (!(cmd instanceof Command) && this.defaultCommand && (this.commands[this.defaultCommand] instanceof Command)) {
+			// 	log(`Selected default command: ${this.defaultCommand}`);
+			// 	cmd = this.commands[this.defaultCommand];
+			// 	parser.contexts.unshift(cmd);
+			// }
+			//
 
-			// execute the command
-			if (cmd && typeof cmd.action === 'function') {
-				result = await cmd.action.call(this, $args);
-			}
-
-			return result || $args;
+			const result = { argv, _ };
+			return cmd && typeof cmd.action === 'function' ? await cmd.action(result) : result;
 		} catch (err) {
-			const help = this.help && this.showHelpOnError !== false && this.commands.help;
-
-			if (help) {
-				return await help.action({
-					contexts: [ help, ...(err.contexts || ($args && $args.contexts) || [ this ]) ],
-					err
-				});
-			}
+			console.log(err);
+			// const help = this.help && this.showHelpOnError !== false && this.commands.help;
+			//
+			// if (help) {
+			// 	return await help.action({
+			// 		contexts: [ help, ...(err.contexts || parser.contexts || [ this ]) ],
+			// 		err
+			// 	});
+			// }
 
 			throw err;
-		} finally {
-			if (banner) {
-				out.write = originalWrite;
-			}
 		}
 	}
 }

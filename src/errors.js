@@ -32,13 +32,6 @@ function createError(code, type, desc) {
 	errors[code] = function (msg, meta) {
 		const err = new type(msg);
 
-		Object.defineProperty(err, 'code', {
-			configurable: true,
-			enumerable: true,
-			writable: true,
-			value: `ERR_${code}`
-		});
-
 		if (desc) {
 			if (!meta) {
 				meta = {};
@@ -46,30 +39,30 @@ function createError(code, type, desc) {
 			meta.desc = desc;
 		}
 
-		if (meta) {
-			Object.defineProperty(err, 'meta', {
+		return Object.defineProperties(errors[code], {
+			code: {
 				configurable: true,
-				value: meta,
-				writable: true
-			});
-		}
-
-		return err;
-	};
-
-	// set the name so that it shows up in stack traces
-	Object.defineProperties(errors[code], {
-		name: {
-			configurable: true,
-			value: code,
-			writable: true
-		},
-		toString: {
-			configurable: true,
-			value: function toString() {
-				return `ERR_${code}`;
+				enumerable: true,
+				writable: true,
+				value: `ERR_${code}`
 			},
-			writable: true
-		}
-	});
+			meta: {
+				configurable: true,
+				value: meta || undefined,
+				writable: true
+			},
+			name: {
+				configurable: true,
+				value: code,
+				writable: true
+			},
+			toString: {
+				configurable: true,
+				value: function toString() {
+					return `ERR_${code}`;
+				},
+				writable: true
+			}
+		});
+	};
 }

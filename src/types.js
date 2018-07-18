@@ -20,17 +20,19 @@ export const types = {};
  * then returns the cleaned up list of types or a default value if no types were found.
  *
  * @param {String} type - A list of types to validate.
- * @param {String} [defaultValue] - An optional list of types to default to if no
+ * @param {Array.<String>} [otherTypes] - An optional list of types to default to if no
  * types were originally specified.
  * @returns {String}
  */
-export function checkType(type, defaultValue) {
-	if (type && !types[type]) {
+export function checkType(type, ...otherTypes) {
+	if (!type) {
+		for (const other of otherTypes) {
+			if (typeof other !== 'undefined' && other !== null && types[other]) {
+				return other;
+			}
+		}
+	} else if (!types[type]) {
 		throw E.INVALID_DATA_TYPE(`Unsupported type "${type}"`, { name: 'type', scope: 'types.checkType', types: Object.keys(types), value: type });
-	}
-
-	if (!type && defaultValue) {
-		return defaultValue;
 	}
 
 	return type;

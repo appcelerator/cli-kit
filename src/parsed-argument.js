@@ -7,7 +7,8 @@ export default class ParsedArgument {
 	/**
 	 * Sets the parsed argument type and its data.
 	 *
-	 * @param {String} type - The parsed argument type such as `option` or `command`.
+	 * @param {String} type - The parsed argument type such as `command`, `option`, `extra`, or
+	 * `unknown`.
 	 * @param {Object} [data] - An optional data payload to mix into this parsed argument instance.
 	 * @access public
 	 */

@@ -109,7 +109,11 @@ export default class Option {
 		params.isFlag    = !params.hint;
 
 		// determine the datatype
-		params.datatype  = checkType(params.type, params.hint || 'bool');
+		if (params.isFlag) {
+			params.datatype  = checkType(params.type, 'bool');
+		} else {
+			params.datatype  = checkType(params.type, params.hint, 'string');
+		}
 		if (params.datatype !== 'bool') {
 			if (params.isFlag) {
 				throw E.CONFLICT(Error, 'A flag option must be a bool', { name: 'flag', scope: 'Option.constructor', value: params.dataType });

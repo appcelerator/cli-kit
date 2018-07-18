@@ -108,6 +108,19 @@ export function isFile(file) {
 }
 
 /**
+ * Determines the length of the longest key in the specified object.
+ *
+ * @param {Object} obj - The object to check.
+ * @returns {Number}
+ */
+export function maxKeyLength(obj) {
+	if (typeof obj === 'object') {
+		return Object.keys(obj).reduce((n, key) => Math.max(n, key.length), 0);
+	}
+	return 0;
+}
+
+/**
  * Inserts line breaks into a string so that the text does not exceed the specified width.
  *
  * @param {String} str - The string to line wrap.
@@ -153,4 +166,68 @@ export function wrap(str, width, indent) {
 			return line;
 		})
 		.join('\n');
+}
+
+/**
+ * Overwrites the `write()` method of the supplied streams and the first stream that has data will
+ * fire the specified `callback` and render a string, then restore the original writes.
+ */
+export class WriteInterceptor {
+	/**
+	 * Wires up the streams.
+	 *
+	 * @param {Array.<Writable>} streams - An array of one or more streams to intercept.
+	 * @param {Function} callback - A function to call when data is written to a stream.
+	 * @access public
+	 */
+	constructor(streams, callback) {
+		const dataRegExp = /^\s*[<{[]/;
+
+		this.streams = streams
+			.filter(stream => stream)
+			.map(stream => {
+				const { write } = stream;
+
+				stream.write = (chunk, encoding, cb) => {
+					if (typeof encoding === 'function') {
+						cb = encoding;
+						encoding = null;
+					}
+
+					if (typeof cb !== 'function') {
+						cb = () => {};
+					}
+
+					// restore the original writes
+					this.restore();
+
+					if (encoding === 'base64' || encoding === 'binary' || encoding === 'hex') {
+						// noop
+					} else if (!dataRegExp.test(chunk)) {
+						const str = callback();
+						if (str) {
+							write.call(stream, `${str}\n\n`);
+						}
+					}
+
+					return write.call(stream, chunk, encoding, cb);
+				};
+
+				return {
+					stream,
+					write
+				};
+			});
+	}
+
+	/**
+	 * Restores the original `write()` method for each stream.
+	 *
+	 * @access public
+	 */
+	restore() {
+		for (const { stream, write } of this.streams) {
+			stream.write = write;
+		}
+	}
 }
