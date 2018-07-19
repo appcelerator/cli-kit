@@ -1,9 +1,12 @@
 import AliasLookup from './alias-lookup';
 import Argument from './argument';
+import ArgumentList from './argument-list';
+import CommandList from './command-list';
 import debug from './debug';
 import E from './errors';
 import HookEmitter from 'hook-emitter';
 import Option from './option';
+import OptionList from './option-list';
 
 import { declareCLIKitClass, maxKeyLength, wrap } from './util';
 import { defaultStyles } from './styles';
@@ -35,22 +38,23 @@ export default class Context extends HookEmitter {
 	 * Constructs a context instance.
 	 *
 	 * @param {Object} [params] - Various parameters.
+	 * @param {Boolean} [params.allowUnknownOptions=false] - When `true`, any unknown flags or
+	 * options will be treated as an option. When `false`, unknown flags/options will be treated as
+	 * arguments.
 	 * @param {Array<Object>} [params.args] - An array of arguments.
 	 * @param {Boolean} [params.camelCase=true] - Camel case option names.
-	 * @param {Object} [params.commands] - A map of command names to command descriptors.
+	 * @param {Object|Map} [params.commands] - A map of command names to command descriptors.
 	 * @param {String} [params.desc] - The description of the CLI or command displayed in the help
 	 * output.
 	 * @param {Object|Array.<String>} [params.extensions] - An map of extension names to extension
 	 * paths or an array of extension paths. A extension path is either a path to a directory
 	 * containing a Node.js module, a path to a .js file, or the name of a executable.
-	 * @param {String} [params.name] - The name of the context such as the program or the command name.
-	 * @param {Array<Object>|Object} [params.options] - An array of options.
+	 * @param {String} [params.name] - The name of the context such as the program or the command
+	 * name.
+	 * @param {Array<Object>|Object|Map} [params.options] - An array of options.
 	 * @param {Context} [params.parent] - The parent context.
 	 * @param {Object} [params.styles] - A map of style overrides.
 	 * @param {String} [params.title] - The context title.
-	 * @param {Boolean} [params.allowUnknownOptions=false] - When `true`, any unknown flags or options
-	 * will be treated as an option. When `false`, unknown flags/options will be treated as
-	 * arguments.
 	 * @access public
 	 */
 	constructor(params = {}) {
@@ -90,9 +94,9 @@ export default class Context extends HookEmitter {
 
 		declareCLIKitClass(this, 'Context');
 
-		this.args     = [];
-		this.commands = {};
-		this.options  = {};
+		this.args     = new ArgumentList();
+		this.commands = new CommandList();
+		this.options  = new OptionList();
 
 		this.styles = Object.assign({}, defaultStyles, params.styles);
 
@@ -107,8 +111,10 @@ export default class Context extends HookEmitter {
 
 		// initialize the commands
 		if (params.commands) {
-			for (const name of Object.keys(params.commands)) {
-				this.command(name, params.commands[name]);
+			const isMap = params.commands instanceof Map;
+			const entries = isMap ? params.commands.entries() : Object.entries(params.commands);
+			for (const [ name, cmd ] of entries) {
+				this.command(name, cmd);
 			}
 		}
 
@@ -117,7 +123,8 @@ export default class Context extends HookEmitter {
 			// them into this context, but only if they option does not already exist in a parent
 			// context
 			const isCLI = params.clikit.has('CLI');
-			for (const [ group, options ] of Object.entries(params.options)) {
+			const entries = params.options instanceof Map ? params.options.entries() : Object.entries(params.options);
+			for (const [ group, options ] of entries) {
 				for (const option of options) {
 					let add = true;
 
@@ -125,7 +132,7 @@ export default class Context extends HookEmitter {
 						// scan all parents to see if this flag is a dupe
 						let found = false;
 						for (let p = this.parent; p && !found; p = p.parent) {
-							for (const opts of Object.values(p.options)) {
+							for (const opts of p.options.values()) {
 								for (const opt of opts) {
 									if (opt.name === option.name) {
 										found = true;
@@ -192,7 +199,7 @@ export default class Context extends HookEmitter {
 	 * @access public
 	 */
 	argument(arg = {}) {
-		this.args.push(arg instanceof Argument ? arg : new Argument(arg));
+		this.args.add(arg);
 		return this;
 	}
 
@@ -327,10 +334,7 @@ export default class Context extends HookEmitter {
 		const opt = optOrFormat instanceof Option ? optOrFormat : new Option(optOrFormat, params);
 		group || (group = opt.group || '');
 
-		if (!Array.isArray(this.options[group])) {
-			this.options[group] = [];
-		}
-		this.options[group].push(opt);
+		this.options.add(group, opt);
 
 		if (opt.long) {
 			this.lookup.long[opt.long] = opt;
@@ -370,16 +374,16 @@ export default class Context extends HookEmitter {
 	 * @access private
 	 */
 	registerCommand(cmd) {
-		if (this.commands[cmd.name]) {
+		if (this.commands.has(cmd.name)) {
 			throw E.ALREADY_EXISTS(`Command "${cmd.name}" already exists`, { name: 'cmd',  scope: 'Context.registerCommand', value: cmd });
 		}
 
-		this.commands[cmd.name] = cmd;
+		this.commands.add(cmd);
 
 		this.lookup.commands[cmd.name] = cmd;
 		if (cmd.aliases) {
 			for (const alias of Object.keys(cmd.aliases)) {
-				if (!this.commands[alias]) {
+				if (!this.commands.has(alias)) {
 					this.lookup.commands[alias] = cmd;
 				}
 			}
@@ -400,54 +404,90 @@ export default class Context extends HookEmitter {
 	 * @returns {Promise}
 	 * @access private
 	 */
-	async renderHelp({ err, out, recursing } = {}) {
-		if (!out && this.outputStream) {
-			out = this.outputStream;
-		} else if (!out && err) {
-			out = process.stderr;
-		} else if (!out && !err) {
-			out = process.stdout;
+	async renderHelp({ err, out, depth = 0 } = {}) {
+		if (!out) {
+			out = this.outputStream || (err && process.stderr) || process.stdout;
 		}
 
 		const width = Math.max(this.get('width', process.stdout.columns || 100), 40);
 
-		const print = ({ heading, items }) => {
-			if (heading) {
-				out.write(`${this.style('heading', wrap(heading))}\n`);
+		// only display the error, usage, and description if this is the beginning of the render
+		// help chain
+		if (!depth) {
+			// display the error
+			if (err) {
+				out.write(`${this.style('error', err.toString())}\n\n`);
 			}
 
-			const colWidths = [];
-			for (const item of items) {
-				let i = 0;
-				for (const value of Object.values(item)) {
-					colWidths[i] = Math.max(colWidths[i++] || 0, String(value).length);
-				}
+			// display the usage
+			let usage = '';
+			if (this.parent) {
+				// add in the chain of commands
+				usage += (function walk(ctx) {
+					return (ctx.parent ? walk(ctx.parent) + ' ' : '') + ctx.name;
+				}(this));
+			} else {
+				usage += this.name;
+			}
+			usage += this.commands.count ? ' <command>' : '';
+			usage += this.options.count ? ' [options]' : '';
+			usage += this.args
+				.filter(arg => !arg.hidden)
+				.map(arg => {
+					return arg.required ? ` <${arg.name}>` : ` [<${arg.name}>]`;
+				})
+				.join('');
+
+			out.write(`Usage: ${this.style('usage', usage)}\n\n`);
+
+			// display the description
+			if (this.desc) {
+				out.write(`${this.style('desc', wrap(this.desc.substring(0, 1).toUpperCase() + this.desc.substring(1), width))}\n\n`);
 			}
 
-			for (const item of items) {
-				let i = 0;
-				for (const value of Object.values(item)) {
-					// this.style('key',
-					out.write('  ' + String(value).padEnd(colWidths[i]));
-					i++;
-				}
-				out.write('\n');
-			}
-		};
-
-		const commands = Object.keys(this.commands).sort();
-		if (commands.length) {
-			print({
-				heading: 'Commands:',
-				items: commands
-					.filter(name => !this.commands[name].hidden)
-					.map(name => ({ name, desc: this.commands[name].desc }))
-			});
+			// render this context's commands
+			// TODO
 		}
+
+		// const print = ({ heading, items }) => {
+		// 	if (heading) {
+		// 		out.write(`${this.style('heading', wrap(heading))}\n`);
+		// 	}
+		//
+		// 	const colWidths = [];
+		// 	for (const item of items) {
+		// 		let i = 0;
+		// 		for (const value of Object.values(item)) {
+		// 			colWidths[i] = Math.max(colWidths[i++] || 0, String(value).length);
+		// 		}
+		// 	}
+		//
+		// 	for (const item of items) {
+		// 		let i = 0;
+		// 		for (const value of Object.values(item)) {
+		// 			if (i) {
+		// 				out.write('  ' + String(value).padEnd(colWidths[i]));
+		// 			} else {
+		// 				out.write('  ' + this.style('name', String(value).padEnd(colWidths[i])));
+		// 			}
+		// 			i++;
+		// 		}
+		// 		out.write('\n');
+		// 	}
+		// };
+		//
+		// const commands = ;
+		// if (this.commands.count) {
+		// 	print({
+		// 		heading: 'Commands:',
+		// 		items: this.commands.keys()
+		// 			.map(
+		// 			.filter(name => !this.commands.get(name).hidden)
+		// 			.map(name => ({ name, desc: this.commands[name].desc }))
+		// 	});
+		// }
 
 		/*
-		const width = Math.max(this.get('width', process.stdout.columns || 100), 40);
-
 		const add = (bucket, columns) => {
 			for (let i = 0, l = columns.length; i < l; i++) {
 				let len = 0;
@@ -543,38 +583,6 @@ export default class Context extends HookEmitter {
 			}
 		};
 
-		if (err) {
-			out.write(`${this.style('error', err.toString())}\n\n`);
-		}
-
-		if (!recursing) {
-			let usage = '';
-			if (this.parent) {
-				// add in the chain of commands
-				usage += (function walk(ctx) {
-					return (ctx.parent ? walk(ctx.parent) + ' ' : '') + ctx.name;
-				}(this));
-			} else {
-				usage += this.name;
-			}
-			usage += commands.list.length ? ' <command>' : '';
-			usage += options.list.length ? ' [options]' : '';
-			usage += this.args
-				.filter(arg => !arg.hidden)
-				.map(arg => {
-					return arg.required ? ` <${arg.name}>` : ` [<${arg.name}>]`;
-				})
-				.join('');
-
-			out.write(`Usage: ${this.style('usage', usage)}\n\n`);
-
-			if (this.desc) {
-				out.write(`${this.style('desc', wrap(this.desc.substring(0, 1).toUpperCase() + this.desc.substring(1), width))}\n\n`);
-			}
-
-			list('Commands', commands);
-		}
-
 		list(this.title ? `${this.title} arguments` : 'Arguments', args);
 
 		list(this.title ? `${this.title} options` : 'Options', options);
@@ -583,7 +591,7 @@ export default class Context extends HookEmitter {
 		if (this.parent) {
 			await this.parent.renderHelp({
 				out,
-				recursing: true
+				depth: depth + 1
 			});
 		}
 	}

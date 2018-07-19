@@ -65,117 +65,6 @@ export default class Parser {
 	}
 
 	/**
-	 * Parses the command line arguments.
-	 *
-	 * @param {Array} args - An array of raw, unparsed arguments.
-	 * @param {Context} ctx - The context to reference for commands, options, and arguments.
-	 * @returns {Promise}
-	 * @access public
-	 */
-	async parse(args, ctx) {
-		try {
-			if (!Array.isArray(args)) {
-				throw E.INVALID_ARGUMENT('Expected args to be an array', { name: 'args', scope: 'Parser.parse', value: args });
-			}
-
-			if (!(ctx instanceof Context)) {
-				throw E.INVALID_ARGUMENT('Expected ctx to be a context', { name: 'ctx', scope: 'Parser.parse', value: ctx });
-			}
-
-			this.args = args;
-			log(`Processing ${pluralize('argument', args.length, true)}: ${highlight(this.args.join(', '))}`);
-
-			// add the context to the stack
-			this.contexts.unshift(ctx);
-
-			// process the arguments against the context
-			await this.applyContext(ctx);
-
-			// from here, we want to deal with the most specific context
-			ctx = this.contexts[0];
-
-			// gather the default option values and environment variable values
-			const env = this.applyDefaults();
-
-			// loop over the parsed args and fill in the `argv` and `_`
-			log('Filling argv and _');
-			let i = 0;
-			let extra = [];
-			for (const parsedArg of this.args) {
-				let name;
-				if (parsedArg instanceof ParsedArgument) {
-					switch (parsedArg.type) {
-						case 'extra':
-							extra = parsedArg.args;
-							break;
-
-						case 'option':
-							name = parsedArg.option.camelCase || ctx.get('camelCase') ? camelCase(parsedArg.option.name) : parsedArg.option.name;
-							this.argv[name] = parsedArg.value;
-							break;
-
-						case 'unknown':
-							name = ctx.get('camelCase') ? camelCase(parsedArg.name) : parsedArg.name;
-							this.argv[name] = true;
-							break;
-					}
-				} else {
-					const arg = ctx.args[i++];
-					if (arg) {
-						name = arg.camelCase || ctx.get('camelCase') ? camelCase(arg.name) : arg.name;
-						let value = arg.transform(parsedArg);
-
-						if (typeof arg.callback === 'function') {
-							const newValue = await arg.callback.call(arg, value);
-							if (newValue !== undefined) {
-								value = newValue;
-							}
-						}
-
-						if (arg.multiple) {
-							// if this arg gobbles up multiple parsed args, then we
-							// decrement `i` so that we never increment it and no further
-							// arguments will be applied
-							i--;
-							if (Array.isArray(this.argv[name])) {
-								this.argv[name].push(value);
-							} else {
-								this.argv[name] = [ value ];
-							}
-						} else {
-							this.argv[name] = value;
-						}
-					} else {
-						this._.push(parsedArg);
-					}
-				}
-			}
-
-			// add the extra items
-			this._.push.apply(this._, extra);
-
-			// check for missing arguments if help is not specifiec
-			if (!this.argv.help) {
-				// note that `i` has been incrementing above for each known argument
-				for (const len = this.args.length; i < len; i++) {
-					if (this.args[i].required) {
-						throw E.MISSING_REQUIRED_ARGUMENT(`Missing required argument "${this.args[i].name}"`, { name: 'args', scope: 'Parser.parse', value: this.args[i] });
-					}
-				}
-			}
-
-			// process env vars
-			log('Mixing in environment variable values');
-			Object.assign(this.argv, env);
-
-			return this;
-		} catch (err) {
-			err.contexts = this.contexts;
-			throw err;
-		}
-	}
-
-	/**
 	 * Processes the arguments against the given context. If a command is found, it recursively
 	 * calls itself.
 	 *
@@ -409,7 +298,7 @@ export default class Parser {
 		for (let i = len; i; i--) {
 			const ctx = this.contexts[i - 1];
 
-			for (const options of Object.values(ctx.options)) {
+			for (const options of ctx.options.values()) {
 				for (const option of options) {
 					if (option.name) {
 						const name = option.camelCase || ctx.get('camelCase') ? camelCase(option.name) : option.name;
@@ -432,13 +321,113 @@ export default class Parser {
 	}
 
 	/**
-	 * Returns a reconstruction of `process.argv`.
+	 * Parses the command line arguments.
 	 *
-	 * @returns {Array.<String>}
+	 * @param {Array} args - An array of raw, unparsed arguments.
+	 * @param {Context} ctx - The context to reference for commands, options, and arguments.
+	 * @returns {Promise}
 	 * @access public
 	 */
-	valueOf() {
-		return this.args.map(arg => String(arg));
+	async parse(args, ctx) {
+		try {
+			if (!Array.isArray(args)) {
+				throw E.INVALID_ARGUMENT('Expected args to be an array', { name: 'args', scope: 'Parser.parse', value: args });
+			}
+
+			if (!(ctx instanceof Context)) {
+				throw E.INVALID_ARGUMENT('Expected ctx to be a context', { name: 'ctx', scope: 'Parser.parse', value: ctx });
+			}
+
+			this.args = args;
+			log(`Processing ${pluralize('argument', args.length, true)}: ${highlight(this.args.join(', '))}`);
+
+			// add the context to the stack
+			this.contexts.unshift(ctx);
+
+			// process the arguments against the context
+			await this.applyContext(ctx);
+
+			// from here, we want to deal with the most specific context
+			ctx = this.contexts[0];
+
+			// gather the default option values and environment variable values
+			const env = this.applyDefaults();
+
+			// loop over the parsed args and fill in the `argv` and `_`
+			log('Filling argv and _');
+			let i = 0;
+			let extra = [];
+			for (const parsedArg of this.args) {
+				let name;
+				if (parsedArg instanceof ParsedArgument) {
+					switch (parsedArg.type) {
+						case 'extra':
+							extra = parsedArg.args;
+							break;
+
+						case 'option':
+							name = parsedArg.option.camelCase || ctx.get('camelCase') ? camelCase(parsedArg.option.name) : parsedArg.option.name;
+							this.argv[name] = parsedArg.value;
+							break;
+
+						case 'unknown':
+							name = ctx.get('camelCase') ? camelCase(parsedArg.name) : parsedArg.name;
+							this.argv[name] = true;
+							break;
+					}
+				} else {
+					const arg = ctx.args[i++];
+					if (arg) {
+						name = arg.camelCase || ctx.get('camelCase') ? camelCase(arg.name) : arg.name;
+						let value = arg.transform(parsedArg);
+
+						if (typeof arg.callback === 'function') {
+							const newValue = await arg.callback.call(arg, value);
+							if (newValue !== undefined) {
+								value = newValue;
+							}
+						}
+
+						if (arg.multiple) {
+							// if this arg gobbles up multiple parsed args, then we decrement `i` so
+							// that we never increment it and no further arguments will be applied
+							i--;
+							if (Array.isArray(this.argv[name])) {
+								this.argv[name].push(value);
+							} else {
+								this.argv[name] = [ value ];
+							}
+						} else {
+							this.argv[name] = value;
+						}
+					} else {
+						this._.push(parsedArg);
+					}
+				}
+			}
+
+			// add the extra items
+			this._.push.apply(this._, extra);
+
+			// check for missing arguments if help is not specifiec
+			if (!this.argv.help) {
+				// note that `i` has been incrementing above for each known argument
+				for (const len = this.args.length; i < len; i++) {
+					if (this.args[i].required) {
+						throw E.MISSING_REQUIRED_ARGUMENT(`Missing required argument "${this.args[i].name}"`, { name: 'args', scope: 'Parser.parse', value: this.args[i] });
+					}
+				}
+			}
+
+			// process env vars
+			log('Mixing in environment variable values');
+			Object.assign(this.argv, env);
+
+			return this;
+		} catch (err) {
+			err.contexts = this.contexts;
+			throw err;
+		}
 	}
 
 	/**
@@ -449,5 +438,15 @@ export default class Parser {
 	 */
 	toString() {
 		return this.valueOf().join(' ');
+	}
+
+	/**
+	 * Returns a reconstruction of `process.argv`.
+	 *
+	 * @returns {Array.<String>}
+	 * @access public
+	 */
+	valueOf() {
+		return this.args.map(arg => String(arg));
 	}
 }

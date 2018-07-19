@@ -1,6 +1,6 @@
 export const defaultStyles = {
 	heading:              'default',
-	key:                  'cyan',
+	name:                 'cyan',
 	usage:                'cyan',
 	desc:                 'default',
 	'extended-desc':      'default',

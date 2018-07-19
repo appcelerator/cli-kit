@@ -6,7 +6,7 @@ import E from './errors';
 
 import { declareCLIKitClass, WriteInterceptor } from './util';
 
-const { log } = debug('cli-kit:cli');
+const { error, log } = debug('cli-kit:cli');
 
 /**
  * Defines a CLI context and is responsible for parsing the command line arguments.
@@ -192,7 +192,7 @@ export default class CLI extends Context {
 
 			return cmd && typeof cmd.action === 'function' ? await cmd.action(parser) : parser;
 		} catch (err) {
-			log(err);
+			error(err);
 
 			const help = this.help && this.showHelpOnError !== false && this.commands.help;
 
