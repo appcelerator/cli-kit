@@ -17,6 +17,8 @@ const { highlight, note } = debug.styles;
 
 /**
  * Defines a namespace that wraps an external program or script.
+ *
+ * @extends {Command}
  */
 export default class Extension extends Command {
 	/**
@@ -73,6 +75,7 @@ export default class Extension extends Command {
 					try {
 						ctx = require(pkg.main);
 					} catch (e) {
+						console.log(e.toString());
 						err = e;
 					}
 
@@ -93,7 +96,7 @@ export default class Extension extends Command {
 
 					} else if (params.ignoreInvalidExtensions || (params.parent && params.parent.get('ignoreInvalidExtensions', false))) {
 						params.action = () => {
-							const out = this.outputStream || process.stdout;
+							const out = this.get('out', process.stdout);
 							if (err) {
 								out.write(`Bad extension: ${pkg.json.name}\n`);
 								out.write(`  ${err.toString()}\n`);
@@ -147,7 +150,7 @@ export default class Extension extends Command {
 
 		} else if (this.get('ignoreMissingExtensions', false)) {
 			this.action = () => {
-				const out = this.outputStream || process.stdout;
+				const out = this.get('out', process.stdout);
 				out.write(`Extension not found: ${extensionPath}\n`);
 			};
 
@@ -171,7 +174,7 @@ export default class Extension extends Command {
 				return reject(E.NO_EXECUTABLE('No executable to run', { name: 'executable', scope: 'Extension.run', value: this.executable }));
 			}
 
-			const out = this.outputStream;
+			const out = this.get('out');
 			const stdout = out || process.stdout;
 			const stderr = out || process.stderr;
 

@@ -1,11 +1,14 @@
 import Context from './context';
 import E from './errors';
+import helpCommand from './help';
 import Option from './option';
 
 import { declareCLIKitClass } from './util';
 
 /**
  * Defines a command and its options and arguments.
+ *
+ * @extends {Context}
  */
 export default class Command extends Context {
 	/**
@@ -34,17 +37,13 @@ export default class Command extends Context {
 				}
 
 				const { defaultCommand } = params;
-				params.action = (...args) => {
+				params.action = async parser => {
 					if (defaultCommand === 'help' && this.get('help')) {
-						this.renderHelp();
-						const helpExitCode = this.get('helpExitCode', params.helpExitCode);
-						if (helpExitCode !== undefined) {
-							process.exit(helpExitCode);
-						}
+						await helpCommand.action(parser);
 					} else {
 						const cmd = defaultCommand && this.commands[defaultCommand];
 						if (cmd) {
-							return cmd.action(...args);
+							return cmd.action(parser);
 						}
 					}
 				};

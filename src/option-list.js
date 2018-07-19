@@ -2,6 +2,8 @@ import { declareCLIKitClass } from './util';
 
 /**
  * Stores a map of `Option` instances that have been registered for a context.
+ *
+ * @extends {Map}
  */
 export default class OptionList extends Map {
 	/**
@@ -35,5 +37,17 @@ export default class OptionList extends Map {
 		}
 		options.push(option);
 		this.count++;
+	}
+
+	/**
+	 * Renders the list of commands for the help output.
+	 *
+	 * @param {Object} params - Various parameters.
+	 * @param {WritableStream} params.out - The stream to write output to.
+	 * @param {Number} params.width - The width of the terminal.
+	 * @access public
+	 */
+	renderHelp({ out, width }) {
+		out.write('\nhi from options\n');
 	}
 }

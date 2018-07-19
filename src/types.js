@@ -42,13 +42,43 @@ export function checkType(type, ...otherTypes) {
  * Transforms a value to the first successfully transformed data type.
  *
  * @param {*} value - The value to transform.
- * @param {String} type - A list of data types to try to coerce the value into.
+ * @param {String} [type] - A specific data type to try to coerce the value into.
  * @returns {*}
  */
 export function transformValue(value, type) {
-	if (types[type] && typeof types[type].transform === 'function') {
+	if (!type) {
+		const lvalue = value.toLowerCase();
+
+		// try as a boolean
+		if (lvalue === 'true') {
+			return true;
+		}
+		if (lvalue === 'false') {
+			return false;
+		}
+
+		// try as a number
+		const num = Number(value);
+		if (!isNaN(num)) {
+			return num;
+		}
+
+		// try as a date
+		if (dateRegExp.test(value)) {
+			return new Date(value);
+		}
+
+		// try as json
+		try {
+			return JSON.parse(value);
+		} catch (e) {
+			// nope
+		}
+	} else if (types[type] && typeof types[type].transform === 'function') {
 		value = types[type].transform(value);
 	}
+
+	// return the original value
 	return value;
 }
 

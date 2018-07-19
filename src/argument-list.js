@@ -4,6 +4,8 @@ import { declareCLIKitClass } from './util';
 
 /**
  * Stores a list of `Argument` instances that have been registered for a context.
+ *
+ * @extends {Array}
  */
 export default class ArgumentList extends Array {
 	/**
@@ -34,5 +36,17 @@ export default class ArgumentList extends Array {
 	 */
 	get count() {
 		return this.args.length;
+	}
+
+	/**
+	 * Renders the list of commands for the help output.
+	 *
+	 * @param {Object} params - Various parameters.
+	 * @param {WritableStream} params.out - The stream to write output to.
+	 * @param {Number} params.width - The width of the terminal.
+	 * @access public
+	 */
+	renderHelp({ out, width }) {
+		out.write('\nhi from arguments\n');
 	}
 }

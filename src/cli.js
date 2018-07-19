@@ -3,6 +3,7 @@ import Command from './command';
 import Context from './context';
 import debug from './debug';
 import E from './errors';
+import helpCommand from './help';
 
 import { declareCLIKitClass, WriteInterceptor } from './util';
 
@@ -10,6 +11,8 @@ const { error, log } = debug('cli-kit:cli');
 
 /**
  * Defines a CLI context and is responsible for parsing the command line arguments.
+ *
+ * @extends {Context}
  */
 export default class CLI extends Context {
 	/**
@@ -82,20 +85,7 @@ export default class CLI extends Context {
 				this.defaultCommand = 'help';
 			}
 
-			this.command('help', {
-				hidden: true,
-				async action({ contexts, err }) {
-					// the first context is the help command, so just skip to the second context
-					await contexts[1].renderHelp({ err });
-
-					// istanbul ignore if
-					if (err) {
-						process.exitCode = 1;
-					} else if (params.helpExitCode !== undefined) {
-						process.exitCode = params.helpExitCode;
-					}
-				}
-			});
+			this.command('help', Object.assign({}, helpCommand));
 
 			this.option('-h, --help', 'displays the help screen');
 		}
@@ -195,7 +185,6 @@ export default class CLI extends Context {
 			error(err);
 
 			const help = this.help && this.showHelpOnError !== false && this.commands.help;
-
 			if (help) {
 				return await help.action({
 					contexts: [ help, ...(err.contexts || parser.contexts || [ this ]) ],

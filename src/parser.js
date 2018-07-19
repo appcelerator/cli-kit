@@ -5,6 +5,7 @@ import E from './errors';
 import ParsedArgument from './parsed-argument';
 
 import { declareCLIKitClass } from './util';
+import { transformValue } from './types';
 
 const { log } = debug('cli-kit:parser');
 const { highlight, note } = debug.styles;
@@ -117,10 +118,10 @@ export default class Parser {
 						}
 
 						if (option) {
-							log(`Overriding option: ${highlight(arg.option.name)}`);
+							log(`Overriding option: ${highlight(option.name)}`);
 						} else {
 							// not an option in this context, leave it alone
-							log(`Skipping known option: ${highlight(arg.option.name)}`);
+							log(`Skipping ${arg.type === 'unknown' ? 'un' : ''}known option: ${highlight(arg.name)}`);
 							return dispatch(i + 1).then(resolve, reject);
 						}
 					} else {
@@ -166,6 +167,7 @@ export default class Parser {
 							input: [ arg ],
 							isFlag,
 							match: m,
+							negated,
 							option,
 							value: option.transform(m[2], negated)
 						});
@@ -243,15 +245,17 @@ export default class Parser {
 
 				// if the argument matched an option pattern, but didn't match a defined option,
 				// then we can add it as an unknown option which will eventually become a flag
-				if (option === null && ctx.get('allowUnknownOptions')) {
-					log('Found unknown option');
+				if (option === null) {
+					log(`Found unknown option: ${highlight(arg)}`);
 
 					// treat unknown options as flags
 					args[i] = new ParsedArgument('unknown', {
 						input: [ arg ],
 						match: m,
-						name: m[1],
-						orig: arg
+						name: negated ? negated[1] : m[1],
+						negated,
+						orig: arg,
+						value: m[2]
 					});
 
 				} else {
@@ -371,8 +375,20 @@ export default class Parser {
 							break;
 
 						case 'unknown':
+							// since this is an unknown option, we try to guess it's type and if it's
+							// a bool, we will honor the negate (e.g. --no-<name>)
+							let { value } = parsedArg;
+							value = value === undefined ? true : transformValue(value);
+							if (typeof value === 'boolean' && parsedArg.negated) {
+								value = !value;
+							}
+
 							name = ctx.get('camelCase') ? camelCase(parsedArg.name) : parsedArg.name;
-							this.argv[name] = true;
+							this.argv[name] = value;
+
+							if (ctx.get('treatUnknownOptionsAsArguments')) {
+								this._.push(parsedArg.input[0]);
+							}
 							break;
 					}
 				} else {

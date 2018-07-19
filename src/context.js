@@ -8,7 +8,7 @@ import HookEmitter from 'hook-emitter';
 import Option from './option';
 import OptionList from './option-list';
 
-import { declareCLIKitClass, maxKeyLength, wrap } from './util';
+import { declareCLIKitClass, wrap } from './util';
 import { defaultStyles } from './styles';
 
 /**
@@ -38,9 +38,6 @@ export default class Context extends HookEmitter {
 	 * Constructs a context instance.
 	 *
 	 * @param {Object} [params] - Various parameters.
-	 * @param {Boolean} [params.allowUnknownOptions=false] - When `true`, any unknown flags or
-	 * options will be treated as an option. When `false`, unknown flags/options will be treated as
-	 * arguments.
 	 * @param {Array<Object>} [params.args] - An array of arguments.
 	 * @param {Boolean} [params.camelCase=true] - Camel case option names.
 	 * @param {Object|Map} [params.commands] - A map of command names to command descriptors.
@@ -55,6 +52,10 @@ export default class Context extends HookEmitter {
 	 * @param {Context} [params.parent] - The parent context.
 	 * @param {Object} [params.styles] - A map of style overrides.
 	 * @param {String} [params.title] - The context title.
+	 * @param {Boolean} [params.treatUnknownOptionsAsArguments=false] - When `true`, any argument is
+	 * encountered during parsing that resembles a option that does not exist, it will add it
+	 * untouched to `_` as an argument as well as to `argv` as a boolean flag. When `false`, it will
+	 * only add the argument to `argv` as a boolean flag.
 	 * @access public
 	 */
 	constructor(params = {}) {
@@ -239,7 +240,7 @@ export default class Context extends HookEmitter {
 				throw E.INVALID_ARGUMENT('Expected command parameters to be an object', { name: 'params', scope: 'Context.command', value: params });
 			}
 
-			params.allowUnknownOptions = this.allowUnknownOptions;
+			params.treatUnknownOptionsAsArguments = this.treatUnknownOptionsAsArguments;
 			params.parent = this;
 
 			cmd = new Command(name, params);
@@ -357,16 +358,6 @@ export default class Context extends HookEmitter {
 	}
 
 	/**
-	 * Returns the output stream.
-	 *
-	 * @returns {Stream}
-	 * @access private
-	 */
-	get outputStream() {
-		return this.get('out');
-	}
-
-	/**
 	 * Registers a command or extension to add to this context's list of commands and alias lookup.
 	 *
 	 * @param {Command} cmd - The command instance.
@@ -404,196 +395,75 @@ export default class Context extends HookEmitter {
 	 * @returns {Promise}
 	 * @access private
 	 */
-	async renderHelp({ err, out, depth = 0 } = {}) {
-		if (!out) {
-			out = this.outputStream || (err && process.stderr) || process.stdout;
-		}
+	async generateHelp({ err, depth = 0 } = {}) {
+		const results = {};
 
-		const width = Math.max(this.get('width', process.stdout.columns || 100), 40);
-
-		// only display the error, usage, and description if this is the beginning of the render
-		// help chain
+		// on the first call to help(), we add the error, usage, description, commands and arguments
 		if (!depth) {
-			// display the error
+			// set the error, if exists
 			if (err) {
-				out.write(`${this.style('error', err.toString())}\n\n`);
-			}
-
-			// display the usage
-			let usage = '';
-			if (this.parent) {
-				// add in the chain of commands
-				usage += (function walk(ctx) {
-					return (ctx.parent ? walk(ctx.parent) + ' ' : '') + ctx.name;
-				}(this));
+				results.error = {
+					code:    err.code,
+					message: err.message,
+					stack:   err.stack,
+					type:    err.constructor && err.constructor.name || null
+				};
 			} else {
-				usage += this.name;
+				results.error = null;
 			}
-			usage += this.commands.count ? ' <command>' : '';
-			usage += this.options.count ? ' [options]' : '';
-			usage += this.args
-				.filter(arg => !arg.hidden)
-				.map(arg => {
-					return arg.required ? ` <${arg.name}>` : ` [<${arg.name}>]`;
-				})
-				.join('');
 
-			out.write(`Usage: ${this.style('usage', usage)}\n\n`);
+			// set the usage line
+			results.usage = '';
+			// if (this.parent) {
+			// 	// add in the chain of commands
+			// 	usage += (function walk(ctx) {
+			// 		return (ctx.parent ? walk(ctx.parent) + ' ' : '') + ctx.name;
+			// 	}(this));
+			// } else {
+			// 	usage += this.name;
+			// }
+			// usage += this.commands.count ? ' <command>' : '';
+			// usage += this.options.count ? ' [options]' : '';
+			// usage += this.args
+			// 	.filter(arg => !arg.hidden)
+			// 	.map(arg => {
+			// 		return arg.required ? ` <${arg.name}>` : ` [<${arg.name}>]`;
+			// 	})
+			// 	.join('');
 
-			// display the description
-			if (this.desc) {
-				out.write(`${this.style('desc', wrap(this.desc.substring(0, 1).toUpperCase() + this.desc.substring(1), width))}\n\n`);
-			}
+			// out.write(`Usage: ${this.style('usage', usage)}\n`);
+			//
+			// // display the description
+			// if (this.desc) {
+			// 	out.write(`\n${this.style('desc', wrap(this.desc.substring(0, 1).toUpperCase() + this.desc.substring(1), width))}\n`);
+			// }
 
 			// render this context's commands
-			// TODO
+			// this.commands.renderHelp({
+			// 	colors: this.get('colors'),
+			// 	out,
+			// 	styles: this.get('styles'),
+			// 	width
+			// });
+
+			// render this context's arguments
+			// this.args.renderHelp({ ctx: this, out, width });
 		}
 
-		// const print = ({ heading, items }) => {
-		// 	if (heading) {
-		// 		out.write(`${this.style('heading', wrap(heading))}\n`);
-		// 	}
-		//
-		// 	const colWidths = [];
-		// 	for (const item of items) {
-		// 		let i = 0;
-		// 		for (const value of Object.values(item)) {
-		// 			colWidths[i] = Math.max(colWidths[i++] || 0, String(value).length);
-		// 		}
-		// 	}
-		//
-		// 	for (const item of items) {
-		// 		let i = 0;
-		// 		for (const value of Object.values(item)) {
-		// 			if (i) {
-		// 				out.write('  ' + String(value).padEnd(colWidths[i]));
-		// 			} else {
-		// 				out.write('  ' + this.style('name', String(value).padEnd(colWidths[i])));
-		// 			}
-		// 			i++;
-		// 		}
-		// 		out.write('\n');
-		// 	}
-		// };
-		//
-		// const commands = ;
-		// if (this.commands.count) {
-		// 	print({
-		// 		heading: 'Commands:',
-		// 		items: this.commands.keys()
-		// 			.map(
-		// 			.filter(name => !this.commands.get(name).hidden)
-		// 			.map(name => ({ name, desc: this.commands[name].desc }))
+		// out.write(`\n${style({ types: 'heading', text: 'Commands:', colors, styles })}\n`);
+
+		// render this context's options
+		// this.options.renderHelp({ ctx: this, out, width });
+
+		// if there is a parent context, render its options
+		// if (this.parent) {
+		// 	await this.parent.generateHelp({
+		// 		out,
+		// 		depth: depth + 1
 		// 	});
 		// }
 
-		/*
-		const add = (bucket, columns) => {
-			for (let i = 0, l = columns.length; i < l; i++) {
-				let len = 0;
-				if (columns[i] === undefined || columns[i] === null) {
-					// do nothing
-				} else if (typeof columns[i] === 'object') {
-					len = maxKeyLength(columns[i]);
-				} else {
-					len = String(columns[i]).length;
-				}
-				if (!bucket.maxWidths[i] || len > bucket.maxWidths[i]) {
-					bucket.maxWidths[i] = len;
-				}
-			}
-			bucket.list.push(columns);
-		};
-
-		const commands = {
-			list: [],
-			maxWidths: []
-		};
-		for (const name of Object.keys(this.commands).sort()) {
-			const { desc, hidden } = this.commands[name];
-			if (!hidden) {
-				add(commands, [ name, desc ]);
-			}
-		}
-
-		const args = {
-			list: [],
-			maxWidths: []
-		};
-		for (const { desc, hidden, name } of this.args) {
-			if (!hidden) {
-				add(args, [ name, desc ]);
-			}
-		}
-
-		const options = {
-			list: [],
-			maxWidths: []
-		};
-		for (const [ group, params ] of Object.entries(this.options)) {
-			for (const opt of params) {
-				if (!opt.hidden) {
-					if (opt.negate) {
-						add(options, [ `--no-${opt.name}`, opt.desc ]);
-					} else {
-						let s = '';
-						if (opt.short) {
-							s += `-${opt.short}`;
-						}
-						if (opt.long) {
-							s += `${s.length ? ', ' : ''}--${opt.long}`;
-						}
-						if (opt.datatype !== 'bool') {
-							s += `=<${opt.hint || 'value'}>`;
-						}
-						add(options, [ s, opt.desc ]);
-					}
-				}
-			}
-		}
-
-		const list = (heading, bucket) => {
-			if (bucket.list.length) {
-				out.write(`${this.style('heading', heading)}:\n`);
-				const max = bucket.maxWidths[0];
-				for (const line of bucket.list) {
-					let [ name, desc ] = line;
-					if (desc) {
-						const indent = name.length + 2;
-						name = `  ${name.padEnd(max)}`;
-						out.write(`${this.style('key', name)}  ${this.style('desc', wrap(desc, width, indent))}\n`);
-
-						/ *
-						if (extendedDesc && typeof extendedDesc === 'object') {
-							const maxTerm = maxKeyLength(extendedDesc) + 2;
-							for (const [ term, extDesc ] of Object.entries(extendedDesc)) {
-								const wrapped = wrap(`${term}  ${extDesc}`, width, indent + maxTerm);
-								const str = '    ' + this.style('extended-desc-term', wrapped.substring(0, term.length).padEnd(maxTerm, ' ')) + wrapped.substring(term.length + 2);
-								out.write(`${this.style('extended-desc', wrap(str, width, indent + maxTerm))}\n`);
-							}
-						} else if (extendedDesc) {
-							out.write(`    ${this.style('extended-desc', wrap(extendedDesc, width, 4))}\n`);
-						}
-						* /
-					} else {
-						out.write(`  ${this.style('key', name)}\n`);
-					}
-				}
-				out.write('\n');
-			}
-		};
-
-		list(this.title ? `${this.title} arguments` : 'Arguments', args);
-
-		list(this.title ? `${this.title} options` : 'Options', options);
-		*/
-
-		if (this.parent) {
-			await this.parent.renderHelp({
-				out,
-				depth: depth + 1
-			});
-		}
+		return results;
 	}
 
 	/**
@@ -604,32 +474,32 @@ export default class Context extends HookEmitter {
 	 * @returns {String}
 	 * @access private
 	 */
-	style(types, str) {
-		if (!this.get('colors', true)) {
-			return str;
-		}
-
-		for (const type of types.split('.')) {
-			const style = this.get('styles', {})[type];
-
-			if (!style || style === 'default') {
-				continue;
-			}
-
-			if (Array.isArray(style)) {
-				str = style.length >= 3 ? chalk.rgb.apply(chalk, style)(str) : str;
-				continue;
-			}
-
-			for (const s of style.split('.')) {
-				if (s.charAt(0) === '#') {
-					str = chalk.hex(s)(str);
-				} else {
-					str = chalk.keyword(s)(str);
-				}
-			}
-		}
-
-		return str;
-	}
+	// style(types, str) {
+	// 	if (!this.get('colors', true)) {
+	// 		return str;
+	// 	}
+	//
+	// 	for (const type of types.split('.')) {
+	// 		const style = this.get('styles', {})[type];
+	//
+	// 		if (!style || style === 'default') {
+	// 			continue;
+	// 		}
+	//
+	// 		if (Array.isArray(style)) {
+	// 			str = style.length >= 3 ? chalk.rgb.apply(chalk, style)(str) : str;
+	// 			continue;
+	// 		}
+	//
+	// 		for (const s of style.split('.')) {
+	// 			if (s.charAt(0) === '#') {
+	// 				str = chalk.hex(s)(str);
+	// 			} else {
+	// 				str = chalk.keyword(s)(str);
+	// 			}
+	// 		}
+	// 	}
+	//
+	// 	return str;
+	// }
 }
