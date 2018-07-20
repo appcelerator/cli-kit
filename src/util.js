@@ -108,19 +108,6 @@ export function isFile(file) {
 }
 
 /**
- * Determines the length of the longest key in the specified object.
- *
- * @param {Object} obj - The object to check.
- * @returns {Number}
- */
-export function maxKeyLength(obj) {
-	if (typeof obj === 'object') {
-		return Object.keys(obj).reduce((n, key) => Math.max(n, key.length), 0);
-	}
-	return 0;
-}
-
-/**
  * Inserts line breaks into a string so that the text does not exceed the specified width.
  *
  * @param {String} str - The string to line wrap.

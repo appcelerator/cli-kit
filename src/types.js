@@ -19,7 +19,7 @@ export const types = {};
  * Ensures that the specified list of types is indeed an array and each value is a supported type,
  * then returns the cleaned up list of types or a default value if no types were found.
  *
- * @param {String} type - A list of types to validate.
+ * @param {String|RegExp} type - A list of types to validate.
  * @param {Array.<String>} [otherTypes] - An optional list of types to default to if no
  * types were originally specified.
  * @returns {String}
@@ -31,6 +31,8 @@ export function checkType(type, ...otherTypes) {
 				return other;
 			}
 		}
+	} else if (type instanceof RegExp) {
+		return 'regex';
 	} else if (!types[type]) {
 		throw E.INVALID_DATA_TYPE(`Unsupported type "${type}"`, { name: 'type', scope: 'types.checkType', types: Object.keys(types), value: type });
 	}
@@ -131,6 +133,10 @@ registerType({
 	transform(value) {
 		return value && value !== 'false';
 	}
+});
+
+registerType({
+	name: 'count'
 });
 
 registerType({

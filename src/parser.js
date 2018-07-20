@@ -173,13 +173,16 @@ export default class Parser {
 						});
 					} else {
 						// if value is `null`, then we are missing the value
-						let nextArg;
+						const input = [ arg ];
 						let value = null;
 
 						if (option.isFlag && option.datatype === 'bool') {
-							nextArg = value = isFlag || !negated;
+							input.push(value = isFlag || !negated);
+						} else if (option.isFlag && option.type === 'count') {
+							// do nothing
 						} else if (i + 1 < args.length) {
-							nextArg = args.splice(i + 1, 1)[0];
+							const nextArg = args.splice(i + 1, 1)[0];
+							input.push(nextArg);
 
 							if (nextArg instanceof ParsedArgument) {
 								if (nextArg.type === 'unknown') {
@@ -197,7 +200,7 @@ export default class Parser {
 						}
 
 						args[i] = new ParsedArgument('option', {
-							input: [ arg, nextArg ],
+							input,
 							isFlag,
 							match: m,
 							option,
@@ -254,7 +257,6 @@ export default class Parser {
 						match: m,
 						name: negated ? negated[1] : m[1],
 						negated,
-						orig: arg,
 						value: m[2]
 					});
 
@@ -311,6 +313,8 @@ export default class Parser {
 							this.argv[name] = option.default;
 						} else if (option.datatype === 'bool') {
 							this.argv[name] = !!option.negate;
+						} else if (option.type === 'count') {
+							this.argv[name] = 0;
 						}
 
 						if (option.env && process.env[option.env] !== undefined) {
@@ -329,11 +333,11 @@ export default class Parser {
 	 *
 	 * @param {Array} args - An array of raw, unparsed arguments.
 	 * @param {Context} ctx - The context to reference for commands, options, and arguments.
-	 * @returns {Promise}
+	 * @returns {Promise<Parser>}
 	 * @access public
 	 */
-	async parse(args, ctx) {
-		try {
+	parse(args, ctx) {
+		return ctx.hook('parse', async args => {
 			if (!Array.isArray(args)) {
 				throw E.INVALID_ARGUMENT('Expected args to be an array', { name: 'args', scope: 'Parser.parse', value: args });
 			}
@@ -371,7 +375,11 @@ export default class Parser {
 
 						case 'option':
 							name = parsedArg.option.camelCase || ctx.get('camelCase') ? camelCase(parsedArg.option.name) : parsedArg.option.name;
-							this.argv[name] = parsedArg.value;
+							if (parsedArg.option.type === 'count') {
+								this.argv[name] = (this.argv[name] || 0) + 1;
+							} else {
+								this.argv[name] = parsedArg.value;
+							}
 							break;
 
 						case 'unknown':
@@ -383,6 +391,7 @@ export default class Parser {
 								value = !value;
 							}
 
+							// clean up the name
 							name = ctx.get('camelCase') ? camelCase(parsedArg.name) : parsedArg.name;
 							this.argv[name] = value;
 
@@ -440,10 +449,10 @@ export default class Parser {
 			Object.assign(this.argv, env);
 
 			return this;
-		} catch (err) {
+		})(args).catch(err => {
 			err.contexts = this.contexts;
 			throw err;
-		}
+		});
 	}
 
 	/**

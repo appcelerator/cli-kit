@@ -75,7 +75,6 @@ export default class Extension extends Command {
 					try {
 						ctx = require(pkg.main);
 					} catch (e) {
-						console.log(e.toString());
 						err = e;
 					}
 

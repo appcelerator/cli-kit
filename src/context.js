@@ -4,12 +4,13 @@ import ArgumentList from './argument-list';
 import CommandList from './command-list';
 import debug from './debug';
 import E from './errors';
+import fs from 'fs';
 import HookEmitter from 'hook-emitter';
 import Option from './option';
 import OptionList from './option-list';
+import path from 'path';
 
 import { declareCLIKitClass, wrap } from './util';
-import { defaultStyles } from './styles';
 
 /**
  * `Command` and `Extension` are lazy loaded due to circular references.
@@ -25,7 +26,7 @@ const { highlight, note } = debug.styles;
  * Properties to ignore when mixing an existing context into a new context.
  * @type {RegExp}
  */
-const propIgnoreRegExp = /^_events|_links|args|commands|lookup|options|styles$/;
+const propIgnoreRegExp = /^_events|_links|args|commands|lookup|options$/;
 
 /**
  * Defines a context that contains commands, options, and args. Serves as the
@@ -50,7 +51,6 @@ export default class Context extends HookEmitter {
 	 * name.
 	 * @param {Array<Object>|Object|Map} [params.options] - An array of options.
 	 * @param {Context} [params.parent] - The parent context.
-	 * @param {Object} [params.styles] - A map of style overrides.
 	 * @param {String} [params.title] - The context title.
 	 * @param {Boolean} [params.treatUnknownOptionsAsArguments=false] - When `true`, any argument is
 	 * encountered during parsing that resembles a option that does not exist, it will add it
@@ -79,10 +79,6 @@ export default class Context extends HookEmitter {
 			throw E.INVALID_ARGUMENT('Expected extensions to be an object or an array', { name: 'params.extensions', scope: 'Context.constructor', value: params.extensions });
 		}
 
-		if (params.styles && typeof params.styles !== 'object') {
-			throw E.INVALID_ARGUMENT('Expected styles to be an object', { name: 'params.styles', scope: 'CLI.constructor', value: params.styles });
-		}
-
 		super();
 
 		const ignoreOut = params.clikit instanceof Set && params.clikit.has('Context');
@@ -98,8 +94,6 @@ export default class Context extends HookEmitter {
 		this.args     = new ArgumentList();
 		this.commands = new CommandList();
 		this.options  = new OptionList();
-
-		this.styles = Object.assign({}, defaultStyles, params.styles);
 
 		// initialize the alias lookup
 		Object.defineProperty(this, 'lookup', {
@@ -240,7 +234,6 @@ export default class Context extends HookEmitter {
 				throw E.INVALID_ARGUMENT('Expected command parameters to be an object', { name: 'params', scope: 'Context.command', value: params });
 			}
 
-			params.treatUnknownOptionsAsArguments = this.treatUnknownOptionsAsArguments;
 			params.parent = this;
 
 			cmd = new Command(name, params);
@@ -386,20 +379,16 @@ export default class Context extends HookEmitter {
 	/**
 	 * Renders the help screen for this context including the parent contexts.
 	 *
-	 * @param {Object} [params] - Various parameters.
-	 * @param {Error} [params.err] - An optional error to render before the help output.
-	 * @param {WritableStream} [params.out] - The stream to write output to.
-	 * @param {Boolean} [params.recursing] - Indicates that this function is being called by itself
-	 * from a sub-context and that the current context's usage, description, and commands should be
-	 * suppressed.
-	 * @returns {Promise}
+	 * @param {Error} [err] - An optional error to render before the help output.
+	 * @returns {Promise<Object>}
 	 * @access private
 	 */
-	async generateHelp({ err, depth = 0 } = {}) {
-		const results = {};
+	generateHelp(err) {
+		return this.hook('generateHelp', err => {
+			const results = {};
 
-		// on the first call to help(), we add the error, usage, description, commands and arguments
-		if (!depth) {
+			const pkgJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'package.json'), 'utf8'));
+
 			// set the error, if exists
 			if (err) {
 				results.error = {
@@ -412,94 +401,62 @@ export default class Context extends HookEmitter {
 				results.error = null;
 			}
 
+			const options = [];
+			const usage = [];
+
+			let ctx = this;
+			while (ctx) {
+				options.push({
+					title: `${ctx.title} options`,
+					name: ctx.name,
+					groups: ctx.options.generateHelp()
+				});
+				usage.unshift(ctx.name);
+				ctx = ctx.parent;
+			}
+
 			// set the usage line
-			results.usage = '';
-			// if (this.parent) {
-			// 	// add in the chain of commands
-			// 	usage += (function walk(ctx) {
-			// 		return (ctx.parent ? walk(ctx.parent) + ' ' : '') + ctx.name;
-			// 	}(this));
-			// } else {
-			// 	usage += this.name;
-			// }
-			// usage += this.commands.count ? ' <command>' : '';
-			// usage += this.options.count ? ' [options]' : '';
-			// usage += this.args
-			// 	.filter(arg => !arg.hidden)
-			// 	.map(arg => {
-			// 		return arg.required ? ` <${arg.name}>` : ` [<${arg.name}>]`;
-			// 	})
-			// 	.join('');
+			this.commands.count && usage.push('<command>');
+			this.options.count && usage.push('[options]');
+			for (const arg of this.args) {
+				if (!arg.hidden) {
+					usage.push(arg.required ? `<${arg.name}>` : `[<${arg.name}>]`);
+				}
+			}
+			results.usage = {
+				title: 'Usage',
+				text: usage.join(' ')
+			};
 
-			// out.write(`Usage: ${this.style('usage', usage)}\n`);
-			//
-			// // display the description
-			// if (this.desc) {
-			// 	out.write(`\n${this.style('desc', wrap(this.desc.substring(0, 1).toUpperCase() + this.desc.substring(1), width))}\n`);
-			// }
+			// set the description
+			results.desc = String(this.desc).trim().replace(/^\w/, c => c.toLocaleUpperCase());
 
-			// render this context's commands
-			// this.commands.renderHelp({
-			// 	colors: this.get('colors'),
-			// 	out,
-			// 	styles: this.get('styles'),
-			// 	width
-			// });
+			// set the commands
+			results.commands = {
+				title: `${this.title} commands`,
+				entries: this.commands.generateHelp()
+			};
 
-			// render this context's arguments
-			// this.args.renderHelp({ ctx: this, out, width });
-		}
+			// update the default command
+			if (this.defaultCommand) {
+				for (const cmd of results.commands.entries) {
+					if (cmd.name === this.defaultCommand) {
+						cmd.default = true;
+						break;
+					}
+				}
+			}
 
-		// out.write(`\n${style({ types: 'heading', text: 'Commands:', colors, styles })}\n`);
+			// set the arguments
+			results.arguments = {
+				title: `${this.title} arguments`,
+				entries: this.args.generateHelp()
+			};
 
-		// render this context's options
-		// this.options.renderHelp({ ctx: this, out, width });
+			// set the options
+			results.options = options;
 
-		// if there is a parent context, render its options
-		// if (this.parent) {
-		// 	await this.parent.generateHelp({
-		// 		out,
-		// 		depth: depth + 1
-		// 	});
-		// }
-
-		return results;
+			return results;
+		})(err);
 	}
-
-	/**
-	 * Applies the specified style to the string.
-	 *
-	 * @param {String} types - The style type to apply.
-	 * @param {String} str - The string to apply the style to.
-	 * @returns {String}
-	 * @access private
-	 */
-	// style(types, str) {
-	// 	if (!this.get('colors', true)) {
-	// 		return str;
-	// 	}
-	//
-	// 	for (const type of types.split('.')) {
-	// 		const style = this.get('styles', {})[type];
-	//
-	// 		if (!style || style === 'default') {
-	// 			continue;
-	// 		}
-	//
-	// 		if (Array.isArray(style)) {
-	// 			str = style.length >= 3 ? chalk.rgb.apply(chalk, style)(str) : str;
-	// 			continue;
-	// 		}
-	//
-	// 		for (const s of style.split('.')) {
-	// 			if (s.charAt(0) === '#') {
-	// 				str = chalk.hex(s)(str);
-	// 			} else {
-	// 				str = chalk.keyword(s)(str);
-	// 			}
-	// 		}
-	// 	}
-	//
-	// 	return str;
-	// }
 }

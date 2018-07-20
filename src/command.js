@@ -6,6 +6,12 @@ import Option from './option';
 import { declareCLIKitClass } from './util';
 
 /**
+ * Matches all non alphabet, numeric, dash, and underscore characters.
+ * @type {RegExp}
+ */
+const scrubNameRegExp = /[^A-Za-z0-9_-]+/g;
+
+/**
  * Defines a command and its options and arguments.
  *
  * @extends {Context}
@@ -32,12 +38,16 @@ export default class Command extends Context {
 		if (params.clikit instanceof Set) {
 			// params is a cli-kit object
 			if (params.clikit.has('CLI')) {
+				// since a command cannot have a title "global" (only a `CLI` object can have that),
+				// we must delete it so that the title is reset to the command name
 				if (params.title === 'Global') {
 					delete params.title;
 				}
 
-				const { defaultCommand } = params;
+				// add an action handler that eitehr executes a specific command or the help for
+				// for this command (e.g. this command is an extension)
 				params.action = async parser => {
+					const { defaultCommand } = params;
 					if (defaultCommand === 'help' && this.get('help')) {
 						await helpCommand.action(parser);
 					} else {
@@ -75,9 +85,11 @@ export default class Command extends Context {
 			throw E.INVALID_ARGUMENT('Expected command action to be a function', { name: 'params.action', scope: 'Command.constructor', value: params.action });
 		}
 
+		// ensure we have a title
 		params.title || (params.title = name);
 
-		params.name = name.replace(/[^A-Za-z0-9_-]+/g, '_');
+		// scrub the name
+		params.name = name.replace(scrubNameRegExp, '_');
 
 		super(params);
 		declareCLIKitClass(this, 'Command');

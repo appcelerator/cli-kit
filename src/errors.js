@@ -15,6 +15,7 @@ createError('INVALID_OPTION',              Error,      'The option parameters ar
 createError('INVALID_OPTION_ALIAS',        TypeError,  'An option alias is empty or not a string');
 createError('INVALID_OPTION_FORMAT',       TypeError,  'Unable to parse an option\'s foramt');
 createError('INVALID_PACKAGE_JSON',        Error,      'A package.json file does not exist, did not contain valid JSON, or define an object');
+createError('INVALID_VALUE',               Error,      'Unable to transform the value to the desired data type or conform to the required format');
 createError('MISSING_REQUIRED_ARGUMENT',   Error,      'A required command line argument was not found');
 createError('NO_EXECUTABLE',               Error,      'Attempted to run an undefined executable');
 createError('NOT_YES_NO',                  RangeError, 'The value is not "yes", "y", "no", or "n"');

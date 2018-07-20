@@ -39,14 +39,24 @@ export default class ArgumentList extends Array {
 	}
 
 	/**
-	 * Renders the list of commands for the help output.
+	 * Generates an object containing the arguments for the help screen.
 	 *
-	 * @param {Object} params - Various parameters.
-	 * @param {WritableStream} params.out - The stream to write output to.
-	 * @param {Number} params.width - The width of the terminal.
+	 * @returns {Object}
 	 * @access public
 	 */
-	renderHelp({ out, width }) {
-		out.write('\nhi from arguments\n');
+	generateHelp() {
+		const entries = [];
+
+		for (const { desc, hidden, name, required } of this) {
+			if (!hidden) {
+				entries.push({
+					name,
+					desc,
+					required
+				});
+			}
+		}
+
+		return entries;
 	}
 }

@@ -37,7 +37,6 @@ export default class Argument {
 	 * required (unless `params.required` is explicitly set to `false`). If the name is wrapped in
 	 * square brackets (`[`, `]`), then the brackets are trimmed off. If the name ends with `...`
 	 * and `params.multiple` is not specified, then it will set `params.multiple` to `true`.
-	 * @param {Boolean} [params.regex] - A regular expression used to validate the value.
 	 * @param {Boolean} [params.required=false] - Marks the option value as required.
 	 * @param {String} [params.type] - The argument type to coerce the data type into.
 	 * @access public
@@ -64,8 +63,6 @@ export default class Argument {
 			throw E.INVALID_ARGUMENT('Expected argument name to be a non-empty string', { name: 'params.name', scope: 'Argument.constructor', value: params.name });
 		}
 
-		declareCLIKitClass(this, 'Argument');
-
 		if (params.clikit instanceof Set && params.clikit.has('Argument')) {
 			// we're going to assume the name, required, and multiple are sane
 		} else {
@@ -88,13 +85,13 @@ export default class Argument {
 			}
 		}
 
+		params.hidden   = !!params.hidden;
+		params.required = !!params.required;
+		params.regex    = params.type instanceof RegExp ? params.type : null;
+		params.datatype = checkType(params.type, 'string');
+
 		Object.assign(this, params);
-
-		// TODO: params.regex
-
-		this.hidden   = !!this.hidden;
-		this.required = !!this.required;
-		this.type     = checkType(this.type, 'string');
+		declareCLIKitClass(this, 'Argument');
 	}
 
 	/**
@@ -116,6 +113,12 @@ export default class Argument {
 				}
 				if (this.max !== null && value > this.max) {
 					throw E.RANGE_ERROR(`Value must be less than or equal to ${this.max}`, { max: this.max, min: this.min, name: `transform.${this.type}`, scope: 'Argument.transform', value });
+				}
+				break;
+
+			case 'regex':
+				if (!this.regex.test(value)) {
+					throw E.INVALID_VALUE(this.errorMsg || 'Invalid value', { name: 'regex', regex: this.regex, scope: 'Option.transform', value });
 				}
 				break;
 		}

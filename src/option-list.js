@@ -40,14 +40,36 @@ export default class OptionList extends Map {
 	}
 
 	/**
-	 * Renders the list of commands for the help output.
+	 * Generates an object containing the options for the help screen.
 	 *
-	 * @param {Object} params - Various parameters.
-	 * @param {WritableStream} params.out - The stream to write output to.
-	 * @param {Number} params.width - The width of the terminal.
+	 * @returns {Object}
 	 * @access public
 	 */
-	renderHelp({ out, width }) {
-		out.write('\nhi from options\n');
+	generateHelp() {
+		const groups = {};
+		const sortFn = (a, b) => {
+			return a.order < b.order ? -1 : a.order > b.order ? 1 : a.name.localeCompare(b.name);
+		};
+
+		for (const [ groupName, options ] of this.entries()) {
+			const group = groups[groupName] = [];
+			for (const opt of options.sort(sortFn)) {
+				if (!opt.hidden) {
+					group.push({
+						name:     opt.name,
+						format:   opt.format,
+						desc:     opt.desc,
+						datatype: opt.datatype,
+						aliases:  Object.keys(opt.aliases),
+						default:  opt.default,
+						max:      opt.max,
+						min:      opt.min,
+						required: opt.required
+					});
+				}
+			}
+		}
+
+		return groups;
 	}
 }

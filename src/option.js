@@ -3,7 +3,7 @@ import E from './errors';
 import { checkType, transformValue } from './types';
 import { declareCLIKitClass } from './util';
 
-const formatRegExp = /^(?:-([^-])(?:[ ,|]+)?)?(?:--([^\s]+))?(?:\s+?(.+))?$/;
+const formatRegExp = /^(?:-([^\W]+)(?:[ ,|]+)?)?(?:--([^\s]+))?(?:\s+?(.+))?$/;
 const valueRegExp = /^(\[(?=.+\]$)|<(?=.+>$))(.+)[\]>]$/;
 const negateRegExp = /^no-(.+)$/;
 const aliasSepRegExp = /[ ,|]+/;
@@ -25,12 +25,15 @@ export default class Option {
 	 * @param {Function} [params.callback] - A function to call when the option has been parsed.
 	 * @param {Boolean} [params.camelCase=true] - If option has a name or can derive a name from the
 	 * long option format, then it the name be camel cased.
-	 * @param {Boolean} [params.count] - ?????????????????????????? force type to boolean OR make "count" a type
+	 * @param {Boolean} [params.count] - Enforces that this option is a flag that acts as a counter.
+	 * Each time the parser finds this option, it increments a counter. If the flag is not set, the
+	 * value is zero.
 	 * @param {*} [params.default] - A default value. Defaults to `undefined` unless the `type` is
 	 * set to `bool` and `negate` is `true`, then the default value will be set to `true`.
 	 * @param {String} [params.desc] - The description of the option used in the help display.
 	 * @param {String} [params.env] - The environment variable name to get a value from. If the
 	 * environment variable is set, it overrides the value parsed from the arguments.
+	 * @param {String} [params.errorMsg] - A generic message when the value is invalid.
 	 * @param {Boolean} [params.hidden=false] - When `true`, the option is not displayed on the help
 	 * screen or auto-suggest.
 	 * @param {String} [params.hint] - The hint label if the option expects a value.
@@ -42,8 +45,12 @@ export default class Option {
 	 * @param {Boolean} [params.negate] - When `true`, it will automatically prepend `no-` to the
 	 * option name on the help screen and convert the value from truthy to `false` or falsey to
 	 * `true`.
+	 * @param {Number} [params.order=Infinity] - A number used to sort the options within the group
+	 * on the help screen. Options with a lower order are sorted before those with a higher order.
+	 * If two options have the same order, then they are sorted alphabetically based on the name.
 	 * @param {Boolean} [params.required] - Marks the option value as required.
-	 * @param {String|Array.<String>} [params.type] - The option type to coerce the data type into.
+	 * @param {String|RegExp} [params.type] - The option type to coerce the data type into. If type
+	 * is a regular expression, then it'll use it to validate the option.
 	 * @param {Function} [params.validate] - A function to call to validate the option value.
 	 * @access public
 	 */
@@ -71,7 +78,8 @@ export default class Option {
 		params.min      = params.min || null;
 		params.multiple = !!params.multiple;
 		params.negate   = false;
-		params.order    = params.order || null;
+		params.order    = params.order || Infinity;
+		params.regex    = params.type instanceof RegExp ? params.type : null;
 		params.required = !!params.required;
 
 		// first try to see if we have a valid option format
@@ -85,12 +93,12 @@ export default class Option {
 
 		// check if we have a long option and name
 		if (m[2]) {
-			const negate = m[2].match(negateRegExp);
+			const negate  = m[2].match(negateRegExp);
 			params.negate = !!negate;
-			params.long = params.name = negate ? negate[1] : m[2];
+			params.long   = params.name = negate ? negate[1] : m[2];
 		}
 
-		params.name = params.name || (params.long ? `--${params.long}` : params.short ? `-${params.short}` : null);
+		params.name = params.name || params.long || params.short || params.format;
 		if (!params.name) {
 			throw E.INVALID_OPTION('Option has no name', { name: 'params.name', scope: 'Option.constructor', value: params.name });
 		}
@@ -109,12 +117,20 @@ export default class Option {
 		params.isFlag    = !params.hint;
 
 		// determine the datatype
-		if (params.isFlag) {
-			params.datatype  = checkType(params.type, 'bool');
-		} else {
-			params.datatype  = checkType(params.type, params.hint, 'string');
+		if (params.count) {
+			if (!params.isFlag) {
+				throw E.CONFLICT('Count requires option to be a flag', { name: 'count', scope: 'Option.constructor', value: params.count });
+			}
+			params.type = 'count';
 		}
-		if (params.datatype !== 'bool') {
+
+		if (params.isFlag) {
+			params.datatype = checkType(params.type, 'bool');
+		} else {
+			params.datatype = checkType(params.type, params.hint, 'string');
+		}
+
+		if (params.datatype !== 'bool' && params.type !== 'count') {
 			if (params.isFlag) {
 				throw E.CONFLICT(Error, 'A flag option must be a bool', { name: 'flag', scope: 'Option.constructor', value: params.dataType });
 			}
@@ -122,15 +138,9 @@ export default class Option {
 			if (params.negate) {
 				throw E.CONFLICT(Error, 'Negate requires option to be a bool', { name: 'negate', scope: 'Option.constructor', value: params.negate });
 			}
-
-			if (params.count) {
-				throw E.CONFLICT('Count requires option to be a bool', { name: 'count', scope: 'Option.constructor', value: params.count });
-			}
 		}
 
 		params.default = params.default !== undefined ? params.default : (params.datatype === 'bool' && params.negate ? true : undefined);
-
-		// TODO: params.regex
 
 		Object.assign(this, params);
 		declareCLIKitClass(this, 'Option');
@@ -155,14 +165,23 @@ export default class Option {
 				}
 				break;
 
-			case 'positiveInt':
+			case 'count':
+				break;
+
 			case 'int':
 			case 'number':
+			case 'positiveInt':
 				if (this.min !== null && value < this.min) {
 					throw E.RANGE_ERROR(`Value must be greater than or equal to ${this.min}`, { max: this.max, min: this.min, name: 'min', scope: 'Option.transform', value });
 				}
 				if (this.max !== null && value > this.max) {
 					throw E.RANGE_ERROR(`Value must be less than or equal to ${this.max}`, { max: this.max, min: this.min, name: 'max', scope: 'Option.transform', value });
+				}
+				break;
+
+			case 'regex':
+				if (!this.regex.test(value)) {
+					throw E.INVALID_VALUE(this.errorMsg || 'Invalid value', { name: 'regex', regex: this.regex, scope: 'Option.transform', value });
 				}
 				break;
 

@@ -1,4 +1,4 @@
-import { declareCLIKitClass, maxKeyLength, wrap } from './util';
+import { declareCLIKitClass } from './util';
 
 /**
  * Stores a map of `Command` instances that have been registered for a context.
@@ -37,32 +37,25 @@ export default class CommandList extends Map {
 	}
 
 	/**
-	 * Generates an object containing information about the commands for the help screen.
+	 * Generates an object containing the commands for the help screen.
 	 *
-	 * @type {Object}
+	 * @returns {Object}
 	 * @access public
 	 */
-	get data() {
-		const rows = [];
-		const maxWidths = [];
-		const setMax = (col, str) => maxWidths[col] = Math.max(maxWidths[col] || 0, str.length);
+	generateHelp() {
+		const entries = [];
 
-		for (const name of this.keys().sort()) {
-			const cmd = this.get(name);
-
-			rows.push({
-				name: cmd.name,
-				desc: cmd.desc
-			});
-
-			setMax(0, cmd.name);
-			setMax(0, cmd.desc);
+		for (const cmd of Array.from(this.keys()).sort()) {
+			const { aliases, desc, hidden, name } = this.get(cmd);
+			if (!hidden) {
+				entries.push({
+					name,
+					desc,
+					aliases: Object.keys(aliases)
+				});
+			}
 		}
 
-		return {
-			rows,
-			title: 'Commands',
-			maxWidths
-		};
+		return entries;
 	}
 }
