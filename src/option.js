@@ -25,9 +25,6 @@ export default class Option {
 	 * @param {Function} [params.callback] - A function to call when the option has been parsed.
 	 * @param {Boolean} [params.camelCase=true] - If option has a name or can derive a name from the
 	 * long option format, then it the name be camel cased.
-	 * @param {Boolean} [params.count] - Enforces that this option is a flag that acts as a counter.
-	 * Each time the parser finds this option, it increments a counter. If the flag is not set, the
-	 * value is zero.
 	 * @param {*} [params.default] - A default value. Defaults to `undefined` unless the `type` is
 	 * set to `bool` and `negate` is `true`, then the default value will be set to `true`.
 	 * @param {String} [params.desc] - The description of the option used in the help display.
@@ -70,7 +67,6 @@ export default class Option {
 			throw E.INVALID_ARGUMENT('Expected params to be an object', { name: 'params', scope: 'Option.constructor', value: params });
 		}
 
-		params.count    = !!params.count;
 		params.format   = format;
 		params.hidden   = !!params.hidden;
 		params.long     = null;
@@ -117,27 +113,19 @@ export default class Option {
 		params.isFlag    = !params.hint;
 
 		// determine the datatype
-		if (params.count) {
-			if (!params.isFlag) {
-				throw E.CONFLICT('Count requires option to be a flag', { name: 'count', scope: 'Option.constructor', value: params.count });
-			}
-			params.type = 'count';
-		}
-
 		if (params.isFlag) {
 			params.datatype = checkType(params.type, 'bool');
+			if (params.datatype !== 'bool' && params.datatype !== 'count') {
+				throw E.CONFLICT(Error, 'A flag option must be a bool', { name: 'flag', scope: 'Option.constructor', value: params.dataType });
+			}
+		} else if (params.type === 'count') {
+			throw E.CONFLICT('Count requires option to be a flag', { name: 'count', scope: 'Option.constructor', value: params.count });
 		} else {
 			params.datatype = checkType(params.type, params.hint, 'string');
 		}
 
-		if (params.datatype !== 'bool' && params.type !== 'count') {
-			if (params.isFlag) {
-				throw E.CONFLICT(Error, 'A flag option must be a bool', { name: 'flag', scope: 'Option.constructor', value: params.dataType });
-			}
-
-			if (params.negate) {
-				throw E.CONFLICT(Error, 'Negate requires option to be a bool', { name: 'negate', scope: 'Option.constructor', value: params.negate });
-			}
+		if (params.datatype !== 'bool' && params.negate) {
+			throw E.CONFLICT(Error, 'Negate requires option to be a bool', { name: 'negate', scope: 'Option.constructor', value: params.negate });
 		}
 
 		params.default = params.default !== undefined ? params.default : (params.datatype === 'bool' && params.negate ? true : undefined);
