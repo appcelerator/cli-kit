@@ -56,6 +56,9 @@ export default class CommandList extends Map {
 			}
 		}
 
-		return entries;
+		return {
+			count: entries.length,
+			entries
+		};
 	}
 }

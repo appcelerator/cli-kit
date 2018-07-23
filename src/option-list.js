@@ -46,6 +46,7 @@ export default class OptionList extends Map {
 	 * @access public
 	 */
 	generateHelp() {
+		let count = 0;
 		const groups = {};
 		const sortFn = (a, b) => {
 			return a.order < b.order ? -1 : a.order > b.order ? 1 : a.name.localeCompare(b.name);
@@ -66,10 +67,14 @@ export default class OptionList extends Map {
 						min:      opt.min,
 						required: opt.required
 					});
+					count++;
 				}
 			}
 		}
 
-		return groups;
+		return {
+			count,
+			groups
+		};
 	}
 }

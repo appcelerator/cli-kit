@@ -23,7 +23,7 @@ export default class Command extends Context {
 	 * @param {String} name - The command name.
 	 * @param {Object} [params] - Various command options.
 	 * @param {Function} [params.action] - A function to call when the command is found.
-	 * @param {Array.<String>} [params.aliases] - An array of command aliases.
+	 * @param {Array.<String>|String} [params.aliases] - An array of command aliases.
 	 * @access public
 	 */
 	constructor(name, params = {}) {
@@ -69,7 +69,7 @@ export default class Command extends Context {
 			const aliases = {};
 			if (params.aliases) {
 				if (!Array.isArray(params.aliases)) {
-					throw E.INVALID_ARGUMENT('Expected command aliases to be an array of strings', { name: 'params.aliases', scope: 'Command.constructor', value: params.aliases });
+					params.aliases = [ params.aliases ];
 				}
 				for (const alias of params.aliases) {
 					if (!alias || typeof alias !== 'string') {

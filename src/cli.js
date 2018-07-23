@@ -91,6 +91,7 @@ export default class CLI extends Context {
 				this.defaultCommand = 'help';
 			}
 
+			// note: we must clone the help command params since the object gets modified
 			this.command('help', Object.assign({}, helpCommand));
 
 			this.option('-h, --help', 'displays the help screen');
@@ -119,7 +120,8 @@ export default class CLI extends Context {
 		// add the --version flag
 		if (params.version && !this.lookup.short.v && !this.lookup.long.version) {
 			this.option('-v, --version', {
-				callback: () => {
+				callback: async ({ next }) => {
+					await next();
 					this.showBanner = false;
 					const out = this.get('out', process.stdout);
 					out.write(`${params.version}\n`);
@@ -176,7 +178,7 @@ export default class CLI extends Context {
 
 			if (this.help && argv.help) {
 				log('Selected help command');
-				cmd = this.commands.help;
+				cmd = this.commands.get('help');
 				parser.contexts.unshift(cmd);
 
 			} else if (!(cmd instanceof Command) && this.defaultCommand && this.commands.has(this.defaultCommand)) {

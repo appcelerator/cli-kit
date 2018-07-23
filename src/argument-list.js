@@ -57,6 +57,9 @@ export default class ArgumentList extends Array {
 			}
 		}
 
-		return entries;
+		return {
+			count: entries.length,
+			entries
+		};
 	}
 }

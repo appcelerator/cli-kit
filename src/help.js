@@ -1,6 +1,8 @@
 import debug from './debug';
 import E from './errors';
 
+import { wrap } from './util';
+
 const { log } = debug('cli-kit:help');
 
 /**
@@ -81,15 +83,21 @@ export default {
  * @param {Number} params.width - The maximum width of the screen for which to wrap the help output.
  */
 function defaultHelpRenderer({ help, out, width }) {
-	width = Math.max(width || (process.stdout && process.stdout.columns) || (process.stderr && process.stderr.columns) || 100, 40);
+	width = Math.max(width || 100, 40);
 
-	if (help.usage) {
-		out.write(`${help.usage.title}: ${help.usage.text}\n\n`);
+	const { err, usage, desc } = help;
+
+	if (err) {
+		out.write(`${err.toString()}\n\n`);
 	}
 
-	if (help.desc) {
-		out.write(`${help.desc}\n\n`);
+	if (usage) {
+		out.write(`${usage.title}: ${usage.text}\n\n`);
 	}
 
-	out.write('it works!\n');
+	if (desc) {
+		out.write(`${wrap(desc, width)}\n\n`);
+	}
+
+	log(help);
 }

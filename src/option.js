@@ -99,33 +99,31 @@ export default class Option {
 			throw E.INVALID_OPTION('Option has no name', { name: 'params.name', scope: 'Option.constructor', value: params.name });
 		}
 
-		const hint = params.hint || m[3];
+		let hint = params.type !== 'count' && params.hint || m[3];
 		if (hint) {
 			const value = hint.match(valueRegExp);
 			if (value) {
 				params.required = value[1] === '<';
-				params.hint = value[2].trim();
+				params.hint = hint = value[2].trim();
 			} else {
 				params.hint = hint;
 			}
 		}
 		params.camelCase = params.name ? params.camelCase !== false : false;
-		params.isFlag    = !params.hint;
+		params.isFlag    = !hint;
 
 		// determine the datatype
 		if (params.isFlag) {
 			params.datatype = checkType(params.type, 'bool');
 			if (params.datatype !== 'bool' && params.datatype !== 'count') {
-				throw E.CONFLICT(Error, 'A flag option must be a bool', { name: 'flag', scope: 'Option.constructor', value: params.dataType });
+				throw E.CONFLICT(`Option "${params.format}" is a flag and must be type bool`, { name: 'flag', scope: 'Option.constructor', value: params.dataType });
 			}
-		} else if (params.type === 'count') {
-			throw E.CONFLICT('Count requires option to be a flag', { name: 'count', scope: 'Option.constructor', value: params.count });
 		} else {
 			params.datatype = checkType(params.type, params.hint, 'string');
 		}
 
 		if (params.datatype !== 'bool' && params.negate) {
-			throw E.CONFLICT(Error, 'Negate requires option to be a bool', { name: 'negate', scope: 'Option.constructor', value: params.negate });
+			throw E.CONFLICT(`Option "${params.format}" is negated and must be type bool`, { name: 'negate', scope: 'Option.constructor', value: params.negate });
 		}
 
 		params.default = params.default !== undefined ? params.default : (params.datatype === 'bool' && params.negate ? true : undefined);

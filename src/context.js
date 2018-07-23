@@ -401,32 +401,18 @@ export default class Context extends HookEmitter {
 				results.error = null;
 			}
 
-			const options = [];
 			const usage = [];
-
+			const scopes = [];
 			let ctx = this;
 			while (ctx) {
-				options.push({
+				scopes.push({
 					title: `${ctx.title} options`,
 					name: ctx.name,
-					groups: ctx.options.generateHelp()
+					...ctx.options.generateHelp()
 				});
 				usage.unshift(ctx.name);
 				ctx = ctx.parent;
 			}
-
-			// set the usage line
-			this.commands.count && usage.push('<command>');
-			this.options.count && usage.push('[options]');
-			for (const arg of this.args) {
-				if (!arg.hidden) {
-					usage.push(arg.required ? `<${arg.name}>` : `[<${arg.name}>]`);
-				}
-			}
-			results.usage = {
-				title: 'Usage',
-				text: usage.join(' ')
-			};
 
 			// set the description
 			results.desc = String(this.desc).trim().replace(/^\w/, c => c.toLocaleUpperCase());
@@ -434,7 +420,7 @@ export default class Context extends HookEmitter {
 			// set the commands
 			results.commands = {
 				title: `${this.title} commands`,
-				entries: this.commands.generateHelp()
+				...this.commands.generateHelp()
 			};
 
 			// update the default command
@@ -450,11 +436,23 @@ export default class Context extends HookEmitter {
 			// set the arguments
 			results.arguments = {
 				title: `${this.title} arguments`,
-				entries: this.args.generateHelp()
+				...this.args.generateHelp()
 			};
 
 			// set the options
-			results.options = options;
+			results.options = {
+				count: scopes.reduce((p, c) => p + c.count, 0),
+				scopes
+			};
+
+			// set the usage line
+			results.commands.count && usage.push('<command>');
+			results.options.count && usage.push('[options]');
+			usage.push.apply(usage, results.arguments.entries.map(arg => arg.required ? `<${arg.name}>` : `[<${arg.name}>]`));
+			results.usage = {
+				title: 'Usage',
+				text: usage.join(' ')
+			};
 
 			return results;
 		})(err);

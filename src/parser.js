@@ -152,49 +152,73 @@ export default class Parser {
 
 					// check if short option
 					} else if (m = arg.match(dashOpt)) {
-						option = lookup.short[m[1]] || null;
-						isFlag = true;
+						if (m.length > 1) {
+							// chop it up
+							args[i] = new ParsedArgument('group', {
+								input: [ arg ],
+								args: m.split('')
+							});
+						} else {
+							option = lookup.short[m[1]] || null;
+							isFlag = true;
+						}
 					}
 				}
 
 				if (option) {
 					log(`Found option: ${highlight(option.name)} ${note(`(${option.datatype})`)} Negated? ${highlight(!!negated)}`);
+					let value = null;
 
-					if (m[2]) {
+					if (arg instanceof ParsedArgument) {
+						value = option.transform(args[i].value, arg.negated);
+						if (value !== undefined) {
+							log(`Transforming previous value from ${highlight(args[i].value)} to ${highlight(value)}`);
+							args[i].value = value;
+						}
+					} else if (m[2]) {
 						// --something=foo
 						// -x=foo
-						args[i] = new ParsedArgument('option', {
-							input: [ arg ],
-							isFlag,
-							match: m,
-							negated,
-							option,
-							value: option.transform(m[2], negated)
-						});
+						if (arg instanceof ParsedArgument) {
+							value = option.transform(args[i].value, arg.negated);
+							if (value !== undefined) {
+								args[i].value = value;
+							}
+						} else {
+							args[i] = new ParsedArgument('option', {
+								input: [ arg ],
+								isFlag,
+								match: m,
+								negated,
+								option,
+								value: option.transform(m[2], negated)
+							});
+						}
 					} else {
 						// if value is `null`, then we are missing the value
 						const input = [ arg ];
-						let value = null;
 
 						if (option.isFlag && option.datatype === 'bool') {
 							input.push(value = isFlag || !negated);
 						} else if (option.isFlag && option.type === 'count') {
 							// do nothing
 						} else if (i + 1 < args.length) {
-							const nextArg = args.splice(i + 1, 1)[0];
-							input.push(nextArg);
+							const nextArg = args[i + 1];
 
 							if (nextArg instanceof ParsedArgument) {
 								if (nextArg.type === 'unknown') {
+									input.push(nextArg);
+									args.splice(i + 1, 1);
 									// maybe the unknown option is actually a value that just
 									// happens to match the pattern for an option?
-									value = option.transform(nextArg.input[0]);
+									value = option.transform(nextArg.value);
 								} else {
 									// next arg has already been identified, so treat this option as
 									// a flag
 									value = true;
 								}
 							} else {
+								input.push(nextArg);
+								args.splice(i + 1, 1);
 								value = option.transform(nextArg);
 							}
 						}
@@ -208,42 +232,48 @@ export default class Parser {
 						});
 					}
 
-					if (typeof option.callback === 'function') {
-						log('TODO: Option has a callback!');
-						/*
-						let fired = false;
-
-						const result = option.callback.call(option, {
-							input: args[i].input,
-							ctx,
-							async next() {
-								if (fired) {
-									log('next() already fired');
-									return;
-								}
-
-								fired = true;
-
-								// go to next
-							},
-							option,
-							value: args[i].value
-						});
-
-						if (result instanceof Promise) {
-							// TODO: wait for the promise to resolve
-						}
-
-						if (newValue !== undefined) {
-							args[i].value = newValue;
-						}
-						*/
-
-						// TODO: resolve or reject!!!!
-						return dispatch(i + 1).then(resolve, reject);
-					} else {
+					if (typeof option.callback !== 'function') {
+						log(`Option ${highlight(option.format)} does not have a callback, dispatching next arg`);
 						return dispatch(i + 1).then(resolve, reject);
 					}
+
+					let fired = false;
+
+					return Promise.resolve()
+						.then(() => {
+							log(`Firing option ${highlight(option.format)} callback`);
+
+							return option.callback.call(option, {
+								input: args[i].input,
+								ctx,
+								async next() {
+									if (fired) {
+										log('next() already fired');
+										return;
+									}
+
+									fired = true;
+
+									log(`Option ${highlight(option.format)} called next(), dispatching next arg`);
+									return dispatch(i + 1).then(resolve, reject);
+								},
+								option,
+								value: args[i].value
+							});
+						})
+						.then(value => {
+							if (value === undefined) {
+								log(`Option ${highlight(option.format)} callback did not change the value`);
+							} else {
+								log(`Option ${highlight(option.format)} callback changed value ${highlight(args[i].value)} to ${highlight(value)}`);
+								args[i].value = value;
+							}
+							if (!fired) {
+								log(`Option ${highlight(option.format)} did not call next(), dispatching next arg`);
+								return dispatch(i + 1).then(resolve, reject);
+							}
+						})
+						.then(resolve, reject);
 				}
 
 				// if the argument matched an option pattern, but didn't match a defined option,
@@ -257,7 +287,7 @@ export default class Parser {
 						match: m,
 						name: negated ? negated[1] : m[1],
 						negated,
-						value: m[2]
+						value: m[2] || true
 					});
 
 				} else {

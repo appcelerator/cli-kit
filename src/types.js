@@ -48,7 +48,7 @@ export function checkType(type, ...otherTypes) {
  * @returns {*}
  */
 export function transformValue(value, type) {
-	if (!type) {
+	if (!type && typeof value === 'string') {
 		const lvalue = value.toLowerCase();
 
 		// try as a boolean
