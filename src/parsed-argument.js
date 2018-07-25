@@ -26,25 +26,29 @@ export default class ParsedArgument {
 	}
 
 	/**
+	 * Attempts to form a name of the given parsed argument.
+	 *
+	 * @returns {String}
+	 * @access public
+	 */
+	getName() {
+		let name;
+		switch (this.type) {
+			case 'command':
+				name = this.command && this.command.name;
+				break;
+		}
+		return name || this.input && this.input[0];
+	}
+
+	/**
 	 * Builds a string describing this parsed argument.
 	 *
 	 * @returns {String}
 	 * @access public
 	 */
 	toString() {
-		let desc = '';
-
-		switch (this.type) {
-			case 'command':
-				desc = this.command && this.command.name;
-				break;
-			case 'option':
-				desc = this.option && this.option.name;
-				break;
-			default:
-				desc = this.name || this.value;
-		}
-
-		return `[parsed ${this.type}${desc ? `: ${desc}` : ''}]`;
+		const name = this.getName();
+		return `[parsed ${this.type}${name ? `: ${name}` : ''}]`;
 	}
 }

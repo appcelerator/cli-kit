@@ -71,11 +71,22 @@ export default class Command extends Context {
 				if (!Array.isArray(params.aliases)) {
 					params.aliases = [ params.aliases ];
 				}
+
 				for (const alias of params.aliases) {
 					if (!alias || typeof alias !== 'string') {
 						throw E.INVALID_ARGUMENT('Expected command aliases to be an array of strings', { name: 'params.aliases.alias', scope: 'Command.constructor', value: alias });
 					}
-					aliases[alias] = 1;
+
+					for (const a of alias.split(/[ ,|]+/)) {
+						if (a === '!') {
+							throw E.INVALID_ALIAS(`Invalid command alias "${alias}"`, { name: 'aliases', scope: 'Command.constructor', value: alias });
+						}
+						if (a[0] === '!') {
+							aliases[a.substring(1)] = 'hidden';
+						} else {
+							aliases[a] = 'visible';
+						}
+					}
 				}
 			}
 			params.aliases = aliases;

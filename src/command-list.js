@@ -51,7 +51,7 @@ export default class CommandList extends Map {
 				entries.push({
 					name,
 					desc,
-					aliases: Object.keys(aliases)
+					aliases: aliases ? Object.keys(aliases) : null
 				});
 			}
 		}

@@ -1,4 +1,3 @@
-import AliasLookup from './alias-lookup';
 import Argument from './argument';
 import ArgumentList from './argument-list';
 import CommandList from './command-list';
@@ -6,6 +5,7 @@ import debug from './debug';
 import E from './errors';
 import fs from 'fs';
 import HookEmitter from 'hook-emitter';
+import Lookup from './lookup';
 import Option from './option';
 import OptionList from './option-list';
 import path from 'path';
@@ -95,11 +95,12 @@ export default class Context extends HookEmitter {
 		this.commands = new CommandList();
 		this.options  = new OptionList();
 
-		// initialize the alias lookup
+		// initialize the lookup table as a hidden property so that it won't get mixed in when being
+		// loaded from an extension
 		Object.defineProperty(this, 'lookup', {
 			configurable: true,
 			writable: true,
-			value: new AliasLookup()
+			value: new Lookup()
 		});
 
 		this.camelCase = params.camelCase !== false;
@@ -415,7 +416,7 @@ export default class Context extends HookEmitter {
 			}
 
 			// set the description
-			results.desc = String(this.desc).trim().replace(/^\w/, c => c.toLocaleUpperCase());
+			results.desc = this.desc ? String(this.desc).trim().replace(/^\w/, c => c.toLocaleUpperCase()) : null;
 
 			// set the commands
 			results.commands = {

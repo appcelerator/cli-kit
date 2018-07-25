@@ -4,6 +4,7 @@ export default errors;
 createError('ALREADY_EXISTS',              Error,      'A object with the same name has already been registered and would overwrite the existing object');
 createError('CONFLICT',                    Error,      'A parameter conflicts with the value of another parameter');
 createError('EMPTY_STRING',                Error,      'A string value was undefined, null, empty, or false');
+createError('INVALID_ALIAS',               TypeError,  'An alias is empty, not a string, or an invalid format');
 createError('INVALID_ARGUMENT',            TypeError,  'A function argument is undefined or the incorrect data type');
 createError('INVALID_CLIKIT_OBJECT',       TypeError,  'A function was passed a cli-kit object that is not supported');
 createError('INVALID_DATA_TYPE',           Error,      'The CLI argument or option has been assigned an unsupported data type');
@@ -12,7 +13,6 @@ createError('INVALID_EXTENSION',           Error,      'Unable to load an extens
 createError('INVALID_JSON',                Error,      'The string does not contain valid JSON');
 createError('INVALID_NUMBER',              Error,      'Unable to parse value into the number');
 createError('INVALID_OPTION',              Error,      'The option parameters are incomplete or contains invalid values');
-createError('INVALID_OPTION_ALIAS',        TypeError,  'An option alias is empty or not a string');
 createError('INVALID_OPTION_FORMAT',       TypeError,  'Unable to parse an option\'s foramt');
 createError('INVALID_PACKAGE_JSON',        Error,      'A package.json file does not exist, did not contain valid JSON, or define an object');
 createError('INVALID_VALUE',               Error,      'Unable to transform the value to the desired data type or conform to the required format');

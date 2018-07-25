@@ -12,7 +12,7 @@ const { highlight, note } = debug.styles;
 
 const dashOpt = /^(?:-|—)(.+?)(?:=(.+))?$/;
 const negateRegExp = /^no-(.+)$/;
-const optRE = /^(?:--|—)(?:([^=]+)(?:=([\s\S]*))?)?$/;
+const optRE = /^(?:--|—)(?:([^=]+)(?:=([\s\S]*))?)$/;
 
 /**
  * A collection of parsed CLI arguments.
@@ -24,6 +24,8 @@ export default class Parser {
 	 * @type {Object}
 	 */
 	argv = {};
+
+	_argv = {};
 
 	/**
 	 * An array of parsed arguments.
@@ -63,260 +65,6 @@ export default class Parser {
 		});
 
 		declareCLIKitClass(this, 'Parser');
-	}
-
-	/**
-	 * Processes the arguments against the given context. If a command is found, it recursively
-	 * calls itself.
-	 *
-	 * @param {Context} ctx - The context to process the command line arguments against.
-	 * @returns {Promise}
-	 * @access private
-	 */
-	async applyContext(ctx) {
-		const { args } = this;
-		const { lookup } = ctx;
-
-		// print the context's info
-		log(`Context: ${highlight(ctx.name)}`);
-		if (!lookup.empty) {
-			log(lookup.toString());
-		}
-
-		const dispatch = i => {
-			const arg = args[i];
-
-			if (!arg) {
-				const cmd = this.contexts[0];
-				if (cmd !== ctx) {
-					log('Descending into next context\'s parser');
-					return this.applyContext(cmd);
-				}
-
-				log('End of the line');
-				return Promise.resolve();
-			}
-
-			return new Promise((resolve, reject) => {
-				log(`Processing argument [${i}]: ${highlight(arg)}`);
-
-				let isFlag = false;
-				let m;
-				let negated = false;
-				let option;
-
-				if (arg instanceof ParsedArgument) {
-					if (arg.type === 'option' || arg.type === 'unknown') {
-						m = arg.match;
-
-						if (arg.isFlag) {
-							option = lookup.short[m[1]] || null;
-						} else {
-							negated = m[1].match(negateRegExp);
-							const name = negated ? negated[1] : m[1];
-							option = lookup.long[name] || null;
-						}
-
-						if (option) {
-							log(`Overriding option: ${highlight(option.name)}`);
-						} else {
-							// not an option in this context, leave it alone
-							log(`Skipping ${arg.type === 'unknown' ? 'un' : ''}known option: ${highlight(arg.name)}`);
-							return dispatch(i + 1).then(resolve, reject);
-						}
-					} else {
-						if (arg.type === 'command') {
-							log(`Skipping known command: ${highlight(arg.command.name)}`);
-						} else if (arg.type === 'extra') {
-							log('Skipping extra arguments');
-						}
-						return dispatch(i + 1).then(resolve, reject);
-					}
-				} else {
-					m = arg.match(optRE);
-
-					// check if `--`
-					if (m && !m[1]) {
-						args[i] = new ParsedArgument('extra', {
-							args: args.splice(i + 1, args.length)
-						});
-						return dispatch(i + 1).then(resolve, reject);
-					}
-
-					// check if long option
-					if (m) {
-						// --something or --something=foo
-						negated = m[1].match(negateRegExp);
-						const name = negated ? negated[1] : m[1];
-						option = lookup.long[name] || null;
-
-					// check if short option
-					} else if (m = arg.match(dashOpt)) {
-						if (m.length > 1) {
-							// chop it up
-							args[i] = new ParsedArgument('group', {
-								input: [ arg ],
-								args: m.split('')
-							});
-						} else {
-							option = lookup.short[m[1]] || null;
-							isFlag = true;
-						}
-					}
-				}
-
-				if (option) {
-					log(`Found option: ${highlight(option.name)} ${note(`(${option.datatype})`)} Negated? ${highlight(!!negated)}`);
-					let value = null;
-
-					if (arg instanceof ParsedArgument) {
-						value = option.transform(args[i].value, arg.negated);
-						if (value !== undefined) {
-							log(`Transforming previous value from ${highlight(args[i].value)} to ${highlight(value)}`);
-							args[i].value = value;
-						}
-					} else if (m[2]) {
-						// --something=foo
-						// -x=foo
-						if (arg instanceof ParsedArgument) {
-							value = option.transform(args[i].value, arg.negated);
-							if (value !== undefined) {
-								args[i].value = value;
-							}
-						} else {
-							args[i] = new ParsedArgument('option', {
-								input: [ arg ],
-								isFlag,
-								match: m,
-								negated,
-								option,
-								value: option.transform(m[2], negated)
-							});
-						}
-					} else {
-						// if value is `null`, then we are missing the value
-						const input = [ arg ];
-
-						if (option.isFlag && option.datatype === 'bool') {
-							input.push(value = isFlag || !negated);
-						} else if (option.isFlag && option.type === 'count') {
-							// do nothing
-						} else if (i + 1 < args.length) {
-							const nextArg = args[i + 1];
-
-							if (nextArg instanceof ParsedArgument) {
-								if (nextArg.type === 'unknown') {
-									input.push(nextArg);
-									args.splice(i + 1, 1);
-									// maybe the unknown option is actually a value that just
-									// happens to match the pattern for an option?
-									value = option.transform(nextArg.value);
-								} else {
-									// next arg has already been identified, so treat this option as
-									// a flag
-									value = true;
-								}
-							} else {
-								input.push(nextArg);
-								args.splice(i + 1, 1);
-								value = option.transform(nextArg);
-							}
-						}
-
-						args[i] = new ParsedArgument('option', {
-							input,
-							isFlag,
-							match: m,
-							option,
-							value
-						});
-					}
-
-					if (typeof option.callback !== 'function') {
-						log(`Option ${highlight(option.format)} does not have a callback, dispatching next arg`);
-						return dispatch(i + 1).then(resolve, reject);
-					}
-
-					let fired = false;
-
-					return Promise.resolve()
-						.then(() => {
-							log(`Firing option ${highlight(option.format)} callback`);
-
-							return option.callback.call(option, {
-								input: args[i].input,
-								ctx,
-								async next() {
-									if (fired) {
-										log('next() already fired');
-										return;
-									}
-
-									fired = true;
-
-									log(`Option ${highlight(option.format)} called next(), dispatching next arg`);
-									return dispatch(i + 1).then(resolve, reject);
-								},
-								option,
-								value: args[i].value
-							});
-						})
-						.then(value => {
-							if (value === undefined) {
-								log(`Option ${highlight(option.format)} callback did not change the value`);
-							} else {
-								log(`Option ${highlight(option.format)} callback changed value ${highlight(args[i].value)} to ${highlight(value)}`);
-								args[i].value = value;
-							}
-							if (!fired) {
-								log(`Option ${highlight(option.format)} did not call next(), dispatching next arg`);
-								return dispatch(i + 1).then(resolve, reject);
-							}
-						})
-						.then(resolve, reject);
-				}
-
-				// if the argument matched an option pattern, but didn't match a defined option,
-				// then we can add it as an unknown option which will eventually become a flag
-				if (option === null) {
-					log(`Found unknown option: ${highlight(arg)}`);
-
-					// treat unknown options as flags
-					args[i] = new ParsedArgument('unknown', {
-						input: [ arg ],
-						match: m,
-						name: negated ? negated[1] : m[1],
-						negated,
-						value: m[2] || true
-					});
-
-				} else {
-					const cmd = lookup.commands[arg];
-
-					// check if command and make sure we haven't already added a command this round
-					if (this.contexts[0] === ctx && cmd) {
-						log(`Found command: ${highlight(cmd.name)}`);
-
-						args[i] = new ParsedArgument('command', {
-							command: cmd,
-							input: [ arg ]
-						});
-
-						// link the context hook emitters
-						cmd.link(ctx);
-
-						// add the context to the stack
-						this.contexts.unshift(cmd);
-					} else {
-						log(`Found argument: ${highlight(arg)}`);
-					}
-				}
-
-				return dispatch(i + 1).then(resolve, reject);
-			});
-		};
-
-		await dispatch(0);
 	}
 
 	/**
@@ -383,7 +131,7 @@ export default class Parser {
 			this.contexts.unshift(ctx);
 
 			// process the arguments against the context
-			await this.applyContext(ctx);
+			await this.parseWithContext(ctx);
 
 			// from here, we want to deal with the most specific context
 			ctx = this.contexts[0];
@@ -483,6 +231,254 @@ export default class Parser {
 			err.contexts = this.contexts;
 			throw err;
 		});
+	}
+
+	/**
+	 * Processes the arguments against the given context. If a command is found, it recursively
+	 * calls itself.
+	 *
+	 * @param {CLI|Command} ctx - The context to apply when parsing the command line arguments.
+	 * @returns {Promise}
+	 * @access private
+	 */
+	async parseWithContext(ctx) {
+		// print the context's info
+		log(`Context: ${highlight(ctx.name)}`);
+		if (!ctx.lookup.empty) {
+			log(ctx.lookup.toString());
+		}
+
+		await this.parseArg(ctx, 0);
+
+		const cmd = this.contexts[0];
+		if (cmd !== ctx) {
+			log('Descending into next context\'s parser');
+			console.log(this.toString());
+			await this.parseWithContext(cmd);
+		}
+	}
+
+	/**
+	 * Parses a single argument as apart of a chain of promises.
+	 *
+	 * @param {CLI|Command} ctx - The context to apply when parsing the command line arguments.
+	 * @param {Number} i - The argument index number to parse.
+	 * @returns {Promise}
+	 * @access private
+	 */
+	parseArg(ctx, i) {
+		if (i === this.args.length) {
+			// end of the line
+			return Promise.resolve();
+		}
+
+		const arg = this.createParsedArgument(ctx, i);
+		if (arg) {
+			this.args[i] = arg;
+
+			// if we found a command and this context is not
+			if (arg.type === 'command' && this.contexts[0] === ctx) {
+				// link the context hook emitters
+				arg.command.link(ctx);
+
+				// add the context to the stack
+				this.contexts.unshift(arg.command);
+
+			} else  if (arg.type === 'option' && typeof arg.option.callback === 'function') {
+				return new Promise((resolve, reject) => {
+					const { option } = arg;
+					log(`Firing option ${highlight(option.format)} callback`);
+					let fired = false;
+
+					Promise.resolve()
+						.then(() => {
+							return option.callback.call(option, {
+								input: arg.input,
+								ctx,
+								async next() {
+									if (fired) {
+										log('next() already fired');
+										return;
+									}
+
+									fired = true;
+
+									log(`Option ${highlight(option.format)} called next(), processing next arg`);
+									return this.parseArg(ctx, i + 1).then(resolve, reject);
+								},
+								option,
+								value: arg.value
+							});
+						})
+						.then(value => {
+							if (value === undefined) {
+								log(`Option ${highlight(option.format)} callback did not change the value`);
+							} else {
+								log(`Option ${highlight(option.format)} callback changed value ${highlight(arg.value)} to ${highlight(value)}`);
+								arg.value = value;
+							}
+							if (!fired) {
+								log(`Option ${highlight(option.format)} did not call next(), processing next arg`);
+								return this.parseArg(ctx, i + 1).then(resolve, reject);
+							}
+						})
+						.then(resolve, reject);
+				});
+			}
+		}
+
+		return this.parseArg(ctx, i + 1);
+	}
+
+	/**
+	 * Detects what the argument is and returns an object that identifies what was found.
+	 *
+	 * @param {CLI|Command} ctx - The context to apply when parsing the command line arguments.
+	 * @param {Number} i - The argument index number to parse.
+	 * @returns {?ParsedArgument} Returns a `ParsedArgument` or `undefined` if the argument was
+	 * already a `ParsedArgument` and didn't change.
+	 * @access private
+	 */
+	createParsedArgument(ctx, i) {
+		const { args } = this;
+		if (i >= args.length) {
+			throw E.RANGE_ERROR(`Expected argument index to be between 0 and ${args.length}`, { name: 'index', scope: 'Parser.createParsedArgument', value: i, range: [ 0, args.length - 1 ] });
+		}
+
+		const arg = args[i];
+		const type = arg instanceof ParsedArgument && arg.type;
+		log(`Processing argument [${i}]: ${highlight(arg)}`);
+
+		// check if the argument is a the `--` extra arguments sequence
+		if (arg === '--') {
+			return new ParsedArgument('extra', {
+				args: args.splice(i + 1, args.length)
+			});
+		}
+		if (type === 'extra') {
+			log('Skipping extra arguments');
+			return;
+		}
+
+		const { lookup } = ctx;
+		let subject = arg instanceof ParsedArgument ? (arg.input ? arg.input[0] : null) : arg;
+		console.log('subject', subject);
+
+		// check if the argument is an option
+		if (!type || type === 'option' || type === 'unknown') {
+			let group;
+			let m = subject.match(optRE);
+			let negated = false;
+			let option;
+
+			if (m) {
+				// --something or --something=foo
+				negated = m[1].match(negateRegExp);
+				const name = negated ? negated[1] : m[1];
+				option = lookup.long[name] || null;
+
+			// check if short option
+			} else if (m = subject.match(dashOpt)) {
+				if (m[1].length > 1) {
+					log(`Splitting group: ${highlight(m[1])}`);
+					group = subject;
+					const newArgs = m[1].split('').map((arg, i, arr) => i + 1 === arr.length && m[2] ? `-${arg}=${m[2]}` : `-${arg}`);
+					subject = args[i] = newArgs.shift();
+					this.args.splice(i, 0, ...newArgs);
+				}
+
+				option = lookup.short[m[1][0]] || null;
+			}
+
+			if (!option && type) {
+				// not an option in this context, leave it alone
+				log(`Skipping ${type === 'unknown' ? 'un' : ''}known option: ${highlight(arg.name)}`);
+				return;
+			}
+
+			if (option) {
+				log(`${type === 'option' ? 'Overriding' : 'Found'} option: ${highlight(option.name)} ${note(`(${option.datatype})`)} Negated? ${highlight(!!negated)}`);
+
+				if (option.isFlag) {
+					return new ParsedArgument('option', {
+						input: [ subject ],
+						option,
+						value: option.transform(!negated)
+					});
+				}
+
+				let input = [ subject ];
+				let value;
+
+				if (type === 'option') {
+					value = option.transform(args[i].value);
+				} else if (m[2]) {
+					value = option.transform(m[2], negated);
+				} else if (i + 1 < args.length) {
+					const nextArg = args[i + 1];
+					if (nextArg instanceof ParsedArgument) {
+						if (nextArg.type === 'argument') {
+							input.push(nextArg);
+							args.splice(i + 1, 1);
+							// maybe the unknown option is actually a value that just
+							// happens to match the pattern for an option?
+							value = option.transform(nextArg.input[0]);
+						} else {
+							// next arg has already been identified, so treat this option as a flag
+							value = true;
+						}
+					} else {
+						input.push(nextArg);
+						args.splice(i + 1, 1);
+						value = option.transform(nextArg);
+					}
+				} else {
+					value = option.transform(value);
+				}
+
+				return new ParsedArgument('option', {
+					input,
+					option,
+					value
+				});
+			}
+
+			// if the argument matched an option pattern, but didn't match a defined option, then we
+			// can add it as an unknown option which will eventually become a flag
+			if (option === null && !type) {
+				log(`Found unknown option: ${highlight(arg)}`);
+				return new ParsedArgument('unknown', {
+					group,
+					input: [ arg ],
+					name: negated ? negated[1] : m[1],
+					negated,
+					value: m[2]
+				});
+			}
+		}
+
+		// check if the argument is a command
+		if (type === 'command') {
+			log(`Skipping known command: ${highlight(arg.command.name)}`);
+			return;
+		}
+
+		// check if command and make sure we haven't already added a command this round
+		const cmd = lookup.commands[subject];
+		if (cmd) {
+			log(`Found command: ${highlight(cmd.name)}`);
+			return new ParsedArgument('command', {
+				command: cmd,
+				input: [ arg ]
+			});
+		}
+
+		if (!type) {
+			log(`Found unknown argument: ${highlight(arg)}`);
+			return new ParsedArgument('argument', {
+				input: [ arg ]
+			});
+		}
 	}
 
 	/**

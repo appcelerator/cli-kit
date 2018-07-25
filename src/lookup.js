@@ -5,7 +5,7 @@ const { highlight, note } = debug.styles;
 /**
  * Command and option lookup for faster resolution.
  */
-export default class AliasLookup {
+export default class Lookup {
 	/**
 	 * A map of command names and aliases to command instances.
 	 *

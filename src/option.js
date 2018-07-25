@@ -6,8 +6,7 @@ import { declareCLIKitClass } from './util';
 const formatRegExp = /^(?:-([^\W]+)(?:[ ,|]+)?)?(?:--([^\s]+))?(?:\s+?(.+))?$/;
 const valueRegExp = /^(\[(?=.+\]$)|<(?=.+>$))(.+)[\]>]$/;
 const negateRegExp = /^no-(.+)$/;
-const aliasSepRegExp = /[ ,|]+/;
-const aliasRegExp = /^(?:-(.)|-{2}(.+))$/;
+const aliasRegExp = /^(?:-(!)?(.)|--(!)?(.+))$/;
 const numberRegExp = /^\d+(\.\d*)?$/;
 
 /**
@@ -20,8 +19,8 @@ export default class Option {
 	 * @param {String|Object} format - The option format containing the general info or an `Option`
 	 * object to clone.
 	 * @param {Object} [params] - Additional parameters.
-	 * @param {Object|Array<String>|String} [params.aliases] - An array of aliases or an object with
-	 * `visible` and `hidden` arrays of aliases.
+	 * @param {Array.<String>|String} [params.aliases] - An array of aliases. If an alias starts
+	 * with a `!`, then it is hidden from the help.
 	 * @param {Function} [params.callback] - A function to call when the option has been parsed.
 	 * @param {Boolean} [params.camelCase=true] - If option has a name or can derive a name from the
 	 * long option format, then it the name be camel cased.
@@ -188,7 +187,7 @@ export default class Option {
 /**
  * Processes aliases into sorted buckets for faster lookup.
  *
- * @param {Array.<String>|Object|String} aliases - An array, object, or string containing aliases.
+ * @param {Array.<String>|String} aliases - An array, object, or string containing aliases.
  * @returns {Object}
  */
 function processAliases(aliases) {
@@ -197,37 +196,42 @@ function processAliases(aliases) {
 		short: {}
 	};
 
-	const initAliases = (items, visibility = 'hidden') => {
-		if (Array.isArray(items)) {
-			for (const alias of items) {
-				if (!alias || typeof alias !== 'string') {
-					throw E.INVALID_OPTION_ALIAS('Expected aliases to be an array of strings or an object with visible/hidden array of strings',
-						{ name: 'aliases', scope: 'Option.constructor', value: alias });
-				}
+	if (!aliases) {
+		return result;
+	}
 
-				for (const a of alias.split(aliasSepRegExp)) {
-					const m = a.match(aliasRegExp);
-					if (!m) {
-						throw E.INVALID_OPTION_ALIAS(`Invalid alias format "${alias}"`, { name: 'aliases', scope: 'Option.constructor', value: alias });
-					}
+	if (!Array.isArray(aliases)) {
+		if (typeof aliases === 'object') {
+			if (aliases.long && typeof aliases.long === 'object') {
+				Object.assign(result.long, aliases.long);
+			}
+			if (aliases.short && typeof aliases.short === 'object') {
+				Object.assign(result.short, aliases.short);
+			}
+			return result;
+		}
 
-					if (m[1]) {
-						result.short[m[1]] = visibility;
-					} else if (m[2]) {
-						result.long[m[2]] = visibility;
-					}
-				}
+		aliases = [ aliases ];
+	}
+
+	for (const alias of aliases) {
+		if (!alias || typeof alias !== 'string') {
+			throw E.INVALID_OPTION_ALIAS('Expected aliases to be an array of strings',
+				{ name: 'aliases', scope: 'Option.constructor', value: alias });
+		}
+
+		for (const a of alias.split(/[ ,|]+/)) {
+			const m = a.match(aliasRegExp);
+			if (!m) {
+				throw E.INVALID_ALIAS(`Invalid alias format "${alias}"`, { name: 'aliases', scope: 'Option.constructor', value: alias });
+			}
+
+			if (m[2]) {
+				result.short[m[2]] = m[1] ? 'hidden' : 'visible';
+			} else if (m[4]) {
+				result.long[m[4]] = m[3] ? 'hidden' : 'visible';
 			}
 		}
-	};
-
-	if (Array.isArray(aliases)) {
-		initAliases(aliases);
-	} else if (aliases && typeof aliases === 'object') {
-		initAliases(aliases.visible, 'visible');
-		initAliases(aliases.hidden);
-	} else if (aliases) {
-		initAliases([ aliases ]);
 	}
 
 	return result;
