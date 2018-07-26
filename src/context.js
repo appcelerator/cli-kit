@@ -326,6 +326,12 @@ export default class Context extends HookEmitter {
 			}
 		}
 
+		if (!params) {
+			params = {};
+		}
+
+		params.parent = this;
+
 		const opt = optOrFormat instanceof Option ? optOrFormat : new Option(optOrFormat, params);
 		group || (group = opt.group || '');
 

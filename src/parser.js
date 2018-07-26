@@ -25,6 +25,11 @@ export default class Parser {
 	 */
 	argv = {};
 
+	/**
+	 * An object containing only unknown parsed options and flags.
+	 *
+	 * @type {Object}
+	 */
 	_argv = {};
 
 	/**
@@ -143,6 +148,7 @@ export default class Parser {
 			log('Filling argv and _');
 			let i = 0;
 			let extra = [];
+
 			for (const parsedArg of this.args) {
 				let name;
 				if (parsedArg instanceof ParsedArgument) {
@@ -171,7 +177,7 @@ export default class Parser {
 
 							// clean up the name
 							name = ctx.get('camelCase') ? camelCase(parsedArg.name) : parsedArg.name;
-							this.argv[name] = value;
+							this.argv[name] = this._argv[name] = value;
 
 							if (ctx.get('treatUnknownOptionsAsArguments')) {
 								this._.push(parsedArg.input[0]);
@@ -249,13 +255,6 @@ export default class Parser {
 		}
 
 		await this.parseArg(ctx, 0);
-
-		const cmd = this.contexts[0];
-		if (cmd !== ctx) {
-			log('Descending into next context\'s parser');
-			console.log(this.toString());
-			await this.parseWithContext(cmd);
-		}
 	}
 
 	/**
@@ -268,13 +267,20 @@ export default class Parser {
 	 */
 	parseArg(ctx, i) {
 		if (i === this.args.length) {
-			// end of the line
+			const cmd = this.contexts[0];
+			if (cmd !== ctx) {
+				log('Descending into next context\'s parser');
+				return this.parseWithContext(cmd);
+			}
+			log('End of the line');
 			return Promise.resolve();
 		}
 
 		const arg = this.createParsedArgument(ctx, i);
 		if (arg) {
-			this.args[i] = arg;
+			if (arg.type !== 'command' || this.contexts[0] === ctx) {
+				this.args[i] = arg;
+			}
 
 			// if we found a command and this context is not
 			if (arg.type === 'command' && this.contexts[0] === ctx) {
@@ -284,32 +290,30 @@ export default class Parser {
 				// add the context to the stack
 				this.contexts.unshift(arg.command);
 
-			} else  if (arg.type === 'option' && typeof arg.option.callback === 'function') {
+			} else if (arg.type === 'option' && typeof arg.option.callback === 'function') {
 				return new Promise((resolve, reject) => {
 					const { option } = arg;
-					log(`Firing option ${highlight(option.format)} callback`);
+					log(`Firing option ${highlight(option.format)} callback ${note(`(${option.parent.name})`)}`);
 					let fired = false;
 
 					Promise.resolve()
-						.then(() => {
-							return option.callback.call(option, {
-								input: arg.input,
-								ctx,
-								async next() {
-									if (fired) {
-										log('next() already fired');
-										return;
-									}
+						.then(() => option.callback({
+							input: arg.input,
+							ctx,
+							next: () => {
+								if (fired) {
+									log('next() already fired');
+									return;
+								}
 
-									fired = true;
+								fired = true;
 
-									log(`Option ${highlight(option.format)} called next(), processing next arg`);
-									return this.parseArg(ctx, i + 1).then(resolve, reject);
-								},
-								option,
-								value: arg.value
-							});
-						})
+								log(`Option ${highlight(option.format)} called next(), processing next arg`);
+								return this.parseArg(ctx, i + 1);
+							},
+							option,
+							value: arg.value
+						}))
 						.then(value => {
 							if (value === undefined) {
 								log(`Option ${highlight(option.format)} callback did not change the value`);
@@ -317,9 +321,10 @@ export default class Parser {
 								log(`Option ${highlight(option.format)} callback changed value ${highlight(arg.value)} to ${highlight(value)}`);
 								arg.value = value;
 							}
+
 							if (!fired) {
 								log(`Option ${highlight(option.format)} did not call next(), processing next arg`);
-								return this.parseArg(ctx, i + 1).then(resolve, reject);
+								return this.parseArg(ctx, i + 1);
 							}
 						})
 						.then(resolve, reject);
@@ -362,11 +367,9 @@ export default class Parser {
 
 		const { lookup } = ctx;
 		let subject = arg instanceof ParsedArgument ? (arg.input ? arg.input[0] : null) : arg;
-		console.log('subject', subject);
 
 		// check if the argument is an option
 		if (!type || type === 'option' || type === 'unknown') {
-			let group;
 			let m = subject.match(optRE);
 			let negated = false;
 			let option;
@@ -381,10 +384,10 @@ export default class Parser {
 			} else if (m = subject.match(dashOpt)) {
 				if (m[1].length > 1) {
 					log(`Splitting group: ${highlight(m[1])}`);
-					group = subject;
 					const newArgs = m[1].split('').map((arg, i, arr) => i + 1 === arr.length && m[2] ? `-${arg}=${m[2]}` : `-${arg}`);
-					subject = args[i] = newArgs.shift();
-					this.args.splice(i, 0, ...newArgs);
+					subject = newArgs.shift();
+					log(`Inserting arguments: ${newArgs.join(', ')}`);
+					this.args.splice(i + 1, 0, ...newArgs);
 				}
 
 				option = lookup.short[m[1][0]] || null;
@@ -399,16 +402,16 @@ export default class Parser {
 			if (option) {
 				log(`${type === 'option' ? 'Overriding' : 'Found'} option: ${highlight(option.name)} ${note(`(${option.datatype})`)} Negated? ${highlight(!!negated)}`);
 
-				if (option.isFlag) {
-					return new ParsedArgument('option', {
-						input: [ subject ],
-						option,
-						value: option.transform(!negated)
-					});
-				}
-
 				let input = [ subject ];
 				let value;
+
+				if (option.isFlag) {
+					return new ParsedArgument('option', {
+						input,
+						option,
+						value: option.transform(type && arg.value !== undefined ? arg.value : true, negated)
+					});
+				}
 
 				if (type === 'option') {
 					value = option.transform(args[i].value);
@@ -446,10 +449,9 @@ export default class Parser {
 			// if the argument matched an option pattern, but didn't match a defined option, then we
 			// can add it as an unknown option which will eventually become a flag
 			if (option === null && !type) {
-				log(`Found unknown option: ${highlight(arg)}`);
+				log(`Found unknown option: ${highlight(subject)}`);
 				return new ParsedArgument('unknown', {
-					group,
-					input: [ arg ],
+					input: [ subject ],
 					name: negated ? negated[1] : m[1],
 					negated,
 					value: m[2]

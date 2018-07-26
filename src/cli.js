@@ -160,14 +160,6 @@ export default class CLI extends Context {
 		let banner = this.get('banner');
 		banner = banner && String(typeof banner === 'function' ? await banner() : banner).trim();
 
-		// if we have a banner, then override write() so we can immediately write the banner
-		if (banner) {
-			interceptor = new WriteInterceptor(
-				[ this.get('out'), process.stdout, process.stderr ],
-				() => this.get('showBanner', true) && banner
-			);
-		}
-
 		const parser = new Parser();
 
 		try {
@@ -185,6 +177,14 @@ export default class CLI extends Context {
 				log(`Selected default command: ${this.defaultCommand}`);
 				cmd = this.commands.get(this.defaultCommand);
 				parser.contexts.unshift(cmd);
+			}
+
+			// if we have a banner, then override write() so we can immediately write the banner
+			if (banner) {
+				interceptor = new WriteInterceptor(
+					[ (cmd || this).get('out'), process.stdout, process.stderr ],
+					() => (cmd || this).get('showBanner', true) && banner
+				);
 			}
 
 			if (cmd && typeof cmd.action === 'function') {
