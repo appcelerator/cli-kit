@@ -158,10 +158,10 @@ describe('CLI', () => {
 				'',
 				'Usage: test-cli [options]',
 				'',
-				'Global options:',
-				'  -h, --help   displays the help screen',
-				'  --no-banner  suppress the banner',
-				'',
+				// 'Global options:',
+				// '  -h, --help   displays the help screen',
+				// '  --no-banner  suppress the banner',
+				// '',
 				''
 			].join('\n'));
 		});

@@ -37,6 +37,9 @@ export default class ParsedArgument {
 			case 'command':
 				name = this.command && this.command.name;
 				break;
+			case 'option':
+				name = this.option && this.option.name;
+				break;
 		}
 		return name || this.input && this.input[0];
 	}

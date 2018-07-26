@@ -61,7 +61,7 @@ export default class OptionList extends Map {
 						format:   opt.format,
 						desc:     opt.desc,
 						datatype: opt.datatype,
-						aliases:  Object.keys(opt.aliases),
+						aliases:  Object.keys(opt.aliases).filter(a => opt.aliases[a]),
 						default:  opt.default,
 						max:      opt.max,
 						min:      opt.min,

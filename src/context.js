@@ -345,13 +345,16 @@ export default class Context extends HookEmitter {
 			this.lookup.short[opt.short] = opt;
 		}
 
-		let alias;
-		for (alias of Object.keys(opt.aliases.long)) {
-			this.lookup.long[alias] = opt;
+		for (const [ alias, visible ] of Object.entries(opt.aliases.long)) {
+			if (visible) {
+				this.lookup.long[alias] = opt;
+			}
 		}
 
-		for (alias of Object.keys(opt.aliases.short)) {
-			this.lookup.short[alias] = opt;
+		for (const [ alias, visible ] of Object.entries(opt.aliases.short)) {
+			if (visible) {
+				this.lookup.short[alias] = opt;
+			}
 		}
 
 		return this;

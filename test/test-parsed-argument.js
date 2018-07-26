@@ -39,7 +39,7 @@ describe('Parsed Argument', () => {
 		});
 
 		it('should render a parsed argument', () => {
-			const p = new ParsedArgument('blah', { value: 'foo' });
+			const p = new ParsedArgument('blah', { input: [ 'foo' ] });
 			expect(p.toString()).to.equal('[parsed blah: foo]');
 		});
 	});

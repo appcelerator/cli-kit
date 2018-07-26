@@ -6,7 +6,7 @@ import { declareCLIKitClass } from './util';
 const formatRegExp = /^(?:-([^\W]+)(?:[ ,|]+)?)?(?:--([^\s]+))?(?:\s+?(.+))?$/;
 const valueRegExp = /^(\[(?=.+\]$)|<(?=.+>$))(.+)[\]>]$/;
 const negateRegExp = /^no-(.+)$/;
-const aliasRegExp = /^(?:-(!)?(.)|--(!)?(.+))$/;
+const aliasRegExp = /^(!)?(?:-(.)|--(.+))$/;
 const numberRegExp = /^\d+(\.\d*)?$/;
 
 /**
@@ -216,7 +216,7 @@ function processAliases(aliases) {
 
 	for (const alias of aliases) {
 		if (!alias || typeof alias !== 'string') {
-			throw E.INVALID_OPTION_ALIAS('Expected aliases to be an array of strings',
+			throw E.INVALID_ALIAS('Expected aliases to be a string or an array of strings',
 				{ name: 'aliases', scope: 'Option.constructor', value: alias });
 		}
 
@@ -227,9 +227,9 @@ function processAliases(aliases) {
 			}
 
 			if (m[2]) {
-				result.short[m[2]] = m[1] ? 'hidden' : 'visible';
-			} else if (m[4]) {
-				result.long[m[4]] = m[3] ? 'hidden' : 'visible';
+				result.short[m[2]] = !m[1];
+			} else if (m[3]) {
+				result.long[m[3]] = !m[1];
 			}
 		}
 	}
