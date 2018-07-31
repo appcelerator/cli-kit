@@ -24,8 +24,6 @@ export default class CLI extends Context {
 	 * @param {Boolean} [params.colors=true] - Enables colors, specifically on the help screen.
 	 * @param {Boolean} [params.defaultCommand] - The default command to execute.
 	 * @param {Boolean} [params.help=false] - When `true`, enables the built-in help command.
-	 * @param {Function} [params.helpRenderer] - A custom function that takes the help object and
-	 * render it to a custom output.
 	 * @param {Number} [params.helpExitCode] - The exit code to return when the help command is
 	 * finished.
 	 * @param {String} [params.name] - The name of the program.
@@ -54,10 +52,6 @@ export default class CLI extends Context {
 
 		if (params.helpExitCode !== undefined && typeof params.helpExitCode !== 'number') {
 			throw E.INVALID_ARGUMENT('Expected help exit code to be a number', { name: 'params.helpExitCode', scope: 'CLI.constructor', value: params.helpExitCode });
-		}
-
-		if (params.helpRenderer !== undefined && typeof params.helpRenderer !== 'function') {
-			throw E.INVALID_ARGUMENT('Expected help renderer to be a function', { name: 'params.helpRenderer', scope: 'CLI.constructor', value: params.helpRenderer });
 		}
 
 		if (params.width !== undefined && typeof params.width !== 'number') {

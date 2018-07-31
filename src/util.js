@@ -155,6 +155,8 @@ export function wrap(str, width, indent) {
 		.join('\n');
 }
 
+// ctx.get('width')
+
 /**
  * Overwrites the `write()` method of the supplied streams and the first stream that has data will
  * fire the specified `callback` and render a string, then restore the original writes.

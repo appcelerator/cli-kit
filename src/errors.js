@@ -20,6 +20,7 @@ createError('MISSING_REQUIRED_ARGUMENT',   Error,      'A required command line 
 createError('NO_EXECUTABLE',               Error,      'Attempted to run an undefined executable');
 createError('NOT_YES_NO',                  RangeError, 'The value is not "yes", "y", "no", or "n"');
 createError('RANGE_ERROR',                 RangeError, 'The value is not within the acceptable min/max range');
+createError('TEMPLATE_NOT_FOUND',          Error,      'The specified template file does not exist or access is denied');
 createError('TYPE_ERROR',                  TypeError,  'A variable is undefined or the incorrect data type');
 
 /**
