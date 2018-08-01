@@ -179,7 +179,7 @@ export default class Extension extends Command {
 			const stdout = out || process.stdout;
 			const stderr = out || process.stderr;
 
-			log(`Running: ${this.executable} ${args.join(' ')}`);
+			log(`Running: ${highlight(this.executable + ' ' + args.join(' '))}`);
 			const child = spawn(this.executable, args);
 
 			child.stdout.on('data', data => stdout.write(data.toString()));

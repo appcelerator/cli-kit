@@ -8,6 +8,7 @@ import helpCommand from './help';
 import { declareCLIKitClass, WriteInterceptor } from './util';
 
 const { error, log } = debug('cli-kit:cli');
+const { highlight }  = debug.styles;
 
 /**
  * Defines a CLI context and is responsible for parsing the command line arguments.
@@ -182,7 +183,7 @@ export default class CLI extends Context {
 			}
 
 			if (cmd && typeof cmd.action === 'function') {
-				log(`Executing command: ${cmd.name}`);
+				log(`Executing command: ${highlight(cmd.name)}`);
 				return await cmd.action(parser);
 			}
 

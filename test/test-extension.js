@@ -68,7 +68,7 @@ describe('Extension', () => {
 	});
 
 	describe('cli-kit Node Extensions', () => {
-		it('should load and merge a cli-kit Node package', async () => {
+		it.only('should load and merge a cli-kit Node package', async () => {
 			const extension = new Extension({
 				extensionPath: path.join(__dirname, 'fixtures', 'cli-kit-ext')
 			});
@@ -118,7 +118,7 @@ describe('Extension', () => {
 	});
 
 	describe('JavaScript Extensions', () => {
-		it.only('should run a JavaScript file', async function () {
+		it('should run a JavaScript file', async function () {
 			this.slow(4000);
 			this.timeout(5000);
 

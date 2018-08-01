@@ -1,9 +1,13 @@
->>?err
+if (error) {
+	>> ${error}
+}
 
 if (usage) {
-	>>${usage.title}: ${usage.text}
+	>> ${usage.title}: ${usage.text}
 }
 
 >>?desc
 
-commands go here
+if (commands.count) {
+	>> Commands:
+}

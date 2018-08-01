@@ -153,6 +153,10 @@ export default class Parser {
 				let name;
 				if (parsedArg instanceof ParsedArgument) {
 					switch (parsedArg.type) {
+						case 'argument':
+							this._.push(parsedArg.input[0]);
+							break;
+
 						case 'extra':
 							extra = parsedArg.args;
 							break;
