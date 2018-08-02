@@ -90,7 +90,8 @@ export default class Option {
 		if (m[2]) {
 			const negate  = m[2].match(negateRegExp);
 			params.negate = !!negate;
-			params.long   = params.name = negate ? negate[1] : m[2];
+			params.name   = negate ? negate[1] : m[2];
+			params.long   = m[2];
 		}
 
 		params.name = params.name || params.long || params.short || params.format;

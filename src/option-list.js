@@ -49,7 +49,7 @@ export default class OptionList extends Map {
 		let count = 0;
 		const groups = {};
 		const sortFn = (a, b) => {
-			return a.order < b.order ? -1 : a.order > b.order ? 1 : a.name.localeCompare(b.name);
+			return a.order < b.order ? -1 : a.order > b.order ? 1 : a.long.localeCompare(b.long);
 		};
 
 		for (const [ groupName, options ] of this.entries()) {
@@ -58,7 +58,8 @@ export default class OptionList extends Map {
 				if (!opt.hidden) {
 					group.push({
 						name:     opt.name,
-						format:   opt.format,
+						long:     opt.long,
+						short:    opt.short,
 						desc:     opt.desc,
 						datatype: opt.datatype,
 						aliases:  Object.keys(opt.aliases).filter(a => opt.aliases[a]),

@@ -429,7 +429,7 @@ export default class Context extends HookEmitter {
 
 			// set the commands
 			results.commands = {
-				title: `${this.title} commands`,
+				title: this.parent ? `${this.title} commands` : 'Commands',
 				...this.commands.generateHelp()
 			};
 

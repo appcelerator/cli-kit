@@ -1,11 +1,12 @@
-import Parser from './parser';
 import Command from './command';
 import Context from './context';
 import debug from './debug';
 import E from './errors';
+import Formatter from './formatter';
 import helpCommand from './help';
+import Parser from './parser';
 
-import { declareCLIKitClass, WriteInterceptor } from './util';
+import { declareCLIKitClass } from './util';
 
 const { error, log } = debug('cli-kit:cli');
 const { highlight }  = debug.styles;
@@ -24,6 +25,8 @@ export default class CLI extends Context {
 	 * to be displayed before each command.
 	 * @param {Boolean} [params.colors=true] - Enables colors, specifically on the help screen.
 	 * @param {Boolean} [params.defaultCommand] - The default command to execute.
+	 * @param {Object} [params.formatOpts] - Various formatter options such as the preferred display
+	 * width, extensions, etc.
 	 * @param {Boolean} [params.help=false] - When `true`, enables the built-in help command.
 	 * @param {Number} [params.helpExitCode] - The exit code to return when the help command is
 	 * finished.
@@ -38,8 +41,6 @@ export default class CLI extends Context {
 	 * then display the error before the help information.
 	 * @param {String} [params.title='Global'] - The title for the global context.
 	 * @param {String} [params.version] - The program version.
-	 * @param {Number} [params.width] - The number of characters to wrap long descriptions. Defaults
-	 * to `process.stdout.columns` if exists, otherwise `100`. Must be at least `40`.
 	 * @access public
 	 */
 	constructor(params = {}) {
@@ -48,19 +49,15 @@ export default class CLI extends Context {
 		}
 
 		if (params.out && (typeof params.out !== 'object' || typeof params.out.write !== 'function')) {
-			throw E.INVALID_ARGUMENT('Expected output stream to be a writable stream', { name: 'params.out', scope: 'CLI.constructor', value: params.out });
+			throw E.INVALID_ARGUMENT('Expected output stream to be a writable stream', { name: 'out', scope: 'CLI.constructor', value: params.out });
 		}
 
 		if (params.helpExitCode !== undefined && typeof params.helpExitCode !== 'number') {
-			throw E.INVALID_ARGUMENT('Expected help exit code to be a number', { name: 'params.helpExitCode', scope: 'CLI.constructor', value: params.helpExitCode });
-		}
-
-		if (params.width !== undefined && typeof params.width !== 'number') {
-			throw E.INVALID_ARGUMENT('Expected width to be a number', { name: 'params.width', scope: 'CLI.constructor', value: params.width });
+			throw E.INVALID_ARGUMENT('Expected help exit code to be a number', { name: 'helpExitCode', scope: 'CLI.constructor', value: params.helpExitCode });
 		}
 
 		if (params.banner !== undefined && typeof params.banner !== 'string' && typeof params.banner !== 'function') {
-			throw E.INVALID_ARGUMENT('Expected banner to be a string or function', { name: 'params.banner', scope: 'CLI.constructor', value: params.banner });
+			throw E.INVALID_ARGUMENT('Expected banner to be a string or function', { name: 'banner', scope: 'CLI.constructor', value: params.banner });
 		}
 
 		params.colors = params.colors !== false;
@@ -75,6 +72,15 @@ export default class CLI extends Context {
 
 		super(params);
 		declareCLIKitClass(this, 'CLI');
+
+		// init the output streams
+		// note that `this.out` does NOT show the banner, but writing to `this.stdout` or
+		// `this.stderr` WILL show the banner when the output has not been auto detected as xml/json
+		this.stdout = new Formatter(this.formatOpts);
+		this.stdout.pipe(this.out || process.stdout);
+
+		this.stderr = new Formatter(this.formatOpts);
+		this.stderr.pipe(this.out || process.stdout);
 
 		// set the default command
 		this.defaultCommand = params.defaultCommand;
@@ -94,12 +100,7 @@ export default class CLI extends Context {
 
 		// add the --no-banner flag
 		if (this.banner && !hideNoBannerOption) {
-			this.showBanner = true;
-
 			this.option('--no-banner', {
-				callback: value => {
-					this.showBanner = value;
-				},
 				desc: 'suppress the banner'
 			});
 		}
@@ -117,7 +118,6 @@ export default class CLI extends Context {
 			this.option('-v, --version', {
 				callback: async ({ next }) => {
 					await next();
-					this.showBanner = false;
 					const out = this.get('out', process.stdout);
 					out.write(`${params.version}\n`);
 					process.exit(0);
@@ -151,10 +151,6 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected arguments to be an array', { name: 'args', scope: 'CLI.exec', value: unparsedArgs });
 		}
 
-		let interceptor;
-		let banner = this.get('banner');
-		banner = banner && String(typeof banner === 'function' ? await banner() : banner).trim();
-
 		const parser = new Parser();
 
 		try {
@@ -163,6 +159,7 @@ export default class CLI extends Context {
 
 			log('Parsing complete');
 
+			// determine the command to run
 			if (this.help && argv.help) {
 				log('Selected help command');
 				cmd = this.commands.get('help');
@@ -174,14 +171,19 @@ export default class CLI extends Context {
 				parser.contexts.unshift(cmd);
 			}
 
-			// if we have a banner, then override write() so we can immediately write the banner
-			if (banner) {
-				interceptor = new WriteInterceptor(
-					[ (cmd || this).get('out'), process.stdout, process.stderr ],
-					() => (cmd || this).get('showBanner', true) && banner
-				);
+			// wire up the banner
+			let banner = this.get('banner');
+			if (banner && argv.banner) {
+				banner = String(typeof banner === 'function' ? await banner() : banner).trim();
+				const showBanner = write => {
+					banner && write(`${banner}\n\n`);
+					banner = null;
+				};
+				this.stdout.once('banner', showBanner);
+				this.stderr.once('banner', showBanner);
 			}
 
+			// execute the command
 			if (cmd && typeof cmd.action === 'function') {
 				log(`Executing command: ${highlight(cmd.name)}`);
 				return await cmd.action(parser);

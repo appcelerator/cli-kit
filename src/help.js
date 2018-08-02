@@ -37,7 +37,7 @@ export default {
 			const help = await ctx.generateHelp(err);
 
 			// determine the output stream
-			const out = ctx.get('out', err ? process.stderr : process.stdout);
+			const out = ctx.get(err ? 'stderr' : 'stdout');
 
 			// print the help output
 			if (argv.json) {
