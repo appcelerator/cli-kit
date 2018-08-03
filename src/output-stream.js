@@ -1,5 +1,3 @@
-import E from './errors';
-
 import { Transform } from 'stream';
 
 /**
@@ -17,26 +15,19 @@ const ignoredEncodings = /^base64|binary|hex$/;
 /**
  * Handles the signaling for the banner to be displayed and formatting of any output that contains
  * markdown syntax.
+ *
+ * @extends {Transform}
  */
-export default class Formatter extends Transform {
+export default class OutputStream extends Transform {
 	/**
-	 * ?
-	 * @param {Object} [opts] - Various options.
-	 * @param {Number} [opts.width=100] - The maximum width of the output before wrapping.
+	 * Initializes the formatter.
+	 *
+	 * @param {Renderer} renderer - A renderer instance.
 	 * @access public
 	 */
-	constructor(opts = {}) {
-		if (typeof opts !== 'object') {
-			throw E.INVALID_ARGUMENT('Expected format options to be an object', { name: 'opts', scope: 'Formatter.constructor', value: opts });
-		}
-
-		if (opts.width !== undefined && typeof opts.width !== 'number') {
-			throw E.INVALID_ARGUMENT('Expected format width to be a number', { name: 'width', scope: 'Formatter.constructor', value: opts.width });
-		}
-
-		super(opts);
-
-		this.width = opts.width || 100;
+	constructor(renderer) {
+		super();
+		this.renderer = renderer;
 	}
 
 	/**
@@ -54,26 +45,14 @@ export default class Formatter extends Transform {
 			if (!this.firedBanner) {
 				this.firedBanner = true;
 				if (!dataRegExp.test(chunk)) {
-					this.emit('banner', banner => this.push(this.format(banner)));
+					this.emit('banner', banner => this.push(this.renderer.render(banner)));
 				}
 			}
-			chunk = this.format(chunk.toString());
+			chunk = this.renderer.render(chunk.toString());
 		}
 
 		this.push(chunk);
 
 		cb();
-	}
-
-	/**
-	 * Formats as a string using markdown.
-	 *
-	 * @param {String} str - The string to format.
-	 * @returns {String}
-	 * @access private
-	 */
-	format(str) {
-		// console.log('FORMATTING', str);
-		return str;
 	}
 }

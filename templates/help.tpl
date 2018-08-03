@@ -16,6 +16,14 @@ if (commands.count) {
 	>>
 }
 
+if (arguments.count) {
+	>> # ==${arguments.title}:==
+	for (const arg of arguments.entries) {
+		>>|| ${arg.name} | ${arg.desc} |
+	}
+	>>
+}
+
 if (options.count) {
 	for (const scope of options.scopes) {
 		if (scope.count) {

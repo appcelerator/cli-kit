@@ -2,9 +2,10 @@ import Command from './command';
 import Context from './context';
 import debug from './debug';
 import E from './errors';
-import Formatter from './formatter';
 import helpCommand from './help';
 import Parser from './parser';
+import OutputStream from './output-stream';
+import Renderer from './renderer';
 
 import { declareCLIKitClass } from './util';
 
@@ -25,18 +26,18 @@ export default class CLI extends Context {
 	 * to be displayed before each command.
 	 * @param {Boolean} [params.colors=true] - Enables colors, specifically on the help screen.
 	 * @param {Boolean} [params.defaultCommand] - The default command to execute.
-	 * @param {Object} [params.formatOpts] - Various formatter options such as the preferred display
-	 * width, extensions, etc.
 	 * @param {Boolean} [params.help=false] - When `true`, enables the built-in help command.
 	 * @param {Number} [params.helpExitCode] - The exit code to return when the help command is
 	 * finished.
 	 * @param {String} [params.name] - The name of the program.
-	 * @param {Boolean} [params.hideNoBannerOption=false] - When `true` and a `banner` is specified, it
-	 * does not add the `--no-banner` option.
-	 * @param {Boolean} [params.hideNoColorOption=false] - When `true` and `colors` is enabled, it does
-	 * not add the `--no-color` option.
+	 * @param {Boolean} [params.hideNoBannerOption=false] - When `true` and a `banner` is specified,
+	 * it does not add the `--no-banner` option.
+	 * @param {Boolean} [params.hideNoColorOption=false] - When `true` and `colors` is enabled, it
+	 * does not add the `--no-color` option.
 	 * @param {Object|Writable} [params.out=process.stdout] - A stream to write output such as the
 	 * help screen or an object with a `write()` method.
+	 * @param {Object} [params.rendererOpts] - Various rendering options such as a custom MarkdownIt
+	 * instance, MarkdownIt plugins, display width, etc.
 	 * @param {Boolean} [params.showHelpOnError=true] - If an error occurs and `help` is enabled,
 	 * then display the error before the help information.
 	 * @param {String} [params.title='Global'] - The title for the global context.
@@ -76,11 +77,11 @@ export default class CLI extends Context {
 		// init the output streams
 		// note that `this.out` does NOT show the banner, but writing to `this.stdout` or
 		// `this.stderr` WILL show the banner when the output has not been auto detected as xml/json
-		this.stdout = new Formatter(this.formatOpts);
+		const renderer = new Renderer(this.rendererOpts);
+		this.stdout = new OutputStream(renderer);
 		this.stdout.pipe(this.out || process.stdout);
-
-		this.stderr = new Formatter(this.formatOpts);
-		this.stderr.pipe(this.out || process.stdout);
+		this.stderr = new OutputStream(renderer);
+		this.stderr.pipe(this.out || process.stderr);
 
 		// set the default command
 		this.defaultCommand = params.defaultCommand;

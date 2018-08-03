@@ -42,6 +42,7 @@
     "hook-emitter": "^3.0.2",
     "isexe": "^2.0.0",
     "lodash.camelcase": "^4.3.0",
+    "markdown-it": "^8.4.2",
     "pkg-dir": "^3.0.0",
     "snooplogg": "^1.12.1",
     "source-map-support": "^0.5.6",

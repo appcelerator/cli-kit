@@ -445,7 +445,7 @@ export default class Context extends HookEmitter {
 
 			// set the arguments
 			results.arguments = {
-				title: `${this.title} arguments`,
+				title: this.parent ? `${this.title} arguments` : 'Arguments',
 				...this.args.generateHelp()
 			};
 
