@@ -30,7 +30,7 @@ export default class Parser {
 	 *
 	 * @type {Object}
 	 */
-	_argv = {};
+	unknown = {};
 
 	/**
 	 * An array of parsed arguments.
@@ -149,73 +149,81 @@ export default class Parser {
 			let i = 0;
 			let extra = [];
 
-			for (const parsedArg of this.args) {
-				let name;
-				if (parsedArg instanceof ParsedArgument) {
-					switch (parsedArg.type) {
-						case 'argument':
-							this._.push(parsedArg.input[0]);
-							break;
+			const setArg = async (idx, value) => {
+				const arg = ctx.args[idx];
+				if (arg) {
+					const name = arg.camelCase || ctx.get('camelCase') ? camelCase(arg.name) : arg.name;
+					value = arg.transform(value);
 
-						case 'extra':
-							extra = parsedArg.args;
-							break;
-
-						case 'option':
-							name = parsedArg.option.camelCase || ctx.get('camelCase') ? camelCase(parsedArg.option.name) : parsedArg.option.name;
-							if (parsedArg.option.type === 'count') {
-								this.argv[name] = (this.argv[name] || 0) + 1;
-							} else {
-								this.argv[name] = parsedArg.value;
-							}
-							break;
-
-						case 'unknown':
-							// since this is an unknown option, we try to guess it's type and if it's
-							// a bool, we will honor the negate (e.g. --no-<name>)
-							let { value } = parsedArg;
-							value = value === undefined ? true : transformValue(value);
-							if (typeof value === 'boolean' && parsedArg.negated) {
-								value = !value;
-							}
-
-							// clean up the name
-							name = ctx.get('camelCase') ? camelCase(parsedArg.name) : parsedArg.name;
-							this.argv[name] = this._argv[name] = value;
-
-							if (ctx.get('treatUnknownOptionsAsArguments')) {
-								this._.push(parsedArg.input[0]);
-							}
-							break;
-					}
-				} else {
-					const arg = ctx.args[i++];
-					if (arg) {
-						name = arg.camelCase || ctx.get('camelCase') ? camelCase(arg.name) : arg.name;
-						let value = arg.transform(parsedArg);
-
-						if (typeof arg.callback === 'function') {
-							const newValue = await arg.callback.call(arg, value);
-							if (newValue !== undefined) {
-								value = newValue;
-							}
+					if (typeof arg.callback === 'function') {
+						const newValue = await arg.callback.call(arg, value);
+						if (newValue !== undefined) {
+							value = newValue;
 						}
+					}
 
-						if (arg.multiple) {
-							// if this arg gobbles up multiple parsed args, then we decrement `i` so
-							// that we never increment it and no further arguments will be applied
-							i--;
-							if (Array.isArray(this.argv[name])) {
-								this.argv[name].push(value);
-							} else {
-								this.argv[name] = [ value ];
-							}
+					if (arg.multiple) {
+						// if this arg gobbles up multiple parsed args, then we decrement `i` so
+						// that we never increment it and no further arguments will be applied
+						i--;
+						if (Array.isArray(this.argv[name])) {
+							this.argv[name].push(value);
 						} else {
-							this.argv[name] = value;
+							this.argv[name] = [ value ];
 						}
 					} else {
-						this._.push(parsedArg);
+						this.argv[name] = value;
 					}
+
+					this._.push(value);
+
+				} else {
+					this._.push(value);
+				}
+			};
+
+			for (const parsedArg of this.args) {
+				let name;
+				const isParsed = parsedArg instanceof ParsedArgument;
+				if (!isParsed || parsedArg.type === 'argument') {
+					await setArg(i++, isParsed ? parsedArg.input[0] : parsedArg);
+					continue;
+				}
+
+				switch (parsedArg.type) {
+					case 'argument':
+						break;
+
+					case 'extra':
+						extra = parsedArg.args;
+						break;
+
+					case 'option':
+						name = parsedArg.option.camelCase || ctx.get('camelCase') ? camelCase(parsedArg.option.name) : parsedArg.option.name;
+						if (parsedArg.option.type === 'count') {
+							this.argv[name] = (this.argv[name] || 0) + 1;
+						} else {
+							this.argv[name] = parsedArg.value;
+						}
+						break;
+
+					case 'unknown':
+						// since this is an unknown option, we try to guess it's type and if it's
+						// a bool, we will honor the negate (e.g. --no-<name>)
+						let { value } = parsedArg;
+						value = value === undefined ? true : transformValue(value);
+						if (typeof value === 'boolean' && parsedArg.negated) {
+							value = !value;
+						}
+
+						// clean up the name
+						name = ctx.get('camelCase') ? camelCase(parsedArg.name) : parsedArg.name;
+						this.argv[name] = this.unknown[name] = value;
+
+						if (ctx.get('treatUnknownOptionsAsArguments')) {
+							this._.push(parsedArg.input[0]);
+						}
+						break;
 				}
 			}
 

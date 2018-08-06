@@ -179,47 +179,47 @@ describe('Context', () => {
 	// 	});
 	// });
 
-/*	describe('Long Options', () => {
-		it('should ', done => {
-			const ctx = new Context({
-				options: [
-					{ short: 'f', long: 'foo' }
-				]
-			});
-			ctx.parse([ 'foo', 'bar', 'baz' ])
-				.then(results => {
-					expect(results._).to.deep.equal(['foo', 'bar', 'baz']);
-					done();
-				})
-				.catch(done);
-		});
-	});
+	// describe('Long Options', () => {
+	// 	it('should ', done => {
+	// 		const ctx = new Context({
+	// 			options: [
+	// 				{ short: 'f', long: 'foo' }
+	// 			]
+	// 		});
+	// 		ctx.parse([ 'foo', 'bar', 'baz' ])
+	// 			.then(results => {
+	// 				expect(results._).to.deep.equal(['foo', 'bar', 'baz']);
+	// 				done();
+	// 			})
+	// 			.catch(done);
+	// 	});
+	// });
 
-/*	describe('Arguments', () => {
-		it('should add arguments to _', done => {
-			const ctx = new Context;
-			ctx.parse([ 'foo', 'bar', 'baz' ])
-				.then(results => {
-					expect(results._).to.deep.equal(['foo', 'bar', 'baz']);
-					done();
-				})
-				.catch(done);
-		});
-	});
-
-	describe('Short Options', () => {
-		it('should parse a short boolean', done => {
-			const ctx = new Context;
-			ctx.parse([ '-b' ])
-				.then(results => {
-					expect(results).to.have.property('b').to.be.ok.and.be.a.Boolean;
-					expect(results).to.have.property('_').with.lengthOf(0);
-					done();
-				})
-				.catch(done);
-		});
-	});
-	*/
+	// describe('Arguments', () => {
+	// 	it('should add arguments to _', done => {
+	// 		const ctx = new Context;
+	// 		ctx.parse([ 'foo', 'bar', 'baz' ])
+	// 			.then(results => {
+	// 				expect(results._).to.deep.equal(['foo', 'bar', 'baz']);
+	// 				done();
+	// 			})
+	// 			.catch(done);
+	// 	});
+	// });
+	//
+	// describe('Short Options', () => {
+	// 	it('should parse a short boolean', done => {
+	// 		const ctx = new Context;
+	// 		ctx.parse([ '-b' ])
+	// 			.then(results => {
+	// 				expect(results).to.have.property('b').to.be.ok.and.be.a.Boolean;
+	// 				expect(results).to.have.property('_').with.lengthOf(0);
+	// 				done();
+	// 			})
+	// 			.catch(done);
+	// 	});
+	// });
+});
 
 /*
 it('should place bare options in the _ array', function () {
@@ -2294,5 +2294,3 @@ it('normalizes all paths in array when provided via config object', function () 
   argv.a.should.deep.equal(['a.txt', 'b.txt'])
 })
 */
-
-});
