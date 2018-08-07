@@ -7,6 +7,7 @@ import Parser from './parser';
 import OutputStream from './output-stream';
 import Renderer from './renderer';
 
+import { Console } from 'console';
 import { declareCLIKitClass } from './util';
 
 const { error, log } = debug('cli-kit:cli');
@@ -155,7 +156,7 @@ export default class CLI extends Context {
 		const parser = new Parser();
 
 		try {
-			const { argv, _, contexts } = await parser.parse(unparsedArgs || process.argv.slice(2), this);
+			const { _, argv, contexts, unknown } = await parser.parse(unparsedArgs || process.argv.slice(2), this);
 			let cmd = contexts[0];
 
 			log('Parsing complete');
@@ -184,14 +185,22 @@ export default class CLI extends Context {
 				this.stderr.once('banner', showBanner);
 			}
 
+			const results = {
+				_,
+				argv,
+				console: new Console(this.stdout, this.stderr),
+				contexts,
+				unknown
+			};
+
 			// execute the command
 			if (cmd && typeof cmd.action === 'function') {
 				log(`Executing command: ${highlight(cmd.name)}`);
-				return await cmd.action(parser);
+				return await cmd.action(results);
 			}
 
 			log('No command to execute, returning parsed arguments');
-			return parser;
+			return results;
 		} catch (err) {
 			error(err);
 

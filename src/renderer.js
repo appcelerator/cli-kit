@@ -48,7 +48,7 @@ export default class Renderer {
 				}
 			}
 
-			// mix in our custom plugins
+			// TODO: mix in our custom plugins
 		}
 
 		if (opts.width !== undefined && typeof opts.width !== 'number') {
