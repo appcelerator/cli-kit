@@ -175,6 +175,9 @@ export default class Context extends HookEmitter {
 		}
 
 		// load extensions... this must happen last
+		// note that extensions defined in the `CLI` params are loaded by the `CLI` constructor, not
+		// here, because we need to load the extension after the `CLI` has added its auto-generated
+		// options
 		if (Array.isArray(params.extensions)) {
 			for (const extensionPath of params.extensions) {
 				this.extension(extensionPath);
@@ -389,28 +392,13 @@ export default class Context extends HookEmitter {
 	/**
 	 * Renders the help screen for this context including the parent contexts.
 	 *
-	 * @param {Error} [err] - An optional error to render before the help output.
 	 * @returns {Promise<Object>}
 	 * @access private
 	 */
-	generateHelp(err) {
-		return this.hook('generateHelp', err => {
+	generateHelp() {
+		return this.hook('generateHelp', () => {
 			const results = {};
-
 			const pkgJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'package.json'), 'utf8'));
-
-			// set the error, if exists
-			if (err) {
-				results.error = {
-					code:    err.code,
-					message: err.message,
-					stack:   err.stack,
-					type:    err.constructor && err.constructor.name || null
-				};
-			} else {
-				results.error = null;
-			}
-
 			const usage = [];
 			const scopes = [];
 			let ctx = this;
@@ -465,6 +453,6 @@ export default class Context extends HookEmitter {
 			};
 
 			return results;
-		})(err);
+		})();
 	}
 }

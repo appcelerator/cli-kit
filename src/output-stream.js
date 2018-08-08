@@ -42,13 +42,15 @@ export default class OutputStream extends Transform {
 	 */
 	_transform(chunk, encoding, cb) {
 		if (!ignoredEncodings.test(encoding)) {
-			if (!this.firedBanner) {
-				this.firedBanner = true;
-				if (!dataRegExp.test(chunk)) {
+			if (this.isData === undefined) {
+				this.isData = dataRegExp.test(chunk);
+				if (!this.isData) {
 					this.emit('banner', banner => this.push(this.renderer.render(banner)));
 				}
 			}
-			chunk = this.renderer.render(chunk.toString());
+			if (!this.isData) {
+				chunk = this.renderer.render(chunk.toString());
+			}
 		}
 
 		this.push(chunk);

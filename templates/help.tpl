@@ -1,5 +1,15 @@
 if (error) {
-	>>> !!!${error}!!!
+	>> ::: error
+	>> ${error.message}
+	>>> :::
+}
+
+if (Array.isArray(warnings) && warnings.length) {
+	for (const warning of warnings) {
+		>> ::: warning
+		>> ${warning.message}
+		>>> :::
+	}
 }
 
 if (usage) {

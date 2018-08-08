@@ -10,7 +10,7 @@ import Renderer from './renderer';
 import { Console } from 'console';
 import { declareCLIKitClass } from './util';
 
-const { error, log } = debug('cli-kit:cli');
+const { error, log, warn } = debug('cli-kit:cli');
 const { highlight }  = debug.styles;
 
 /**
@@ -35,8 +35,10 @@ export default class CLI extends Context {
 	 * it does not add the `--no-banner` option.
 	 * @param {Boolean} [params.hideNoColorOption=false] - When `true` and `colors` is enabled, it
 	 * does not add the `--no-color` option.
-	 * @param {Object|Writable} [params.out=process.stdout] - A stream to write output such as the
-	 * help screen or an object with a `write()` method.
+	 * @param {Object|stream.Writable} [params.stdout=process.stdout] - A stream or an object with a
+	 * `write()` method to write output such as the help screen to.
+	 * @param {Object|stream.Writable} [params.stderr=process.stderr] - A stream or an object with a
+	 * `write()` method to write error messages to.
 	 * @param {Object} [params.rendererOpts] - Various rendering options such as a custom MarkdownIt
 	 * instance, MarkdownIt plugins, display width, etc.
 	 * @param {Boolean} [params.showHelpOnError=true] - If an error occurs and `help` is enabled,
@@ -50,8 +52,12 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected CLI parameters to be an object or Context', { name: 'params', scope: 'CLI.constructor', value: params });
 		}
 
-		if (params.out && (typeof params.out !== 'object' || typeof params.out.write !== 'function')) {
-			throw E.INVALID_ARGUMENT('Expected output stream to be a writable stream', { name: 'out', scope: 'CLI.constructor', value: params.out });
+		if (params.stdout && (typeof params.stdout !== 'object' || typeof params.stdout.write !== 'function')) {
+			throw E.INVALID_ARGUMENT('Expected stdout stream to be a writable stream', { name: 'stdout', scope: 'CLI.constructor', value: params.stdout });
+		}
+
+		if (params.stderr && (typeof params.stderr !== 'object' || typeof params.stderr.write !== 'function')) {
+			throw E.INVALID_ARGUMENT('Expected stderr stream to be a writable stream', { name: 'stderr', scope: 'CLI.constructor', value: params.stderr });
 		}
 
 		if (params.helpExitCode !== undefined && typeof params.helpExitCode !== 'number') {
@@ -67,22 +73,26 @@ export default class CLI extends Context {
 		params.title || (params.title = 'Global');
 
 		// extract params that we don't want mixed in
-		const { extensions, hideNoBannerOption, hideNoColorOption } = params;
+		const { extensions, hideNoBannerOption, hideNoColorOption, stdout, stderr } = params;
 		delete params.extensions;
 		delete params.hideNoBannerOption;
 		delete params.hideNoColorOption;
+		delete params.stdout;
+		delete params.stderr;
 
 		super(params);
 		declareCLIKitClass(this, 'CLI');
+
+		this.warnings = [];
 
 		// init the output streams
 		// note that `this.out` does NOT show the banner, but writing to `this.stdout` or
 		// `this.stderr` WILL show the banner when the output has not been auto detected as xml/json
 		const renderer = new Renderer(this.rendererOpts);
 		this.stdout = new OutputStream(renderer);
-		this.stdout.pipe(this.out || process.stdout);
+		this.stdout.pipe(stdout || process.stdout);
 		this.stderr = new OutputStream(renderer);
-		this.stderr.pipe(this.out || process.stderr);
+		this.stderr.pipe(stderr || process.stderr);
 
 		// set the default command
 		this.defaultCommand = params.defaultCommand;
@@ -120,8 +130,7 @@ export default class CLI extends Context {
 			this.option('-v, --version', {
 				callback: async ({ next }) => {
 					await next();
-					const out = this.get('out', process.stdout);
-					out.write(`${params.version}\n`);
+					this.get('stdout').write(`${params.version}\n`);
 					process.exit(0);
 				},
 				desc: 'outputs the version'
@@ -131,11 +140,21 @@ export default class CLI extends Context {
 		// add the extensions now that the auto-generated options exist
 		if (Array.isArray(extensions)) {
 			for (const extensionPath of extensions) {
-				this.extension(extensionPath);
+				try {
+					this.extension(extensionPath);
+				} catch (e) {
+					this.warnings.push(e);
+					warn(e);
+				}
 			}
 		} else if (typeof extensions === 'object') {
 			for (const name of Object.keys(extensions)) {
-				this.extension(extensions[name], name);
+				try {
+					this.extension(extensions[name], name);
+				} catch (e) {
+					this.warnings.push(e);
+					warn(e);
+				}
 			}
 		}
 	}
@@ -190,7 +209,8 @@ export default class CLI extends Context {
 				argv,
 				console: new Console(this.stdout, this.stderr),
 				contexts,
-				unknown
+				unknown,
+				warnings: this.warnings
 			};
 
 			// execute the command
@@ -208,7 +228,8 @@ export default class CLI extends Context {
 			if (help) {
 				return await help.action({
 					contexts: err.contexts || parser.contexts || [ this ],
-					err
+					err,
+					warnings: this.warnings
 				});
 			}
 
