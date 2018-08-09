@@ -397,9 +397,10 @@ export default class Context extends HookEmitter {
 	 */
 	generateHelp() {
 		return this.hook('generateHelp', () => {
-			const results = {};
+			const results = {
+				contexts: []
+			};
 			const pkgJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'package.json'), 'utf8'));
-			const usage = [];
 			const scopes = [];
 			let ctx = this;
 			while (ctx) {
@@ -408,7 +409,7 @@ export default class Context extends HookEmitter {
 					name: ctx.name,
 					...ctx.options.generateHelp()
 				});
-				usage.unshift(ctx.name);
+				results.contexts.unshift(ctx.name);
 				ctx = ctx.parent;
 			}
 
@@ -444,6 +445,7 @@ export default class Context extends HookEmitter {
 			};
 
 			// set the usage line
+			const usage = results.contexts.slice();
 			results.commands.count && usage.push('<command>');
 			results.options.count && usage.push('[options]');
 			usage.push.apply(usage, results.arguments.entries.map(arg => arg.required ? `<${arg.name}>` : `[<${arg.name}>]`));
