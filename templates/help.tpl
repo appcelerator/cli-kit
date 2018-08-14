@@ -29,7 +29,7 @@ if (commands.count) {
 if (arguments.count) {
 	>> # ==${arguments.title}:==
 	for (const arg of arguments.entries) {
-		>>|| ${arg.name} | ${arg.desc} |
+		>>|| ${arg.name}${arg.multiple ? '...' : ''} | ${arg.desc} |
 	}
 	>>
 }

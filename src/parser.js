@@ -87,6 +87,7 @@ export default class Parser {
 		for (let i = len; i; i--) {
 			const ctx = this.contexts[i - 1];
 
+			// init options
 			for (const options of ctx.options.values()) {
 				for (const option of options) {
 					if (option.name) {
@@ -100,9 +101,32 @@ export default class Parser {
 							this.argv[name] = 0;
 						}
 
+						if (option.multiple && !Array.isArray(this.argv[name])) {
+							this.argv[name] = this.argv[name] !== undefined ? [ this.argv[name] ] : [];
+						}
+
 						if (option.env && process.env[option.env] !== undefined) {
 							env[name] = option.transform(process.env[option.env]);
 						}
+					}
+				}
+			}
+
+			// init arguments
+			for (const arg of ctx.args) {
+				if (arg.name) {
+					const name = arg.camelCase || ctx.get('camelCase') ? camelCase(arg.name) : arg.name;
+
+					if (arg.default !== undefined) {
+						this.argv[name] = arg.default;
+					}
+
+					if (arg.multiple && !Array.isArray(this.argv[name])) {
+						this.argv[name] = this.argv[name] !== undefined ? [ this.argv[name] ] : [];
+					}
+
+					if (arg.env && process.env[arg.env] !== undefined) {
+						env[name] = arg.transform(process.env[arg.env]);
 					}
 				}
 			}
@@ -174,12 +198,9 @@ export default class Parser {
 					} else {
 						this.argv[name] = value;
 					}
-
-					this._.push(value);
-
-				} else {
-					this._.push(value);
 				}
+
+				this._.push(value);
 			};
 
 			for (const parsedArg of this.args) {

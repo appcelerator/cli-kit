@@ -448,7 +448,10 @@ export default class Context extends HookEmitter {
 			const usage = results.contexts.slice();
 			results.commands.count && usage.push('<command>');
 			results.options.count && usage.push('[options]');
-			usage.push.apply(usage, results.arguments.entries.map(arg => arg.required ? `<${arg.name}>` : `[<${arg.name}>]`));
+			usage.push.apply(usage, results.arguments.entries.map(arg => {
+				const name = `<${arg.name}${arg.multiple ? '...' : ''}>`;
+				return arg.required ? name : `[${name}]`;
+			}));
 			results.usage = {
 				title: 'Usage',
 				text: usage.join(' ')

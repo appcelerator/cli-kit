@@ -94,6 +94,8 @@ export default class CLI extends Context {
 		this.stderr = new OutputStream(renderer);
 		this.stderr.pipe(stderr || process.stderr);
 
+		this.console = new Console(this.stdout, this.stderr);
+
 		// set the default command
 		this.defaultCommand = params.defaultCommand;
 
@@ -207,7 +209,7 @@ export default class CLI extends Context {
 			const results = {
 				_,
 				argv,
-				console: new Console(this.stdout, this.stderr),
+				console: this.console,
 				contexts,
 				unknown,
 				warnings: this.warnings
@@ -224,7 +226,7 @@ export default class CLI extends Context {
 		} catch (err) {
 			error(err);
 
-			const help = this.help && this.showHelpOnError !== false && this.commands.help;
+			const help = this.help && this.showHelpOnError !== false && this.commands.get('help');
 			if (help) {
 				return await help.action({
 					contexts: err.contexts || parser.contexts || [ this ],

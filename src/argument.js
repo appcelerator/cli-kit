@@ -26,7 +26,11 @@ export default class Argument {
 	 * `params.name` below for usage.
 	 * @param {Function} [params.callback] - A function to call when the argument has been
 	 * processed. This happens parsing is complete.
+	 * @param {Boolean} [params.camelCase=true] - If option has a name or can derive a name from the
+	 * long option format, then it the name be camel cased.
 	 * @param {String} [params.desc] - The description of the argument used in the help output.
+	 * @param {String} [params.env] - The environment variable name to get a value from. If the
+	 * environment variable is set, it overrides the value parsed from the arguments.
 	 * @param {Boolean} [params.hidden=false] - When `true`, the argument is not displayed on the
 	 * help screen or auto-suggest.
 	 * @param {Boolean} [params.multiple=false] - When `true`, the value becomes an array with all
@@ -85,6 +89,7 @@ export default class Argument {
 			}
 		}
 
+		params.camelCase = params.name ? params.camelCase !== false : false;
 		params.hidden   = !!params.hidden;
 		params.required = !!params.required;
 		params.regex    = params.type instanceof RegExp ? params.type : null;
