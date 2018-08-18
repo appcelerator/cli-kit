@@ -96,7 +96,7 @@ describe('Argument', () => {
 	});
 
 	describe('Help', () => {
-		it('should show string argument in help', async () => {
+		it.skip('should show string argument in help', async () => {
 			const out = new WritableStream();
 
 			const cli = new CLI({
@@ -123,7 +123,7 @@ describe('Argument', () => {
 			].join('\n'));
 		});
 
-		it('should show object argument in help', async () => {
+		it.skip('should show object argument in help', async () => {
 			const out = new WritableStream();
 
 			const cli = new CLI({

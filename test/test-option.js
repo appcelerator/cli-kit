@@ -121,13 +121,13 @@ describe('Option', () => {
 
 		it('should parse negated option', () => {
 			const opt = new Option('--no-colors');
-			expect(opt.long).to.equal('colors');
+			expect(opt.long).to.equal('no-colors');
 			expect(opt.negate).to.be.true;
 		});
 
 		it('should parse short and long negated option', () => {
 			const opt = new Option('-c | --no-colors');
-			expect(opt.long).to.equal('colors');
+			expect(opt.long).to.equal('no-colors');
 			expect(opt.negate).to.be.true;
 		});
 	});

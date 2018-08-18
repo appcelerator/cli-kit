@@ -114,11 +114,12 @@ export default class Extension extends Command {
 
 					} else if (err) {
 						// prefix the error with this extension's info
-						err.message = `Bad extension "${pkg.json.name}": ${err.message}`;
-						throw err;
+						const error = E.INVALID_EXTENSION(`Bad extension "${pkg.json.name}": ${err.message}`, { extensionPath, name: err.name, scope: 'Extension.constructor', value: err });
+						error.stack = err.stack;
+						throw error;
 
 					} else {
-						throw E.INVALID_EXTENSION(`Extension does not export an object: ${extensionPath}`, { extensionPath, name: 'extension.ctx', scope: 'Extension.constructor', value: ctx });
+						throw E.INVALID_EXTENSION(`Extension does not export an object: ${extensionPath}`, { extensionPath, name: 'ctx', scope: 'Extension.constructor', value: ctx });
 					}
 				}
 

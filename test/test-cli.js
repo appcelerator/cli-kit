@@ -19,16 +19,16 @@ describe('CLI', () => {
 			});
 		});
 
-		it('should error if out is not an object with a write() method', () => {
+		it('should error if stdout is not an object with a write() method', () => {
 			expectThrow(() => {
 				new CLI({
-					out: 'foo'
+					stdout: 'foo'
 				});
 			}, {
 				type:  TypeError,
-				msg:   'Expected output stream to be a writable stream',
+				msg:   'Expected stdout stream to be a writable stream',
 				code:  'ERR_INVALID_ARGUMENT',
-				name:  'params.out',
+				name:  'stdout',
 				scope: 'CLI.constructor',
 				value: 'foo'
 			});
@@ -36,13 +36,13 @@ describe('CLI', () => {
 			const obj = {};
 			expectThrow(() => {
 				new CLI({
-					out: obj
+					stdout: obj
 				});
 			}, {
 				type:  TypeError,
-				msg:   'Expected output stream to be a writable stream',
+				msg:   'Expected stdout stream to be a writable stream',
 				code:  'ERR_INVALID_ARGUMENT',
-				name:  'params.out',
+				name:  'stdout',
 				scope: 'CLI.constructor',
 				value: obj
 			});
@@ -51,13 +51,57 @@ describe('CLI', () => {
 
 			expectThrow(() => {
 				new CLI({
-					out: obj
+					stdout: obj
 				});
 			}, {
 				type:  TypeError,
-				msg:   'Expected output stream to be a writable stream',
+				msg:   'Expected stdout stream to be a writable stream',
 				code:  'ERR_INVALID_ARGUMENT',
-				name:  'params.out',
+				name:  'stdout',
+				scope: 'CLI.constructor',
+				value: obj
+			});
+		});
+
+		it('should error if stderr is not an object with a write() method', () => {
+			expectThrow(() => {
+				new CLI({
+					stderr: 'foo'
+				});
+			}, {
+				type:  TypeError,
+				msg:   'Expected stderr stream to be a writable stream',
+				code:  'ERR_INVALID_ARGUMENT',
+				name:  'stderr',
+				scope: 'CLI.constructor',
+				value: 'foo'
+			});
+
+			const obj = {};
+			expectThrow(() => {
+				new CLI({
+					stderr: obj
+				});
+			}, {
+				type:  TypeError,
+				msg:   'Expected stderr stream to be a writable stream',
+				code:  'ERR_INVALID_ARGUMENT',
+				name:  'stderr',
+				scope: 'CLI.constructor',
+				value: obj
+			});
+
+			obj.write = 'foo';
+
+			expectThrow(() => {
+				new CLI({
+					stderr: obj
+				});
+			}, {
+				type:  TypeError,
+				msg:   'Expected stderr stream to be a writable stream',
+				code:  'ERR_INVALID_ARGUMENT',
+				name:  'stderr',
 				scope: 'CLI.constructor',
 				value: obj
 			});
@@ -72,22 +116,7 @@ describe('CLI', () => {
 				type:  TypeError,
 				msg:   'Expected help exit code to be a number',
 				code:  'ERR_INVALID_ARGUMENT',
-				name:  'params.helpExitCode',
-				scope: 'CLI.constructor',
-				value: 'foo'
-			});
-		});
-
-		it('should error if the width is not a number', () => {
-			expectThrow(() => {
-				new CLI({
-					width: 'foo'
-				});
-			}, {
-				type:  TypeError,
-				msg:   'Expected width to be a number',
-				code:  'ERR_INVALID_ARGUMENT',
-				name:  'params.width',
+				name:  'helpExitCode',
 				scope: 'CLI.constructor',
 				value: 'foo'
 			});
@@ -122,7 +151,7 @@ describe('CLI', () => {
 				type:  TypeError,
 				msg:   'Expected banner to be a string or function',
 				code:  'ERR_INVALID_ARGUMENT',
-				name:  'params.banner',
+				name:  'banner',
 				scope: 'CLI.constructor'
 			});
 
@@ -134,12 +163,12 @@ describe('CLI', () => {
 				type:  TypeError,
 				msg:   'Expected banner to be a string or function',
 				code:  'ERR_INVALID_ARGUMENT',
-				name:  'params.banner',
+				name:  'banner',
 				scope: 'CLI.constructor'
 			});
 		});
 
-		it('should display a banner before command output', async () => {
+		it.skip('should display a banner before command output', async () => {
 			const banner = 'My Amazing CLI, version 1.2.3\nCopyright (c) 2018, Me';
 			const out = new WritableStream();
 			const cli = new CLI({
@@ -166,7 +195,7 @@ describe('CLI', () => {
 			].join('\n'));
 		});
 
-		it('should display a banner when running a command', async () => {
+		it.skip('should display a banner when running a command', async () => {
 			const banner = 'My Amazing CLI, version 1.2.3\nCopyright (c) 2018, Me\n\n';
 			const out = new WritableStream();
 			const cli = new CLI({
