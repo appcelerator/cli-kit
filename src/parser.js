@@ -251,12 +251,12 @@ export default class Parser {
 			// add the extra items
 			this._.push.apply(this._, extra);
 
-			// check for missing arguments if help is not specifiec
+			// check for missing arguments if help is not specified
 			if (!this.argv.help) {
 				// note that `i` has been incrementing above for each known argument
-				for (const len = this.args.length; i < len; i++) {
-					if (this.args[i].required) {
-						throw E.MISSING_REQUIRED_ARGUMENT(`Missing required argument "${this.args[i].name}"`, { name: 'args', scope: 'Parser.parse', value: this.args[i] });
+				for (const len = ctx.args.length; i < len; i++) {
+					if (ctx.args[i].required) {
+						throw E.MISSING_REQUIRED_ARGUMENT(`Missing required argument "${ctx.args[i].name}"`, { name: 'args', scope: 'Parser.parse', value: ctx.args[i] });
 					}
 				}
 			}
