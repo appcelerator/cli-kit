@@ -32,13 +32,11 @@ describe('Output Stream', () => {
 	describe('Plain Strings', () => {
 		it('should passthrough a plain string', () => {
 			const callback = sinon.fake();
-
 			const out = new OutputStream();
-			out.on('start', callback);
-
 			const result = new WritableStream();
-			out.pipe(result);
 
+			out.on('start', callback);
+			out.pipe(result);
 			out.write('foo');
 
 			expect(callback).to.have.been.calledOnce;
@@ -46,35 +44,47 @@ describe('Output Stream', () => {
 		});
 
 		it('should passthrough multiple plain strings', () => {
-			const callback = sinon.fake();
-
 			const out = new OutputStream();
-			out.on('start', callback);
-
 			const result = new WritableStream();
-			out.pipe(result);
 
+			out.pipe(result);
 			out.write('foo');
 			out.write('bar');
 			out.write('baz');
 
-			expect(callback).to.have.been.calledOnce;
 			expect(result.toString()).to.equal('foobarbaz');
 		});
 
 		it('should passthrough markdown strings when markdown off', () => {
-			const callback = sinon.fake();
-
 			const out = new OutputStream();
-			out.on('start', callback);
-
 			const result = new WritableStream();
 			out.pipe(result);
 
 			out.write('# foo');
 
-			expect(callback).to.have.been.calledOnce;
 			expect(result.toString()).to.equal('# foo');
+		});
+	});
+
+	describe('Markdown', () => {
+		it('should render non-markdown string', () => {
+			const out = new OutputStream({ markdown: true });
+			const result = new WritableStream();
+
+			out.pipe(result);
+			out.write('foo');
+
+			expect(result.toString()).to.equal('foo');
+		});
+
+		it('should render non-markdown string', () => {
+			const out = new OutputStream({ markdown: true });
+			const result = new WritableStream();
+
+			out.pipe(result);
+			out.write('# foo');
+
+			expect(result.toString()).to.equal('foo');
 		});
 	});
 });
