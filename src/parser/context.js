@@ -283,6 +283,79 @@ export default class Context extends HookEmitter {
 	}
 
 	/**
+	 * Renders the help screen for this context including the parent contexts.
+	 *
+	 * @returns {Promise<Object>}
+	 * @access private
+	 */
+	generateHelp() {
+		return this.hook('generateHelp', () => {
+			const results = {
+				contexts: [],
+				suggestions: []
+			};
+			const pkgJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'package.json'), 'utf8'));
+			const scopes = [];
+			let ctx = this;
+			while (ctx) {
+				scopes.push({
+					title: `${ctx.title} options`,
+					name: ctx.name,
+					...ctx.options.generateHelp()
+				});
+				results.contexts.unshift(ctx.name);
+				ctx = ctx.parent;
+			}
+
+			// set the description
+			results.desc = this.desc ? String(this.desc).trim().replace(/^\w/, c => c.toLocaleUpperCase()) : null;
+
+			// set the commands
+			results.commands = {
+				title: this.parent ? `${this.title} commands` : 'Commands',
+				...this.commands.generateHelp()
+			};
+
+			// update the default command
+			if (this.defaultCommand) {
+				for (const cmd of results.commands.entries) {
+					if (cmd.name === this.defaultCommand) {
+						cmd.default = true;
+						break;
+					}
+				}
+			}
+
+			// set the arguments
+			results.arguments = {
+				title: this.parent ? `${this.title} arguments` : 'Arguments',
+				...this.args.generateHelp()
+			};
+
+			// set the options
+			results.options = {
+				count: scopes.reduce((p, c) => p + c.count, 0),
+				scopes
+			};
+
+			// set the usage line
+			const usage = results.contexts.slice();
+			results.commands.count && usage.push('<command>');
+			results.options.count && usage.push('[options]');
+			usage.push.apply(usage, results.arguments.entries.map(arg => {
+				const name = `<${arg.name}${arg.multiple ? '...' : ''}>`;
+				return arg.required ? name : `[${name}]`;
+			}));
+			results.usage = {
+				title: 'Usage',
+				text: usage.join(' ')
+			};
+
+			return results;
+		})();
+	}
+
+	/**
 	 * Scans up the context tree for the first instance of a matching defined property.
 	 *
 	 * @param {String} name - The property name.
@@ -389,77 +462,5 @@ export default class Context extends HookEmitter {
 		}
 
 		return this;
-	}
-
-	/**
-	 * Renders the help screen for this context including the parent contexts.
-	 *
-	 * @returns {Promise<Object>}
-	 * @access private
-	 */
-	generateHelp() {
-		return this.hook('generateHelp', () => {
-			const results = {
-				contexts: []
-			};
-			const pkgJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'package.json'), 'utf8'));
-			const scopes = [];
-			let ctx = this;
-			while (ctx) {
-				scopes.push({
-					title: `${ctx.title} options`,
-					name: ctx.name,
-					...ctx.options.generateHelp()
-				});
-				results.contexts.unshift(ctx.name);
-				ctx = ctx.parent;
-			}
-
-			// set the description
-			results.desc = this.desc ? String(this.desc).trim().replace(/^\w/, c => c.toLocaleUpperCase()) : null;
-
-			// set the commands
-			results.commands = {
-				title: this.parent ? `${this.title} commands` : 'Commands',
-				...this.commands.generateHelp()
-			};
-
-			// update the default command
-			if (this.defaultCommand) {
-				for (const cmd of results.commands.entries) {
-					if (cmd.name === this.defaultCommand) {
-						cmd.default = true;
-						break;
-					}
-				}
-			}
-
-			// set the arguments
-			results.arguments = {
-				title: this.parent ? `${this.title} arguments` : 'Arguments',
-				...this.args.generateHelp()
-			};
-
-			// set the options
-			results.options = {
-				count: scopes.reduce((p, c) => p + c.count, 0),
-				scopes
-			};
-
-			// set the usage line
-			const usage = results.contexts.slice();
-			results.commands.count && usage.push('<command>');
-			results.options.count && usage.push('[options]');
-			usage.push.apply(usage, results.arguments.entries.map(arg => {
-				const name = `<${arg.name}${arg.multiple ? '...' : ''}>`;
-				return arg.required ? name : `[${name}]`;
-			}));
-			results.usage = {
-				title: 'Usage',
-				text: usage.join(' ')
-			};
-
-			return results;
-		})();
 	}
 }

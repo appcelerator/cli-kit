@@ -39,6 +39,7 @@
     "test": "gulp test"
   },
   "dependencies": {
+    "fast-levenshtein": "^2.0.6",
     "hook-emitter": "^3.0.2",
     "isexe": "^2.0.0",
     "lodash.camelcase": "^4.3.0",

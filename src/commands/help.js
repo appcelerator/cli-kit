@@ -27,10 +27,11 @@ export default {
 	 * @param {Object} [params.argv] - The parsed options.
 	 * @param {Array.<Context>} params.contexts - The stack of contexts found during parsing.
 	 * @param {Error} [params.err] - An error object in the event an error occurred.
+	 * @param {String} [params.unknownCommand] - The name of the unknown command.
 	 * @param {Array.<Error>} [params.warnings] - A list of warnings (error objects).
 	 * @returns {Promise}
 	 */
-	async action({ argv = {}, contexts, err, warnings } = {}) {
+	async action({ _, argv = {}, contexts, err, unknownCommand, warnings } = {}) {
 		let exitCode = +!!err;
 
 		// skip the built-in help command and find the first context
@@ -42,6 +43,21 @@ export default {
 
 			// generate the help object
 			const help = await ctx.generateHelp({ err, warnings });
+
+			// check if we should error if passed an invalid command
+			if (!err && _.length && (ctx.get('errorIfUnknownCommand') || argv.help)) {
+				const unknownCommand = _[0];
+				err = new Error(`Unknown command "${unknownCommand}"`);
+
+				const levenshtein = require('fast-levenshtein');
+				help.suggestions = Array.from(ctx.commands.values())
+					.map(cmd => ({ name: cmd.name, desc: cmd.desc, dist: levenshtein.get(unknownCommand, cmd.name) }))
+					.filter(s => s.dist <= 2)
+					.sort((a, b) => {
+						const r = a.dist - b.dist;
+						return r !== 0 ? r : a.name.localeCompare(b.name);
+					});
+			}
 
 			const formatError = err => {
 				return err ? {
@@ -70,6 +86,8 @@ export default {
 			// set the exit code
 			exitCode = err ? 1 : ctx.get('helpExitCode');
 
+			// we only loop until we hit the first valid context... generateHelp() will recurse
+			// parent contexts for us
 			break;
 		}
 

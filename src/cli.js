@@ -11,6 +11,7 @@ import { declareCLIKitClass } from './lib/util';
 
 const { error, log, warn } = debug('cli-kit:cli');
 const { highlight }  = debug.styles;
+const { pluralize } = debug;
 
 /**
  * Defines a CLI context and is responsible for parsing the command line arguments.
@@ -26,14 +27,17 @@ export default class CLI extends Context {
 	 * to be displayed before each command.
 	 * @param {Boolean} [params.colors=true] - Enables colors, specifically on the help screen.
 	 * @param {Boolean} [params.defaultCommand] - The default command to execute.
+	 * @param {Boolean} [params.errorIfUnknownCommand=true] - When `true`, `help` is enabled, and
+	 * the parser didn't find a command, but it did find an unknown argument, it will show the help
+	 * screen with an unknown command error.
 	 * @param {Boolean} [params.help=false] - When `true`, enables the built-in help command.
 	 * @param {Number} [params.helpExitCode] - The exit code to return when the help command is
 	 * finished.
-	 * @param {String} [params.name] - The name of the program.
 	 * @param {Boolean} [params.hideNoBannerOption=false] - When `true` and a `banner` is specified,
 	 * it does not add the `--no-banner` option.
 	 * @param {Boolean} [params.hideNoColorOption=false] - When `true` and `colors` is enabled, it
 	 * does not add the `--no-color` option.
+	 * @param {String} [params.name] - The name of the program.
 	 * @param {Object} [params.renderOpts] - Various render options to control the output stream
 	 * such as the display width.
 	 * @param {Object|stream.Writable} [params.stdout=process.stdout] - A stream or an object with a
@@ -88,6 +92,7 @@ export default class CLI extends Context {
 		declareCLIKitClass(this, 'CLI');
 
 		this.colors = params.colors !== false;
+		this.errorIfUnknownCommand = params.errorIfUnknownCommand !== false;
 		this.warnings = [];
 
 		const renderOpts = Object.assign({
@@ -189,19 +194,12 @@ export default class CLI extends Context {
 			const { _, argv, contexts, unknown } = await parser.parse(unparsedArgs || process.argv.slice(2), this);
 			let cmd = contexts[0];
 
-			log('Parsing complete');
-
-			// determine the command to run
-			if (this.help && argv.help) {
-				log('Selected help command');
-				cmd = this.commands.get('help');
-				parser.contexts.unshift(cmd);
-
-			} else if (!(cmd instanceof Command) && this.defaultCommand && this.commands.has(this.defaultCommand)) {
-				log(`Selected default command: ${this.defaultCommand}`);
-				cmd = this.commands.get(this.defaultCommand);
-				parser.contexts.unshift(cmd);
-			}
+			log('Parsing complete: ' +
+				`${pluralize('option', Object.keys(argv).length, true)}, ` +
+				`${pluralize('unknown option', Object.keys(unknown).length, true)}, ` +
+				`${pluralize('arg', _.length, true)}, ` +
+				`${pluralize('context', contexts.length, true)}`
+			);
 
 			// wire up the banner
 			let banner = this.get('banner');
@@ -223,6 +221,18 @@ export default class CLI extends Context {
 				unknown,
 				warnings: this.warnings
 			};
+
+			// determine the command to run
+			if (this.help && argv.help) {
+				log('Selected help command');
+				cmd = this.commands.get('help');
+				parser.contexts.unshift(cmd);
+
+			} else if (!(cmd instanceof Command) && this.defaultCommand && this.commands.has(this.defaultCommand)) {
+				log(`Selected default command: ${this.defaultCommand}`);
+				cmd = this.commands.get(this.defaultCommand);
+				parser.contexts.unshift(cmd);
+			}
 
 			// execute the command
 			if (cmd && typeof cmd.action === 'function') {

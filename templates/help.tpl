@@ -4,6 +4,14 @@ if (error) {
 	>>> :::
 }
 
+if (suggestions.length) {
+	>> Did you mean?
+	for (const s of suggestions) {
+		>>|  ==${s.name}== - ${s.desc}
+	}
+	>>
+}
+
 if (Array.isArray(warnings) && warnings.length) {
 	for (const warning of warnings) {
 		>> ::: warning
