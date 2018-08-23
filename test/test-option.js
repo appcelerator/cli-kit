@@ -1,4 +1,4 @@
-import Option from '../dist/option';
+import Option from '../dist/parser/option';
 
 describe('Option', () => {
 	describe('Constructor', () => {

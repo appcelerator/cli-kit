@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 
-import { render, renderFile } from '../dist/template';
+import { template } from '../dist/index';
+
+const { render, renderFile } = template;
 
 describe('Template', () => {
 	describe('render()', () => {

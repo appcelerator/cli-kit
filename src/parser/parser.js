@@ -1,10 +1,10 @@
 import camelCase from 'lodash.camelcase';
 import Context from './context';
-import debug, { pluralize } from './debug';
-import E from './errors';
+import debug, { pluralize } from '../lib/debug';
+import E from '../lib/errors';
 import ParsedArgument from './parsed-argument';
 
-import { declareCLIKitClass } from './util';
+import { declareCLIKitClass } from '../lib/util';
 import { transformValue } from './types';
 
 const { log } = debug('cli-kit:parser');

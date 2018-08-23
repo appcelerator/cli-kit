@@ -1,4 +1,4 @@
-import ParsedArgument from '../dist/parsed-argument';
+import ParsedArgument from '../dist/parser/parsed-argument';
 
 describe('Parsed Argument', () => {
 	describe('Constructor', () => {

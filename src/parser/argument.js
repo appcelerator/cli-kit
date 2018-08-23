@@ -1,7 +1,7 @@
-import E from './errors';
+import E from '../lib/errors';
 
 import { checkType, transformValue } from './types';
-import { declareCLIKitClass } from './util';
+import { declareCLIKitClass } from '../lib/util';
 
 /**
  * Tests if the name contains the required sequence (`<` and `>`).

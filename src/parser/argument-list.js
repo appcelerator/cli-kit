@@ -1,6 +1,6 @@
 import Argument from './argument';
 
-import { declareCLIKitClass } from './util';
+import { declareCLIKitClass } from '../lib/util';
 
 /**
  * Stores a list of `Argument` instances that have been registered for a context.

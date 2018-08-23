@@ -1,8 +1,8 @@
 import Argument from './argument';
 import ArgumentList from './argument-list';
 import CommandList from './command-list';
-import debug from './debug';
-import E from './errors';
+import debug from '../lib/debug';
+import E from '../lib/errors';
 import fs from 'fs';
 import HookEmitter from 'hook-emitter';
 import Lookup from './lookup';
@@ -10,7 +10,7 @@ import Option from './option';
 import OptionList from './option-list';
 import path from 'path';
 
-import { declareCLIKitClass, wrap } from './util';
+import { declareCLIKitClass } from '../lib/util';
 
 /**
  * `Command` and `Extension` are lazy loaded due to circular references.
@@ -84,7 +84,7 @@ export default class Context extends HookEmitter {
 		const ignoreOut = params.clikit instanceof Set && params.clikit.has('Context');
 
 		for (const prop of Object.keys(params)) {
-			if (!propIgnoreRegExp.test(prop) || (prop === 'out' && ignoreOut)) {
+			if (!propIgnoreRegExp.test(prop) || ((prop === 'stdout' || prop === 'stderr') && ignoreOut)) {
 				this[prop] = params[prop];
 			}
 		}
@@ -178,13 +178,15 @@ export default class Context extends HookEmitter {
 		// note that extensions defined in the `CLI` params are loaded by the `CLI` constructor, not
 		// here, because we need to load the extension after the `CLI` has added its auto-generated
 		// options
-		if (Array.isArray(params.extensions)) {
-			for (const extensionPath of params.extensions) {
-				this.extension(extensionPath);
-			}
-		} else if (typeof params.extensions === 'object') {
-			for (const name of Object.keys(params.extensions)) {
-				this.extension(params.extensions[name], name);
+		if (params.extensions) {
+			if (Array.isArray(params.extensions)) {
+				for (const ext of params.extensions) {
+					this.extension(ext);
+				}
+			} else {
+				for (const [ name, ext ] of Object.entries(params.extensions)) {
+					this.extension(ext, name);
+				}
 			}
 		}
 	}
@@ -400,7 +402,7 @@ export default class Context extends HookEmitter {
 			const results = {
 				contexts: []
 			};
-			const pkgJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'package.json'), 'utf8'));
+			const pkgJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'package.json'), 'utf8'));
 			const scopes = [];
 			let ctx = this;
 			while (ctx) {

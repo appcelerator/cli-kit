@@ -1,9 +1,7 @@
-import debug from './debug';
-import E from './errors';
+import debug from '../lib/debug';
 import path from 'path';
 
-import { isFile, wrap } from './util';
-import { renderFile } from './template';
+import { renderFile } from '../render/template';
 
 const { log } = debug('cli-kit:help');
 const { highlight } = debug.styles;
@@ -14,6 +12,14 @@ const { highlight } = debug.styles;
  * @type {Object}
  */
 export default {
+	clikitHelp: true,
+
+	hidden: true,
+
+	options: {
+		'--json': null
+	},
+
 	/**
 	 * Executes the help command.
 	 *
@@ -56,7 +62,7 @@ export default {
 			if (argv.json) {
 				out.write(JSON.stringify(help, null, '  ') + '\n');
 			} else {
-				const file = ctx.get('helpTemplate', path.resolve(__dirname, '..', 'templates', 'help.tpl'));
+				const file = ctx.get('helpTemplate', path.resolve(__dirname, '..', '..', 'templates', 'help.tpl'));
 				log(`Rendering help template: ${highlight(file)}`);
 				out.write(renderFile(file, help));
 			}
@@ -68,10 +74,5 @@ export default {
 		}
 
 		process.exitCode = exitCode;
-	},
-	clikitHelp: true,
-	hidden: true,
-	options: {
-		'--json': null
 	}
 };

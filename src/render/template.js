@@ -1,5 +1,5 @@
-import debug from './debug';
-import E from './errors';
+import debug from '../lib/debug';
+import E from '../lib/errors';
 import fs from 'fs';
 
 const logger = debug('cli-kit:template:in');

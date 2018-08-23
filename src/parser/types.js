@@ -1,4 +1,4 @@
-import E from './errors';
+import E from '../lib/errors';
 
 const dateRegExp = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?Z?)?$/i;
 const hexRegExp = /^0x[A-Fa-f0-9]+$/;

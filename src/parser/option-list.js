@@ -1,4 +1,4 @@
-import { declareCLIKitClass } from './util';
+import { declareCLIKitClass } from '../lib/util';
 
 /**
  * Stores a map of `Option` instances that have been registered for a context.

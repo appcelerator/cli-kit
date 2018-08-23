@@ -1,4 +1,4 @@
-import Parser from '../dist/parser';
+import Parser from '../dist/parser/parser';
 import CLI from '../dist/index';
 
 import { WritableStream } from 'memory-streams';

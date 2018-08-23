@@ -1,7 +1,7 @@
-import E from './errors';
+import E from '../lib/errors';
 
 import { checkType, transformValue } from './types';
-import { declareCLIKitClass } from './util';
+import { declareCLIKitClass } from '../lib/util';
 
 const formatRegExp = /^(?:-([^\W]+)(?:[ ,|]+)?)?(?:--([^\s]+))?(?:\s+?(.+))?$/;
 const valueRegExp = /^(\[(?=.+\]$)|<(?=.+>$))(.+)[\]>]$/;

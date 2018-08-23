@@ -1,8 +1,13 @@
+/* eslint no-control-regex:0 */
+
 import CLI, { Extension } from '../dist/index';
 import path from 'path';
+import snooplogg from 'snooplogg';
 
 import { tmpDir } from 'tmp';
 import { WritableStream } from 'memory-streams';
+
+const { chalk } = snooplogg;
 
 describe('Extension', () => {
 	describe('Error Handling', () => {
@@ -163,7 +168,7 @@ describe('Extension', () => {
 			expect(extension.name).to.equal('foo');
 
 			const output = await runCLI(extension, [ 'foo' ]);
-			expect(output).to.equal(`Extension not found: ${extensionPath}\n`);
+			expect(output.replace(/\x1B\[\d+m/g, '')).to.equal(`Extension not found: ${extensionPath}\n`);
 		});
 
 		it('should fail if extension does not have a main file', async () => {
@@ -232,7 +237,8 @@ async function runCLI(extension, argv, noHelp) {
 		extensions: [ extension ],
 		help: !noHelp,
 		name: 'test-cli',
-		out
+		stdout: out,
+		stderr: out
 	});
 
 	await cli.exec(argv);

@@ -1,15 +1,11 @@
 import Command from './command';
-import debug from './debug';
-import E from './errors';
+import debug from '../lib/debug';
+import E from '../lib/errors';
 import fs from 'fs';
 import path from 'path';
 import which from 'which';
 
-import {
-	declareCLIKitClass,
-	findPackage
-} from './util';
-
+import { declareCLIKitClass, findPackage } from '../lib/util';
 import { spawn } from 'child_process';
 
 const { log } = debug('cli-kit:extension');
@@ -95,20 +91,20 @@ export default class Extension extends Command {
 
 					} else if (params.ignoreInvalidExtensions || (params.parent && params.parent.get('ignoreInvalidExtensions', false))) {
 						params.action = () => {
-							const out = this.get('out', process.stdout);
+							const stderr = this.get('stderr', process.stderr);
 							if (err) {
-								out.write(`Bad extension: ${pkg.json.name}\n`);
-								out.write(`  ${err.toString()}\n`);
+								stderr.write(`Bad extension: ${pkg.json.name}\n`);
+								stderr.write(`  ${err.toString()}\n`);
 								let { stack } = err;
 								const p = stack.indexOf('\n\n');
 								if (p !== -1) {
 									stack = stack.substring(0, p).trim();
 								}
 								for (const line of stack.split('\n')) {
-									out.write(`  ${line}\n`);
+									stderr.write(`  ${line}\n`);
 								}
 							} else {
-								out.write(`Invalid extension: ${pkg.json.name}\n`);
+								stderr.write(`Invalid extension: ${pkg.json.name}\n`);
 							}
 						};
 
@@ -152,8 +148,8 @@ export default class Extension extends Command {
 
 		} else if (this.get('ignoreMissingExtensions', false)) {
 			this.action = () => {
-				const out = this.get('out', process.stdout);
-				out.write(`Extension not found: ${extensionPath}\n`);
+				const stdout = this.get('stdout', process.stdout);
+				stdout.write(`Extension not found: ${highlight(extensionPath)}\n`);
 			};
 
 			log(`Loaded invalid extension: ${highlight(extensionPath)}`);
@@ -176,9 +172,8 @@ export default class Extension extends Command {
 				return reject(E.NO_EXECUTABLE('No executable to run', { name: 'executable', scope: 'Extension.run', value: this.executable }));
 			}
 
-			const out = this.get('out');
-			const stdout = out || process.stdout;
-			const stderr = out || process.stderr;
+			const stdout = this.get('stdout', process.stdout);
+			const stderr = this.get('stderr', process.stderr);
 
 			log(`Running: ${highlight(this.executable + ' ' + args.join(' '))}`);
 			const child = spawn(this.executable, args);

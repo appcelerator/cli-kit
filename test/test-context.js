@@ -1,7 +1,7 @@
-import Command from '../dist/command';
-import Context from '../dist/context';
-import Option from '../dist/option';
-import Parser from '../dist/parser';
+import Command from '../dist/parser/command';
+import Context from '../dist/parser/context';
+import Option from '../dist/parser/option';
+import Parser from '../dist/parser/parser';
 
 describe('Context', () => {
 	describe('Constructor', () => {

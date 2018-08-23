@@ -13,8 +13,21 @@ export {
 	default as CLI
 } from './cli';
 
-export { default as Argument } from './argument';
-export { default as Command } from './command';
-export { default as Option } from './option';
-export { default as Extension } from './extension';
-export * from './util';
+import Argument from './parser/argument';
+import Command from './parser/command';
+import Option from './parser/option';
+import Extension from './parser/extension';
+
+import * as template from './render/template';
+import * as types from './parser/types';
+import * as util from './lib/util';
+
+export {
+	Argument,
+	Command,
+	Option,
+	Extension,
+	template,
+	types,
+	util
+};

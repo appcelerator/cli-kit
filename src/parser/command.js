@@ -1,9 +1,9 @@
 import Context from './context';
-import E from './errors';
-import helpCommand from './help';
+import E from '../lib/errors';
+import helpCommand from '../commands/help';
 import Option from './option';
 
-import { declareCLIKitClass } from './util';
+import { declareCLIKitClass } from '../lib/util';
 
 /**
  * Matches all non alphabet, numeric, dash, and underscore characters.

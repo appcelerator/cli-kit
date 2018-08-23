@@ -1,4 +1,4 @@
-import { Type } from '../dist/types';
+import { Type } from '../dist/parser/types';
 
 describe('Types', () => {
 	it('should error params are invalid', () => {

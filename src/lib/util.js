@@ -33,7 +33,7 @@ export function findPackage(searchPath) {
 	let root = pkgDir.sync(searchPath);
 
 	// don't let the tests think they are cli-kit
-	if (root === path.dirname(__dirname)) {
+	if (root === path.resolve(__dirname, '..', '..')) {
 		root = null;
 	}
 

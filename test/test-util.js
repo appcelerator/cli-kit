@@ -1,6 +1,6 @@
 import path from 'path';
 
-import { findPackage, wrap } from '../dist/util';
+import { findPackage, wrap } from '../dist/lib/util';
 
 describe('util', () => {
 	describe('findPackage()', () => {
