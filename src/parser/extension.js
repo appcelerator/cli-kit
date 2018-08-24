@@ -18,6 +18,13 @@ const { highlight, note } = debug.styles;
  */
 export default class Extension extends Command {
 	/**
+	 * Set to `true` if this extension is a cli-kit extension. It shall remain `false` for native
+	 * binaries and non-cli-kit CLI's.
+	 * @type {Boolean}
+	 */
+	isCLIKitExtension = false;
+
+	/**
 	 * Detects the extension defined in the specified path and initializes it.
 	 *
 	 * @param {Object} params - Various parameters.
@@ -119,8 +126,23 @@ export default class Extension extends Command {
 					}
 				}
 
-				if (Array.isArray(pkg.json.aliases)) {
-					params.aliases = pkg.json.aliases;
+				// init the aliases with any aliases from the package.json
+				params.aliases = Array.isArray(pkg.json.aliases) ? pkg.json.aliases : [];
+
+				// if the name is different than the one in the package.json, add it to the aliases
+				if (params.name && params.name !== name && !params.aliases.includes(params.name)) {
+					params.aliases.push(params.name);
+				}
+
+				// if the package has a bin script that matches the package name, then add any other
+				// bin name that aliases the package named bin
+				if (pkg.json.bin) {
+					const primary = pkg.json.bin[pkg.json.name];
+					for (const [ name, bin ] of Object.entries(pkg.json.bin)) {
+						if (bin === primary && !params.aliases.includes(name)) {
+							params.aliases.push(name);
+						}
+					}
 				}
 
 				if (pkg.json.description) {
@@ -132,8 +154,9 @@ export default class Extension extends Command {
 		super(name || path.basename(extensionPath), params);
 		declareCLIKitClass(this, 'Extension');
 
-		this.executable    = executable;
-		this.pkg           = pkg;
+		this.executable        = executable;
+		this.isCLIKitExtension = isCLIKitExtension;
+		this.pkg               = pkg;
 
 		if (isCLIKitExtension) {
 			// nothing to do

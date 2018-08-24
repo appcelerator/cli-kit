@@ -2,6 +2,7 @@ import Command from './parser/command';
 import Context from './parser/context';
 import debug from './lib/debug';
 import E from './lib/errors';
+import Extension from './parser/extension';
 import helpCommand from './commands/help';
 import Parser from './parser/parser';
 import OutputStream from './render/output-stream';
@@ -91,10 +92,11 @@ export default class CLI extends Context {
 
 		declareCLIKitClass(this, 'CLI');
 
-		this.banner = params.banner;
-		this.colors = params.colors !== false;
+		this.banner                = params.banner;
+		this.colors                = params.colors !== false;
 		this.errorIfUnknownCommand = params.errorIfUnknownCommand !== false;
-		this.warnings = [];
+		this.helpExitCode          = params.helpExitCode;
+		this.warnings              = [];
 
 		const renderOpts = Object.assign({
 			markdown: true
@@ -229,7 +231,7 @@ export default class CLI extends Context {
 			};
 
 			// determine the command to run
-			if (this.help && argv.help) {
+			if (this.help && argv.help && (!(cmd instanceof Extension) || cmd.isCLIKitExtension)) {
 				log('Selected help command');
 				cmd = this.commands.get('help');
 				parser.contexts.unshift(cmd);

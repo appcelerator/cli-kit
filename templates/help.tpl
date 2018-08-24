@@ -7,7 +7,7 @@ if (error) {
 if (suggestions.length) {
 	>> Did you mean?
 	for (const s of suggestions) {
-		>>|  ==${s.name}== - ${s.desc}
+		>>|  ==${s.name}==${s.desc ? ' - ' + s.desc : ''}
 	}
 	>>
 }
@@ -29,7 +29,7 @@ if (usage) {
 if (commands.count) {
 	>> # ==${commands.title}:==
 	for (const cmd of commands.entries) {
-		>>|| ${cmd.name} | ${cmd.desc} |
+		>>|| ${cmd.name} | ${cmd.desc || ''} |
 	}
 	>>
 }
@@ -37,7 +37,7 @@ if (commands.count) {
 if (arguments.count) {
 	>> # ==${arguments.title}:==
 	for (const arg of arguments.entries) {
-		>>|| ${arg.name}${arg.multiple ? '...' : ''} | ${arg.desc} |
+		>>|| ${arg.name}${arg.multiple ? '...' : ''} | ${arg.desc || ''} |
 	}
 	>>
 }
@@ -56,7 +56,7 @@ if (options.count) {
 					} else {
 						> |
 					}
-					>>| | --${option.long} | ${option.desc} |
+					>>| | --${option.long} | ${option.desc || ''} |
 				}
 			}
 			>>
