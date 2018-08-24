@@ -143,6 +143,8 @@ function runTests(cover) {
 		args.push('--inspect-brk');
 	}
 
+	// args.push('--trace-deprecation');
+
 	// add grep
 	let p = process.argv.indexOf('--grep');
 	if (p !== -1 && p + 1 < process.argv.length) {

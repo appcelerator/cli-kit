@@ -1,3 +1,8 @@
 const CLI = require('../../../dist/index').default;
 
-new CLI({ version: '1.2.3' }).exec();
+new CLI({
+	renderOpts: {
+		markdown: false
+	},
+	version: '1.2.3'
+}).exec();

@@ -1,4 +1,4 @@
-import E from './errors';
+import E from '../lib/errors';
 
 /**
  * Encapsulates a parsed argument.
@@ -7,7 +7,8 @@ export default class ParsedArgument {
 	/**
 	 * Sets the parsed argument type and its data.
 	 *
-	 * @param {String} type - The parsed argument type such as `option` or `command`.
+	 * @param {String} type - The parsed argument type such as `command`, `option`, `extra`, or
+	 * `unknown`.
 	 * @param {Object} [data] - An optional data payload to mix into this parsed argument instance.
 	 * @access public
 	 */
@@ -25,25 +26,32 @@ export default class ParsedArgument {
 	}
 
 	/**
+	 * Attempts to form a name of the given parsed argument.
+	 *
+	 * @returns {String}
+	 * @access public
+	 */
+	getName() {
+		let name;
+		switch (this.type) {
+			case 'command':
+				name = this.command && this.command.name;
+				break;
+			case 'option':
+				name = this.option && this.option.name;
+				break;
+		}
+		return name || this.input && this.input[0];
+	}
+
+	/**
 	 * Builds a string describing this parsed argument.
 	 *
 	 * @returns {String}
 	 * @access public
 	 */
 	toString() {
-		let desc = '';
-
-		switch (this.type) {
-			case 'command':
-				desc = this.command && this.command.name;
-				break;
-			case 'option':
-				desc = this.option && this.option.name;
-				break;
-			default:
-				desc = this.name || this.value;
-		}
-
-		return `[parsed ${this.type}${desc ? `: ${desc}` : ''}]`;
+		const name = this.getName();
+		return `[parsed ${this.type}${name ? `: ${name}` : ''}]`;
 	}
 }

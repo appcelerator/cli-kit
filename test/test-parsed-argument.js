@@ -1,4 +1,4 @@
-import ParsedArgument from '../dist/parsed-argument';
+import ParsedArgument from '../dist/parser/parsed-argument';
 
 describe('Parsed Argument', () => {
 	describe('Constructor', () => {
@@ -39,7 +39,7 @@ describe('Parsed Argument', () => {
 		});
 
 		it('should render a parsed argument', () => {
-			const p = new ParsedArgument('blah', { value: 'foo' });
+			const p = new ParsedArgument('blah', { input: [ 'foo' ] });
 			expect(p.toString()).to.equal('[parsed blah: foo]');
 		});
 	});

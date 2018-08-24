@@ -1,14 +1,23 @@
-import Command from './command';
-import Context from './context';
-import debug from './debug';
-import E from './errors';
+import Command from './parser/command';
+import Context from './parser/context';
+import debug from './lib/debug';
+import E from './lib/errors';
+import Extension from './parser/extension';
+import helpCommand from './commands/help';
+import Parser from './parser/parser';
+import OutputStream from './render/output-stream';
 
-import { declareCLIKitClass } from './util';
+import { Console } from 'console';
+import { declareCLIKitClass } from './lib/util';
 
-const { log } = debug('cli-kit:cli');
+const { error, log, warn } = debug('cli-kit:cli');
+const { highlight }  = debug.styles;
+const { pluralize } = debug;
 
 /**
  * Defines a CLI context and is responsible for parsing the command line arguments.
+ *
+ * @extends {Context}
  */
 export default class CLI extends Context {
 	/**
@@ -19,57 +28,93 @@ export default class CLI extends Context {
 	 * to be displayed before each command.
 	 * @param {Boolean} [params.colors=true] - Enables colors, specifically on the help screen.
 	 * @param {Boolean} [params.defaultCommand] - The default command to execute.
+	 * @param {Boolean} [params.errorIfUnknownCommand=true] - When `true`, `help` is enabled, and
+	 * the parser didn't find a command, but it did find an unknown argument, it will show the help
+	 * screen with an unknown command error.
 	 * @param {Boolean} [params.help=false] - When `true`, enables the built-in help command.
 	 * @param {Number} [params.helpExitCode] - The exit code to return when the help command is
 	 * finished.
+	 * @param {Boolean} [params.hideNoBannerOption=false] - When `true` and a `banner` is specified,
+	 * it does not add the `--no-banner` option.
+	 * @param {Boolean} [params.hideNoColorOption=false] - When `true` and `colors` is enabled, it
+	 * does not add the `--no-color` option.
 	 * @param {String} [params.name] - The name of the program.
-	 * @param {Boolean} [params.hideNoBannerOption=false] - When `true` and a `banner` is specified, it
-	 * does not add the `--no-banner` option.
-	 * @param {Boolean} [params.hideNoColorOption=false] - When `true` and `colors` is enabled, it does
-	 * not add the `--no-color` option.
-	 * @param {Object|Writable} [params.out=process.stdout] - A stream to write output such as the
-	 * help screen or an object with a `write()` method.
+	 * @param {Object} [params.renderOpts] - Various render options to control the output stream
+	 * such as the display width.
+	 * @param {Object|stream.Writable} [params.stdout=process.stdout] - A stream or an object with a
+	 * `write()` method to write output such as the help screen to.
+	 * @param {Object|stream.Writable} [params.stderr=process.stderr] - A stream or an object with a
+	 * `write()` method to write error messages to.
 	 * @param {Boolean} [params.showHelpOnError=true] - If an error occurs and `help` is enabled,
 	 * then display the error before the help information.
 	 * @param {String} [params.title='Global'] - The title for the global context.
 	 * @param {String} [params.version] - The program version.
-	 * @param {Number} [params.width] - The number of characters to wrap long descriptions. Defaults
-	 * to `process.stdout.columns` if exists, otherwise `100`. Must be at least `40`.
 	 * @access public
 	 */
 	constructor(params = {}) {
-		if (typeof params !== 'object' || Array.isArray(params)) {
+		if (!params || typeof params !== 'object' || Array.isArray(params)) {
 			throw E.INVALID_ARGUMENT('Expected CLI parameters to be an object or Context', { name: 'params', scope: 'CLI.constructor', value: params });
 		}
 
-		if (params.out && (typeof params.out !== 'object' || typeof params.out.write !== 'function')) {
-			throw E.INVALID_ARGUMENT('Expected output stream to be a writable stream', { name: 'params.out', scope: 'CLI.constructor', value: params.out });
+		if (params.banner !== undefined && typeof params.banner !== 'string' && typeof params.banner !== 'function') {
+			throw E.INVALID_ARGUMENT('Expected banner to be a string or function', { name: 'banner', scope: 'CLI.constructor', value: params.banner });
+		}
+
+		if (params.extensions && typeof params.extensions !== 'object') {
+			throw E.INVALID_ARGUMENT(
+				'Expected extensions to be an array of extension paths or an object of names to extension paths',
+				{ name: 'extensions', scope: 'CLI.constructor', value: params.extensions }
+			);
 		}
 
 		if (params.helpExitCode !== undefined && typeof params.helpExitCode !== 'number') {
-			throw E.INVALID_ARGUMENT('Expected help exit code to be a number', { name: 'params.helpExitCode', scope: 'CLI.constructor', value: params.helpExitCode });
+			throw E.INVALID_ARGUMENT('Expected help exit code to be a number', { name: 'helpExitCode', scope: 'CLI.constructor', value: params.helpExitCode });
 		}
 
-		if (params.width !== undefined && typeof params.width !== 'number') {
-			throw E.INVALID_ARGUMENT('Expected width to be a number', { name: 'params.width', scope: 'CLI.constructor', value: params.width });
+		if (params.stdout && (typeof params.stdout !== 'object' || typeof params.stdout.write !== 'function')) {
+			throw E.INVALID_ARGUMENT('Expected stdout stream to be a writable stream', { name: 'stdout', scope: 'CLI.constructor', value: params.stdout });
 		}
 
-		if (params.banner !== undefined && typeof params.banner !== 'string' && typeof params.banner !== 'function') {
-			throw E.INVALID_ARGUMENT('Expected banner to be a string or function', { name: 'params.banner', scope: 'CLI.constructor', value: params.banner });
+		if (params.stderr && (typeof params.stderr !== 'object' || typeof params.stderr.write !== 'function')) {
+			throw E.INVALID_ARGUMENT('Expected stderr stream to be a writable stream', { name: 'stderr', scope: 'CLI.constructor', value: params.stderr });
 		}
 
-		params.colors = params.colors !== false;
-		params.name || (params.name = 'program');
-		params.title || (params.title = 'Global');
+		super({
+			args:       params.args,
+			camelCase:  params.camelCase,
+			commands:   params.commands,
+			desc:       params.desc,
+			name:       params.name || 'program',
+			options:    params.options,
+			title:      params.title || 'Global',
+			treatUnknownOptionsAsArguments: params.treatUnknownOptionsAsArguments
+		});
 
-		// extract params that we don't want mixed in
-		const { extensions, hideNoBannerOption, hideNoColorOption } = params;
-		delete params.extensions;
-		delete params.hideNoBannerOption;
-		delete params.hideNoColorOption;
-
-		super(params);
 		declareCLIKitClass(this, 'CLI');
+
+		this.banner                = params.banner;
+		this.colors                = params.colors !== false;
+		this.errorIfUnknownCommand = params.errorIfUnknownCommand !== false;
+		this.helpExitCode          = params.helpExitCode;
+		this.warnings              = [];
+
+		const renderOpts = Object.assign({
+			markdown: true
+		}, params.renderOpts);
+
+		// init the output streams
+		this.stdout = new OutputStream(renderOpts);
+		this.stdout.pipe(params.stdout || process.stdout);
+
+		this.stderr = new OutputStream(renderOpts);
+		this.stderr.pipe(params.stderr || process.stderr);
+
+		process.on('exit', () => {
+			this.stdout.end();
+			this.stderr.end();
+		});
+
+		this.console = new Console(this.stdout, this.stderr);
 
 		// set the default command
 		this.defaultCommand = params.defaultCommand;
@@ -81,38 +126,21 @@ export default class CLI extends Context {
 				this.defaultCommand = 'help';
 			}
 
-			this.command('help', {
-				hidden: true,
-				async action({ contexts, err }) {
-					// the first context is the help command, so just skip to the second context
-					await contexts[1].renderHelp({ err });
-
-					// istanbul ignore if
-					if (err) {
-						process.exitCode = 1;
-					} else if (params.helpExitCode !== undefined) {
-						process.exitCode = params.helpExitCode;
-					}
-				}
-			});
+			// note: we must clone the help command params since the object gets modified
+			this.command('help', Object.assign({}, helpCommand));
 
 			this.option('-h, --help', 'displays the help screen');
 		}
 
 		// add the --no-banner flag
-		if (this.banner && !hideNoBannerOption) {
-			this.showBanner = true;
-
+		if (this.banner && !params.hideNoBannerOption) {
 			this.option('--no-banner', {
-				callback: value => {
-					this.showBanner = value;
-				},
 				desc: 'suppress the banner'
 			});
 		}
 
 		// add the --no-colors flag
-		if (this.colors && !hideNoColorOption) {
+		if (this.colors && !params.hideNoColorOption) {
 			this.option('--no-color', {
 				aliases: [ '--no-colors' ],
 				desc: 'disable colors'
@@ -122,10 +150,9 @@ export default class CLI extends Context {
 		// add the --version flag
 		if (params.version && !this.lookup.short.v && !this.lookup.long.version) {
 			this.option('-v, --version', {
-				callback: () => {
-					this.showBanner = false;
-					const out = this.get('out', process.stdout);
-					out.write(`${params.version}\n`);
+				callback: async ({ next }) => {
+					await next();
+					this.get('stdout').write(`${params.version}\n`);
 					process.exit(0);
 				},
 				desc: 'outputs the version'
@@ -133,13 +160,25 @@ export default class CLI extends Context {
 		}
 
 		// add the extensions now that the auto-generated options exist
-		if (Array.isArray(extensions)) {
-			for (const extensionPath of extensions) {
-				this.extension(extensionPath);
-			}
-		} else if (typeof extensions === 'object') {
-			for (const name of Object.keys(extensions)) {
-				this.extension(extensions[name], name);
+		if (params.extensions) {
+			if (Array.isArray(params.extensions)) {
+				for (const ext of params.extensions) {
+					try {
+						this.extension(ext);
+					} catch (e) {
+						this.warnings.push(e);
+						warn(e);
+					}
+				}
+			} else {
+				for (const [ name, ext ] of Object.entries(params.extensions)) {
+					try {
+						this.extension(ext, name);
+					} catch (e) {
+						this.warnings.push(e);
+						warn(e);
+					}
+				}
 			}
 		}
 	}
@@ -157,81 +196,76 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected arguments to be an array', { name: 'args', scope: 'CLI.exec', value: unparsedArgs });
 		}
 
-		let banner = this.get('banner');
-		banner = banner && String(typeof banner === 'function' ? await banner() : banner).trim();
-		const out = this.get('out', process.stdout);
-		const originalWrite = out.write;
-
-		// if we have a banner, then override write() so we can immediately write the banner
-		if (banner) {
-			const dataRegExp = /^\s*[<{]/;
-
-			out.write = (chunk, encoding, cb) => {
-				if (typeof encoding === 'function') {
-					cb = encoding;
-					encoding = null;
-				}
-
-				if (typeof cb !== 'function') {
-					cb = () => {};
-				}
-
-				// restore the original write;
-				out.write = originalWrite;
-
-				if (encoding === 'base64' || encoding === 'binary' || encoding === 'hex') {
-					// noop
-				} else if (this.get('showBanner', true) && !dataRegExp.test(chunk)) {
-					originalWrite.call(out, `${banner}\n\n`);
-				}
-
-				return originalWrite.call(out, chunk, encoding, cb);
-			};
-		}
-
-		let $args;
+		const parser = new Parser();
 
 		try {
-			$args = await this.parse(unparsedArgs ? unparsedArgs.slice() : process.argv.slice(2));
-			let cmd = $args.contexts[0];
+			const { _, argv, contexts, unknown } = await parser.parse(unparsedArgs || process.argv.slice(2), this);
+			let cmd = contexts[0];
 
-			if (!(cmd instanceof Command) && $args.enteredUnknownCommand) {
-				throw new Error(`Unknown command ${$args.unknownCommand}`);
+			log('Parsing complete: ' +
+				`${pluralize('option', Object.keys(argv).length, true)}, ` +
+				`${pluralize('unknown option', Object.keys(unknown).length, true)}, ` +
+				`${pluralize('arg', _.length, true)}, ` +
+				`${pluralize('context', contexts.length, true)}`
+			);
+
+			// wire up the banner
+			let banner = this.get('banner');
+			if (banner && argv.banner) {
+				banner = String(typeof banner === 'function' ? await banner() : banner).trim();
+				const showBanner = write => {
+					banner && write(`${banner}\n\n`);
+					banner = null;
+				};
+				this.stdout.on('start', showBanner);
+				this.stderr.on('start', showBanner);
 			}
-			if (this.help && $args.argv.help) {
+
+			const results = {
+				_,
+				argv,
+				console: this.console,
+				contexts,
+				unknown,
+				warnings: this.warnings
+			};
+
+			// determine the command to run
+			if (this.help && argv.help && (!(cmd instanceof Extension) || cmd.isCLIKitExtension)) {
 				log('Selected help command');
-				cmd = this.commands.help;
-				$args.contexts.unshift(cmd);
+				cmd = this.commands.get('help');
+				parser.contexts.unshift(cmd);
 
-			} else if (!(cmd instanceof Command) && this.defaultCommand && (this.commands[this.defaultCommand] instanceof Command)) {
+			} else if (!(cmd instanceof Command) && this.defaultCommand && this.commands.has(this.defaultCommand)) {
 				log(`Selected default command: ${this.defaultCommand}`);
-				cmd = this.commands[this.defaultCommand];
-				$args.contexts.unshift(cmd);
+				cmd = this.commands.get(this.defaultCommand);
+				parser.contexts.unshift(cmd);
 			}
-
-			let result;
 
 			// execute the command
 			if (cmd && typeof cmd.action === 'function') {
-				result = await cmd.action.call(this, $args);
+				log(`Executing command: ${highlight(cmd.name)}`);
+				return await cmd.action(results);
 			}
 
-			return result || $args;
+			log('No command to execute, returning parsed arguments');
+			return results;
 		} catch (err) {
-			const help = this.help && this.showHelpOnError !== false && this.commands.help;
+			error(err);
 
+			const help = this.help && this.showHelpOnError !== false && this.commands.get('help');
 			if (help) {
 				return await help.action({
-					contexts: [ help, ...(err.contexts || ($args && $args.contexts) || [ this ]) ],
-					err
+					contexts: err.contexts || parser.contexts || [ this ],
+					err,
+					warnings: this.warnings
 				});
 			}
 
 			throw err;
 		} finally {
-			if (banner) {
-				out.write = originalWrite;
-			}
+			this.stdout.end();
+			this.stderr.end();
 		}
 	}
 }

@@ -1,4 +1,4 @@
-import E from './errors';
+import E from '../lib/errors';
 
 const dateRegExp = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?Z?)?$/i;
 const hexRegExp = /^0x[A-Fa-f0-9]+$/;
@@ -19,18 +19,22 @@ export const types = {};
  * Ensures that the specified list of types is indeed an array and each value is a supported type,
  * then returns the cleaned up list of types or a default value if no types were found.
  *
- * @param {String} type - A list of types to validate.
- * @param {String} [defaultValue] - An optional list of types to default to if no
+ * @param {String|RegExp} type - A list of types to validate.
+ * @param {Array.<String>} [otherTypes] - An optional list of types to default to if no
  * types were originally specified.
  * @returns {String}
  */
-export function checkType(type, defaultValue) {
-	if (type && !types[type]) {
+export function checkType(type, ...otherTypes) {
+	if (!type) {
+		for (const other of otherTypes) {
+			if (typeof other !== 'undefined' && other !== null && types[other]) {
+				return other;
+			}
+		}
+	} else if (type instanceof RegExp) {
+		return 'regex';
+	} else if (!types[type]) {
 		throw E.INVALID_DATA_TYPE(`Unsupported type "${type}"`, { name: 'type', scope: 'types.checkType', types: Object.keys(types), value: type });
-	}
-
-	if (!type && defaultValue) {
-		return defaultValue;
 	}
 
 	return type;
@@ -40,13 +44,43 @@ export function checkType(type, defaultValue) {
  * Transforms a value to the first successfully transformed data type.
  *
  * @param {*} value - The value to transform.
- * @param {String} type - A list of data types to try to coerce the value into.
+ * @param {String} [type] - A specific data type to try to coerce the value into.
  * @returns {*}
  */
 export function transformValue(value, type) {
-	if (types[type] && typeof types[type].transform === 'function') {
+	if (!type && typeof value === 'string') {
+		const lvalue = value.toLowerCase();
+
+		// try as a boolean
+		if (lvalue === 'true') {
+			return true;
+		}
+		if (lvalue === 'false') {
+			return false;
+		}
+
+		// try as a number
+		const num = Number(value);
+		if (!isNaN(num)) {
+			return num;
+		}
+
+		// try as a date
+		if (dateRegExp.test(value)) {
+			return new Date(value);
+		}
+
+		// try as json
+		try {
+			return JSON.parse(value);
+		} catch (e) {
+			// nope
+		}
+	} else if (types[type] && typeof types[type].transform === 'function') {
 		value = types[type].transform(value);
 	}
+
+	// return the original value
 	return value;
 }
 
@@ -99,6 +133,10 @@ registerType({
 	transform(value) {
 		return value && value !== 'false';
 	}
+});
+
+registerType({
+	name: 'count'
 });
 
 registerType({

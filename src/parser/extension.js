@@ -1,15 +1,11 @@
 import Command from './command';
-import debug from './debug';
-import E from './errors';
+import debug from '../lib/debug';
+import E from '../lib/errors';
 import fs from 'fs';
 import path from 'path';
 import which from 'which';
 
-import {
-	declareCLIKitClass,
-	findPackage
-} from './util';
-
+import { declareCLIKitClass, findPackage } from '../lib/util';
 import { spawn } from 'child_process';
 
 const { log } = debug('cli-kit:extension');
@@ -17,8 +13,17 @@ const { highlight, note } = debug.styles;
 
 /**
  * Defines a namespace that wraps an external program or script.
+ *
+ * @extends {Command}
  */
 export default class Extension extends Command {
+	/**
+	 * Set to `true` if this extension is a cli-kit extension. It shall remain `false` for native
+	 * binaries and non-cli-kit CLI's.
+	 * @type {Boolean}
+	 */
+	isCLIKitExtension = false;
+
 	/**
 	 * Detects the extension defined in the specified path and initializes it.
 	 *
@@ -93,33 +98,51 @@ export default class Extension extends Command {
 
 					} else if (params.ignoreInvalidExtensions || (params.parent && params.parent.get('ignoreInvalidExtensions', false))) {
 						params.action = () => {
-							const out = this.outputStream || process.stdout;
+							const stderr = this.get('stderr', process.stderr);
 							if (err) {
-								out.write(`Bad extension: ${pkg.json.name}\n`);
-								out.write(`  ${err.toString()}\n`);
+								stderr.write(`Bad extension: ${pkg.json.name}\n`);
+								stderr.write(`  ${err.toString()}\n`);
 								let { stack } = err;
 								const p = stack.indexOf('\n\n');
 								if (p !== -1) {
 									stack = stack.substring(0, p).trim();
 								}
 								for (const line of stack.split('\n')) {
-									out.write(`  ${line}\n`);
+									stderr.write(`  ${line}\n`);
 								}
 							} else {
-								out.write(`Invalid extension: ${pkg.json.name}\n`);
+								stderr.write(`Invalid extension: ${pkg.json.name}\n`);
 							}
 						};
 
 					} else if (err) {
-						throw E.INVALID_EXTENSION(`Bad extension: ${pkg.json.name}`, { err, extensionPath, name: 'pkg', scope: 'Extension.constructor', value: pkg });
+						// prefix the error with this extension's info
+						const error = E.INVALID_EXTENSION(`Bad extension "${pkg.json.name}": ${err.message}`, { extensionPath, name: err.name, scope: 'Extension.constructor', value: err });
+						error.stack = err.stack;
+						throw error;
 
 					} else {
-						throw E.INVALID_EXTENSION(`Extension does not export an object: ${extensionPath}`, { extensionPath, name: 'extension.ctx', scope: 'Extension.constructor', value: ctx });
+						throw E.INVALID_EXTENSION(`Extension does not export an object: ${extensionPath}`, { extensionPath, name: 'ctx', scope: 'Extension.constructor', value: ctx });
 					}
 				}
 
-				if (Array.isArray(pkg.json.aliases)) {
-					params.aliases = pkg.json.aliases;
+				// init the aliases with any aliases from the package.json
+				params.aliases = Array.isArray(pkg.json.aliases) ? pkg.json.aliases : [];
+
+				// if the name is different than the one in the package.json, add it to the aliases
+				if (params.name && params.name !== name && !params.aliases.includes(params.name)) {
+					params.aliases.push(params.name);
+				}
+
+				// if the package has a bin script that matches the package name, then add any other
+				// bin name that aliases the package named bin
+				if (pkg.json.bin) {
+					const primary = pkg.json.bin[pkg.json.name];
+					for (const [ name, bin ] of Object.entries(pkg.json.bin)) {
+						if (bin === primary && !params.aliases.includes(name)) {
+							params.aliases.push(name);
+						}
+					}
 				}
 
 				if (pkg.json.description) {
@@ -131,8 +154,9 @@ export default class Extension extends Command {
 		super(name || path.basename(extensionPath), params);
 		declareCLIKitClass(this, 'Extension');
 
-		this.executable    = executable;
-		this.pkg           = pkg;
+		this.executable        = executable;
+		this.isCLIKitExtension = isCLIKitExtension;
+		this.pkg               = pkg;
 
 		if (isCLIKitExtension) {
 			// nothing to do
@@ -147,8 +171,8 @@ export default class Extension extends Command {
 
 		} else if (this.get('ignoreMissingExtensions', false)) {
 			this.action = () => {
-				const out = this.outputStream || process.stdout;
-				out.write(`Extension not found: ${extensionPath}\n`);
+				const stdout = this.get('stdout', process.stdout);
+				stdout.write(`Extension not found: ${highlight(extensionPath)}\n`);
 			};
 
 			log(`Loaded invalid extension: ${highlight(extensionPath)}`);
@@ -171,11 +195,10 @@ export default class Extension extends Command {
 				return reject(E.NO_EXECUTABLE('No executable to run', { name: 'executable', scope: 'Extension.run', value: this.executable }));
 			}
 
-			const out = this.outputStream;
-			const stdout = out || process.stdout;
-			const stderr = out || process.stderr;
+			const stdout = this.get('stdout', process.stdout);
+			const stderr = this.get('stderr', process.stderr);
 
-			log(`Running: ${this.executable} ${args.join(' ')}`);
+			log(`Running: ${highlight(this.executable + ' ' + args.join(' '))}`);
 			const child = spawn(this.executable, args);
 
 			child.stdout.on('data', data => stdout.write(data.toString()));
