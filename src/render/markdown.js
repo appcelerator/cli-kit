@@ -1,6 +1,6 @@
 import E from '../lib/errors';
 import kramed from 'kramed';
-import TerminalRenderer from 'marked-terminal';
+import TerminalRenderer from './marked-terminal';
 // import rules from './rules';
 
 // const emptyLine = /^ +$/gm;
