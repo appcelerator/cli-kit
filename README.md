@@ -19,14 +19,17 @@ Everything you need to make awesome Command Line Interfaces.
 * Command line parsing
 * Support for command hierarchies
 * Auto-generated help
+* CLI template engine
+* Markdown/kramdown rendering
+* Extension support (e.g. wrap external CLI's)
 
 ## Installation
 
-    yarn add cli-kit --save
-
-or
-
-	npm i cli-kit --save
+```bash
+yarn add cli-kit --save
+# or
+npm i cli-kit --save
+```
 
 ## Usage
 
@@ -283,14 +286,14 @@ Adds an option or group of options to a `CLI` or `Command`.
 | Parse callbacks                               | :white_check_mark: |                    |                    |                    | :x:                  |                    |                    |                                      |                    |                    |                    |                    |
 | Command support                               | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    | :x:                  | :white_check_mark: |                    |                                      |                    |                    |                    |                    |
 | Options support                               | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    | :white_check_mark:   |                    |                    |                                      |                    |                    |                    |                    |
-| Option validation                             | Coming soon!       | :white_check_mark: |                    |                    | :white_check_mark:   |                    |                    |                                      |                    |                    |                    |                    |
+| Option validation                             | :white_check_mark: | :white_check_mark: |                    |                    | :white_check_mark:   |                    |                    |                                      |                    |                    |                    |                    |
 | Default values                                | :white_check_mark: |                    |                    |                    |                      |                    |                    |                                      |                    |                    |                    |                    |
 | Flags support                                 | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    | :x:                  |                    |                    |                                      |                    |                    |                    |                    |
 | Argument support                              | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    | :white_check_mark:   |                    |                    |                                      |                    |                    |                    |                    |
-| Argument validation                           | Coming soon!       | :white_check_mark: |                    |                    | :white_check_mark:   |                    |                    |                                      |                    |                    |                    |                    |
+| Argument validation                           | :white_check_mark: | :white_check_mark: |                    |                    | :white_check_mark:   |                    |                    |                                      |                    |                    |                    |                    |
 | Dynamic command hierarchies                   | :white_check_mark: |                    |                    |                    |                      |                    |                    |                                      |                    |                    |                    |                    |
 | Automatic parsed value data type coercion     | :white_check_mark: | :white_check_mark: | Numbers only       |                    | Numbers and Booleans |                    |                    |                                      |                    |                    |                    |                    |
-| Parsed value transforming                     | Coming soon!       |                    |                    |                    |                      |                    |                    |                                      |                    |                    |                    |                    |
+| Parsed value transforming                     | :white_check_mark: |                    |                    |                    |                      |                    |                    |                                      |                    |                    |                    |                    |
 | Auto-generated help screen                    | :white_check_mark: | :white_check_mark: |                    |                    | :x:                  |                    | :white_check_mark: |                                      |                    |                    |                    |                    |
 | Help exits with code                          | :white_check_mark: |                    |                    |                    |                      |                    | :white_check_mark: |                                      |                    |                    |                    |                    |
 | Internal hook system                          | :white_check_mark: |                    |                    |                    |                      |                    |                    |                                      |                    |                    |                    |                    |
@@ -299,7 +302,7 @@ Adds an option or group of options to a `CLI` or `Command`.
 
 |                                               | cli-kit            | Caporal.js         | oclif              | meow               | inquirer                              | promptly           | fields             |
 | --------------------------------------------- | ------------------ | ------------------ | ------------------ | ------------------ | ------------------------------------- | ------------------ | ------------------ |
-| Actively maintained <br> (within last year)   | :white_check_mark: | :white_check_mark: |                    | :white_check_mark: | :white_check_mark:                    | :white_check_mark: | :x:                |
+| Actively maintained <br> (within last year)   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:                    | :white_check_mark: | :x:                |
 | Open Source                                   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:                    | :white_check_mark: | :white_check_mark: |
 | Language                                      | JavaScript         | JavaScript         | TypeScript         | JavaScript         | JavaScript                            | JavaScript         | JavaScript         |
 | Automatic prompt value data type coercion     | Coming soon!       |                    |                    |                    | :x:                                   |                    |                    |
