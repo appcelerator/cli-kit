@@ -1,18 +1,19 @@
 import E from '../lib/errors';
+import Markdown from './markdown';
 
 import { Transform } from 'stream';
 
 /**
- * Matches output that begins with a `<` for XML output and `{` or `[` for JSON object output.
+ * Cheap check to see if output may be XML or JSON object output.
  * @type {RegExp}
  */
 const dataRegExp = /^\s*[<{[]/;
 
 /**
- * Matches non-text chunk encodings which will be ignored by the formatter.
+ * The list of encodings where chunks will be parsed as markdown when enabled.
  * @type {RegExp}
  */
-const ignoredEncodings = /^base64|binary|buffer|hex$/;
+const encodings = new Set([ 'ascii', 'latin1', 'ucs2', 'utf8', 'utf16le' ]);
 
 /**
  * Processes output chunks through a formatter.
@@ -26,11 +27,8 @@ export default class OutputStream extends Transform {
 	 * @param {Object} [opts] - Various options.
 	 * @param {Boolean} [opts.decodeStrings=false] - By default, Node will decode strings into a
 	 * buffer, losing the encdoing and disabling the markdown parser.
-	 * @param {Boolean} [opts.markdown] - When `true`, parses the chunks on the fly as markdown and
+	 * @param {Boolean|Object} [opts.markdown] - When `true`, parses the chunks on the fly as markdown and
 	 * renders the result. By default, markdown is not enabled and chunks are simply passed through.
-	 * @param {Number} [opts.width] - The maximum width of the rendered output. Longer text is
-	 * wrapped to the next line. By default, output is not wrapped and lets the terminal wrap the
-	 * long lines.
 	 * @access public
 	 */
 	constructor(opts = {}) {
@@ -44,16 +42,9 @@ export default class OutputStream extends Transform {
 
 		super(opts);
 
-		this.markdown = !!opts.markdown;
-
-		if (opts.width !== undefined) {
-			if (typeof opts.width !== 'number') {
-				throw E.INVALID_ARGUMENT('Expected width to be a number', { name: 'width', scope: 'OutputStream.constructor', value: opts.width });
-			}
-			if (opts.width < 1) {
-				throw E.RANGE_ERROR('Width must be a positive number', { name: 'width', scope: 'OutputStream.constructor', value: opts.width });
-			}
-			this.width = opts.width;
+		if (opts.markdown) {
+			this.markdown = new Markdown(typeof opts.markdown === 'object' ? opts.markdown : {});
+			this._flush = this.markdown.flush.bind(this.markdown);
 		}
 	}
 
@@ -62,30 +53,42 @@ export default class OutputStream extends Transform {
 	 * a JSON object/array or XML document will emit a `start` event.
 	 *
 	 * @param {*} chunk - Data being written to the stream.
-	 * @param {String} encoding - The message encoding. This method does not attempt to format
-	 * base64, binary, or hex encoded chunks.
+	 * @param {String} encoding - The message encoding.
 	 * @param {Function} cb - A function to call when done.
 	 * @access private
 	 * @emits OutputStream#start
 	 */
 	_transform(chunk, encoding, cb) {
-		if (!ignoredEncodings.test(encoding)) {
-			if (this.isData === undefined) {
-				this.isData = dataRegExp.test(chunk);
-				if (!this.isData) {
-					this.emit('start', str => {
-						this.push(str);
-						// this.push(this.renderer.render(str))
+		if (typeof encoding === 'function') {
+			cb = encoding;
+			encoding = null;
+		}
+
+		if (!encoding || encodings.has(encoding)) {
+			if (this._isData === undefined) {
+				this._isData = dataRegExp.test(chunk);
+				if (!this._isData) {
+					this.emit('start', (str, enc = encoding) => {
+						if (this.markdown) {
+							str = this.markdown.process(str, enc);
+						}
+						if (str) {
+							this.push(str, enc);
+						}
 					});
 				}
 			}
 
-			if (!this.isData && this.renderer) {
-				chunk = this.renderer.render(chunk.toString());
+			if (!this._isData && this.markdown) {
+				const str = this.markdown.process(chunk.toString(), encoding);
+				if (str) {
+					this.push(str, encoding);
+				}
+				return cb();
 			}
 		}
 
-		this.push(chunk);
+		this.push(chunk, encoding);
 		cb();
 	}
 }

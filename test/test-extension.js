@@ -237,6 +237,9 @@ async function runCLI(extension, argv, noHelp) {
 		extensions: [ extension ],
 		help: !noHelp,
 		name: 'test-cli',
+		renderOpts: {
+			markdown: false
+		},
 		stdout: out,
 		stderr: out
 	});

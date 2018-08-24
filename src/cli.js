@@ -91,6 +91,7 @@ export default class CLI extends Context {
 
 		declareCLIKitClass(this, 'CLI');
 
+		this.banner = params.banner;
 		this.colors = params.colors !== false;
 		this.errorIfUnknownCommand = params.errorIfUnknownCommand !== false;
 		this.warnings = [];
@@ -105,6 +106,11 @@ export default class CLI extends Context {
 
 		this.stderr = new OutputStream(renderOpts);
 		this.stderr.pipe(params.stderr || process.stderr);
+
+		process.on('exit', () => {
+			this.stdout.end();
+			this.stderr.end();
+		});
 
 		this.console = new Console(this.stdout, this.stderr);
 
@@ -255,6 +261,9 @@ export default class CLI extends Context {
 			}
 
 			throw err;
+		} finally {
+			this.stdout.end();
+			this.stderr.end();
 		}
 	}
 }
