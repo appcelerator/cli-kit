@@ -36,6 +36,9 @@
     "coverage": "gulp coverage",
     "docs": "gulp docs",
     "prepare": "gulp build",
+    "site-build": "cd site && gatsby build",
+    "site-deploy": "cd site && gatsby build && node node_modules/.bin/gh-pages -d public -b gh-pages -r git@github.com:cb1kenobi/cli-kit.git",
+    "site-develop": "cd site && gatsby develop",
     "test": "gulp test"
   },
   "dependencies": {
