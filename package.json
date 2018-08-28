@@ -36,6 +36,9 @@
     "coverage": "gulp coverage",
     "docs": "gulp docs",
     "prepare": "gulp build",
+    "site-build": "cd site && gatsby build",
+    "site-deploy": "cd site && gatsby build && gh-pages -b gh-pages -s site/public",
+    "site-develop": "cd site && gatsby develop",
     "test": "gulp test"
   },
   "dependencies": {
