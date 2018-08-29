@@ -1,6 +1,6 @@
 {
   "name": "cli-kit",
-  "version": "0.4.0-beta",
+  "version": "0.4.0-beta2",
   "description": "Everything you need to create awesome command line interfaces",
   "main": "./dist/index.js",
   "author": "Chris Barber <chris@cb1inc.com> (https://github.com/cb1kenobi)",
