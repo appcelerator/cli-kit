@@ -45,6 +45,7 @@ export default class Extension extends Command {
 		let executable = null;
 		let pkg = null;
 		let isCLIKitExtension = false;
+		let startTime = Date.now();
 
 		if (!extensionPath || typeof extensionPath !== 'string') {
 			throw E.INVALID_ARGUMENT('Expected extension path to be a non-empty string', { extensionPath, name: 'params.extensionPath', scope: 'Extension.constructor', value: extensionPath });
@@ -91,7 +92,6 @@ export default class Extension extends Command {
 						if (ctx.clikit instanceof Set && (ctx.clikit.has('CLI') || ctx.clikit.has('Command'))) {
 							params = ctx;
 							params.parent = parent;
-							log(`Loaded cli-kit enable extension: ${highlight(pkg.json.name)}`);
 						} else {
 							isCLIKitExtension = false;
 						}
@@ -157,17 +157,27 @@ export default class Extension extends Command {
 		this.executable        = executable;
 		this.isCLIKitExtension = isCLIKitExtension;
 		this.pkg               = pkg;
+		this.time              = Date.now() - startTime;
+
+		if (!isCLIKitExtension) {
+			this.option('-v, --version', {
+				callback() {
+					throw E.NOT_AN_OPTION('Non-cli-kit extensions do not support --version flag');
+				},
+				hidden: true
+			});
+		}
 
 		if (isCLIKitExtension) {
-			// nothing to do
+			log(`Loaded cli-kit enable extension: ${highlight(pkg.json.name)} ${note(`(${this.time} ms)`)}`);
 
 		} else if (pkg) {
 			this.executable = process.execPath;
 			this.action = ({ _ }) => this.run([ this.extensionPath, ..._ ]);
-			log(`Loaded extension as Node package: ${highlight(extensionPath)}`);
+			log(`Loaded extension as Node package: ${highlight(extensionPath)} ${note(`(${this.time} ms)`)}`);
 
 		} else if (executable) {
-			log(`Loaded extension as executable: ${highlight(extensionPath)}`);
+			log(`Loaded extension as executable: ${highlight(extensionPath)} ${note(`(${this.time} ms)`)}`);
 
 		} else if (this.get('ignoreMissingExtensions', false)) {
 			this.action = () => {
@@ -175,7 +185,7 @@ export default class Extension extends Command {
 				stdout.write(`Extension not found: ${highlight(extensionPath)}\n`);
 			};
 
-			log(`Loaded invalid extension: ${highlight(extensionPath)}`);
+			log(`Loaded invalid extension: ${highlight(extensionPath)} ${note(`(${this.time} ms)`)}`);
 
 		} else {
 			throw E.INVALID_EXTENSION(`Extension not found: ${extensionPath}`, { extensionPath, name: 'extension', scope: 'Extension.constructor', value: extensionPath });

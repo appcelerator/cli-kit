@@ -311,6 +311,10 @@ Adds an option or group of options to a `CLI` or `Command`.
 | Built-in prompt types                         | Coming soon!       |                    |                    |                    | :white_check_mark:                    |                    | :white_check_mark: |
 | Internal hook system                          | :white_check_mark: |                    |                    |                    | :x:                                   |                    | :x:                |
 
+## Who Uses cli-kit?
+
+ * [Axway](https://www.axway.com)
+
 ## License
 
 MIT

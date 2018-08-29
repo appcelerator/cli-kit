@@ -36,9 +36,6 @@
     "coverage": "gulp coverage",
     "docs": "gulp docs",
     "prepare": "gulp build",
-    "site-build": "cd site && gatsby build",
-    "site-deploy": "cd site && gatsby build && node node_modules/.bin/gh-pages -d public -b gh-pages -r git@github.com:cb1kenobi/cli-kit.git",
-    "site-develop": "cd site && gatsby develop",
     "test": "gulp test"
   },
   "dependencies": {
@@ -49,6 +46,7 @@
     "lodash.camelcase": "^4.3.0",
     "marked-terminal": "^3.1.1",
     "pkg-dir": "^3.0.0",
+    "semver": "^5.5.1",
     "snooplogg": "^1.12.1",
     "source-map-support": "^0.5.9",
     "which": "^1.3.1"
@@ -94,6 +92,6 @@
     "url": "git://github.com/cb1kenobi/cli-kit.git"
   },
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=8.10.0"
   }
 }

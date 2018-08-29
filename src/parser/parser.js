@@ -333,7 +333,7 @@ export default class Parser {
 						.then(() => option.callback({
 							input: arg.input,
 							ctx,
-							next: () => {
+							next: async () => {
 								if (fired) {
 									log('next() already fired');
 									return;
@@ -342,12 +342,14 @@ export default class Parser {
 								fired = true;
 
 								log(`Option ${highlight(option.format)} called next(), processing next arg`);
-								return this.parseArg(ctx, i + 1);
+								await this.parseArg(ctx, i + 1);
+
+								return this.args[i].value;
 							},
 							option,
 							value: arg.value
 						}))
-						.then(value => {
+						.then(async value => {
 							if (value === undefined) {
 								log(`Option ${highlight(option.format)} callback did not change the value`);
 							} else {
@@ -357,8 +359,19 @@ export default class Parser {
 
 							if (!fired) {
 								log(`Option ${highlight(option.format)} did not call next(), processing next arg`);
-								return this.parseArg(ctx, i + 1);
+								await this.parseArg(ctx, i + 1);
 							}
+
+							return arg.value;
+						})
+						.catch(err => {
+							if (err.code === 'ERR_NOT_AN_OPTION') {
+								this.args[i] = new ParsedArgument('argument', {
+									input: arg.input
+								});
+								return;
+							}
+							throw err;
 						})
 						.then(resolve, reject);
 				});

@@ -3,12 +3,18 @@
 	"private": true,
 	"dependencies": {
 		"gatsby": "next",
-		"gatsby-plugin-react-helmet": "next",
 		"gatsby-plugin-manifest": "next",
 		"gatsby-plugin-offline": "next",
+		"gatsby-plugin-react-helmet": "next",
 		"gh-pages": "^1.2.0",
 		"react": "^16.4.2",
 		"react-dom": "^16.4.2",
-		"react-helmet": "^5.2.0"
+		"react-helmet": "^5.2.0",
+		"semantic-ui-react": "^0.82.3"
+	},
+	"scripts": {
+		"build": "gatsby build",
+		"deploy": "gatsby build && yarn run gh-pages -d public -b gh-pages -r git@github.com:cb1kenobi/cli-kit.git",
+		"develop": "gatsby develop"
 	}
 }

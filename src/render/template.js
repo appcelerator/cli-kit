@@ -30,7 +30,7 @@ const breakRegExp = /[ \t]?\\\n/g;
  *
  * @type {RegExp}
  */
-const printRegExp = /(?<=^|\n)([ \t]*)(>+)(\|\?|\?\||\||\?)?(.*?)(?:(?<!\\)\n|$)/gs;
+let printRegExp;
 
 /**
  * Renders a template with the supplied data.
@@ -41,6 +41,14 @@ const printRegExp = /(?<=^|\n)([ \t]*)(>+)(\|\?|\?\||\||\?)?(.*?)(?:(?<!\\)\n|$)
  */
 export function render(template, data) {
 	try {
+		if (!printRegExp) {
+			try {
+				printRegExp = new RegExp('(?<=^|\\n)([ \\t]*)(>+)(\\|\\?|\\?\\||\\||\\?)?(.*?)(?:(?<!\\\\)\\n|$)', 'gs');
+			} catch (e) {
+				throw new Error('Node.js version is too old; must be v8.10 or newer');
+			}
+		}
+
 		if (!data || typeof data !== 'object') {
 			data = {};
 		}

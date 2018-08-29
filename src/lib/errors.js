@@ -11,6 +11,7 @@ createError('INVALID_DATA_TYPE',           Error,      'The CLI argument or opti
 createError('INVALID_DATE',                RangeError, 'A value was not a valid date');
 createError('INVALID_EXTENSION',           Error,      'Unable to load an extension due to bad path, bad package.json, missing main file, etc');
 createError('INVALID_JSON',                Error,      'The string does not contain valid JSON');
+createError('INVALID_NODE_JS',             Error,      'The current Node.js version is too old');
 createError('INVALID_NUMBER',              Error,      'Unable to parse value into the number');
 createError('INVALID_OPTION',              Error,      'The option parameters are incomplete or contains invalid values');
 createError('INVALID_OPTION_FORMAT',       TypeError,  'Unable to parse an option\'s foramt');
@@ -18,6 +19,7 @@ createError('INVALID_PACKAGE_JSON',        Error,      'A package.json file does
 createError('INVALID_VALUE',               Error,      'Unable to transform the value to the desired data type or conform to the required format');
 createError('MISSING_REQUIRED_ARGUMENT',   Error,      'A required command line argument was not found');
 createError('NO_EXECUTABLE',               Error,      'Attempted to run an undefined executable');
+createError('NOT_AN_OPTION',               Error,      'An option is not an option and should be treated as an argument');
 createError('NOT_YES_NO',                  RangeError, 'The value is not "yes", "y", "no", or "n"');
 createError('RANGE_ERROR',                 RangeError, 'The value is not within the acceptable min/max range');
 createError('TEMPLATE_NOT_FOUND',          Error,      'The specified template file does not exist or access is denied');

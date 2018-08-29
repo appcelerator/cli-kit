@@ -3,9 +3,12 @@ import Context from './parser/context';
 import debug from './lib/debug';
 import E from './lib/errors';
 import Extension from './parser/extension';
+import fs from 'fs-extra';
 import helpCommand from './commands/help';
 import Parser from './parser/parser';
+import path from 'path';
 import OutputStream from './render/output-stream';
+import semver from 'semver';
 
 import { Console } from 'console';
 import { declareCLIKitClass } from './lib/util';
@@ -13,6 +16,14 @@ import { declareCLIKitClass } from './lib/util';
 const { error, log, warn } = debug('cli-kit:cli');
 const { highlight }  = debug.styles;
 const { pluralize } = debug;
+
+/**
+ * The required Node.js version for cli-kit. This is used to assert the Node version at runtime.
+ * If the `CLI` instance is created with a `nodeVersion`, then it assert the greater of the two
+ * Node versions.
+ * @type {String}
+ */
+const clikitNodeVersion = fs.readJsonSync(path.resolve(__dirname, '..', 'package.json')).engines.node;
 
 /**
  * Defines a CLI context and is responsible for parsing the command line arguments.
@@ -38,7 +49,9 @@ export default class CLI extends Context {
 	 * it does not add the `--no-banner` option.
 	 * @param {Boolean} [params.hideNoColorOption=false] - When `true` and `colors` is enabled, it
 	 * does not add the `--no-color` option.
-	 * @param {String} [params.name] - The name of the program.
+	 * @param {String} [params.name] - The name of the program. If not set, defaults to `"program"`
+	 * in the help outut and `"This application"` in the Node version assertion.
+	 * @param {String} [params.nodeVersion] - The required Node.js version to run the app.
 	 * @param {Object} [params.renderOpts] - Various render options to control the output stream
 	 * such as the display width.
 	 * @param {Object|stream.Writable} [params.stdout=process.stdout] - A stream or an object with a
@@ -92,10 +105,12 @@ export default class CLI extends Context {
 
 		declareCLIKitClass(this, 'CLI');
 
+		this.appName               = params.name;
 		this.banner                = params.banner;
 		this.colors                = params.colors !== false;
 		this.errorIfUnknownCommand = params.errorIfUnknownCommand !== false;
 		this.helpExitCode          = params.helpExitCode;
+		this.nodeVersion           = params.nodeVersion;
 		this.warnings              = [];
 
 		const renderOpts = Object.assign({
@@ -150,10 +165,11 @@ export default class CLI extends Context {
 		// add the --version flag
 		if (params.version && !this.lookup.short.v && !this.lookup.long.version) {
 			this.option('-v, --version', {
-				callback: async ({ next }) => {
-					await next();
-					this.get('stdout').write(`${params.version}\n`);
-					process.exit(0);
+				callback: async ({ next, value }) => {
+					if (await next()) {
+						this.get('stdout').write(`${params.version}\n`);
+						process.exit(0);
+					}
 				},
 				desc: 'outputs the version'
 			});
@@ -192,6 +208,17 @@ export default class CLI extends Context {
 	 * @access public
 	 */
 	async exec(unparsedArgs) {
+		const { version } = process;
+		let required = this.nodeVersion;
+		if ((required && !semver.satisfies(version, required)) || !semver.satisfies(version, required = clikitNodeVersion)) {
+			throw E.INVALID_NODE_JS(`${this.appName || 'This application'} requires Node.js version is ${required}, currently ${version}`, {
+				name: 'nodeVersion',
+				scope: 'CLI.exec',
+				current: version,
+				required
+			});
+		}
+
 		if (unparsedArgs && !Array.isArray(unparsedArgs)) {
 			throw E.INVALID_ARGUMENT('Expected arguments to be an array', { name: 'args', scope: 'CLI.exec', value: unparsedArgs });
 		}
