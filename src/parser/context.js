@@ -51,6 +51,8 @@ export default class Context extends HookEmitter {
 	 * name.
 	 * @param {Array<Object>|Object|Map} [params.options] - An array of options.
 	 * @param {Context} [params.parent] - The parent context.
+	 * @param {Boolean} [params.showBannerForExternalCLIs=false] - If `true`, shows the `CLI`
+	 * banner, assuming banner is enabled, for non-cli-kit enabled CLIs.
 	 * @param {String} [params.title] - The context title.
 	 * @param {Boolean} [params.treatUnknownOptionsAsArguments=false] - When `true`, any argument is
 	 * encountered during parsing that resembles a option that does not exist, it will add it
@@ -356,7 +358,7 @@ export default class Context extends HookEmitter {
 	}
 
 	/**
-	 * Scans up the context tree for the first instance of a matching defined property.
+	 * Scan parent contexts to find the specified property in the top-most context.
 	 *
 	 * @param {String} name - The property name.
 	 * @param {*} defaultValue - A default value if no value is found.

@@ -54,6 +54,8 @@ export default class CLI extends Context {
 	 * @param {String} [params.nodeVersion] - The required Node.js version to run the app.
 	 * @param {Object} [params.renderOpts] - Various render options to control the output stream
 	 * such as the display width.
+	 * @param {Boolean} [params.showBannerForExternalCLIs=false] - If `true`, shows the `CLI`
+	 * banner, assuming banner is enabled, for non-cli-kit enabled CLIs.
 	 * @param {Object|stream.Writable} [params.stdout=process.stdout] - A stream or an object with a
 	 * `write()` method to write output such as the help screen to.
 	 * @param {Object|stream.Writable} [params.stderr=process.stderr] - A stream or an object with a
@@ -93,25 +95,26 @@ export default class CLI extends Context {
 		}
 
 		super({
-			args:       params.args,
-			camelCase:  params.camelCase,
-			commands:   params.commands,
-			desc:       params.desc,
-			name:       params.name || 'program',
-			options:    params.options,
-			title:      params.title || 'Global',
+			args:                           params.args,
+			camelCase:                      params.camelCase,
+			commands:                       params.commands,
+			desc:                           params.desc,
+			name:                           params.name || 'program',
+			options:                        params.options,
+			showBannerForExternalCLIs:      params.showBannerForExternalCLIs,
+			title:                          params.title || 'Global',
 			treatUnknownOptionsAsArguments: params.treatUnknownOptionsAsArguments
 		});
 
 		declareCLIKitClass(this, 'CLI');
 
-		this.appName               = params.name;
-		this.banner                = params.banner;
-		this.colors                = params.colors !== false;
-		this.errorIfUnknownCommand = params.errorIfUnknownCommand !== false;
-		this.helpExitCode          = params.helpExitCode;
-		this.nodeVersion           = params.nodeVersion;
-		this.warnings              = [];
+		this.appName                   = params.name;
+		this.banner                    = params.banner;
+		this.colors                    = params.colors !== false;
+		this.errorIfUnknownCommand     = params.errorIfUnknownCommand !== false;
+		this.helpExitCode              = params.helpExitCode;
+		this.nodeVersion               = params.nodeVersion;
+		this.warnings                  = [];
 
 		const renderOpts = Object.assign({
 			markdown: true
@@ -236,18 +239,6 @@ export default class CLI extends Context {
 				`${pluralize('context', contexts.length, true)}`
 			);
 
-			// wire up the banner
-			let banner = this.get('banner');
-			if (banner && argv.banner) {
-				banner = String(typeof banner === 'function' ? await banner() : banner).trim();
-				const showBanner = write => {
-					banner && write(`${banner}\n\n`);
-					banner = null;
-				};
-				this.stdout.on('start', showBanner);
-				this.stderr.on('start', showBanner);
-			}
-
 			const results = {
 				_,
 				argv,
@@ -267,6 +258,24 @@ export default class CLI extends Context {
 				log(`Selected default command: ${this.defaultCommand}`);
 				cmd = this.commands.get(this.defaultCommand);
 				parser.contexts.unshift(cmd);
+			}
+
+			// wire up the banner
+			let banner = cmd.banner || this.get('banner');
+			if (banner) {
+				if (cmd instanceof Extension && !cmd.isCLIKitExtension && !cmd.get('showBannerForExternalCLIs')) {
+					// disable the banner for non-cli-kit extensions
+				} else {
+					banner = String(typeof banner === 'function' ? await banner() : banner).trim();
+					const showBanner = write => {
+						if (banner && argv.banner) {
+							write(`${banner}\n\n`);
+						}
+						banner = null;
+					};
+					this.stdout.on('start', showBanner);
+					this.stderr.on('start', showBanner);
+				}
 			}
 
 			// execute the command

@@ -160,6 +160,8 @@ export default class Extension extends Command {
 		this.time              = Date.now() - startTime;
 
 		if (!isCLIKitExtension) {
+			// if this is a not a cli-kit-enabled extension, add a --version option to override
+			// the CLI's --version and disable it
 			this.option('-v, --version', {
 				callback() {
 					throw E.NOT_AN_OPTION('Non-cli-kit extensions do not support --version flag');
