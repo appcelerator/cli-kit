@@ -4,7 +4,8 @@ import Helmet from 'react-helmet';
 import { StaticQuery, graphql } from 'gatsby';
 
 import Header from '../components/header';
-import './index.css';
+import '../css/styles.css';
+import "semantic-ui-css/semantic.min.css";
 
 const Layout = ({ children }) => (
 	<StaticQuery
