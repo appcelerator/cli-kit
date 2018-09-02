@@ -18,6 +18,12 @@ const { highlight, note } = debug.styles;
  */
 export default class Extension extends Command {
 	/**
+	 * An array of args to pass to the extension.
+	 * @type {Array.<String>}
+	 */
+	execArgs = [];
+
+	/**
 	 * Set to `true` if this extension is a cli-kit extension. It shall remain `false` for native
 	 * binaries and non-cli-kit CLI's.
 	 * @type {Boolean}
@@ -56,7 +62,7 @@ export default class Extension extends Command {
 		// first see if this is an executable
 		try {
 			executable = which.sync(extensionPath);
-			params.action = ({ _ }) => this.run(_);
+			params.action = () => this.exec();
 		} catch (e) {
 			// not an executable,
 			if (fs.existsSync(extensionPath)) {
@@ -175,7 +181,8 @@ export default class Extension extends Command {
 
 		} else if (pkg) {
 			this.executable = process.execPath;
-			this.action = ({ _ }) => this.run([ this.extensionPath, ..._ ]);
+			this.execArgs.unshift(this.extensionPath);
+			this.action = () => this.exec();
 			log(`Loaded extension as Node package: ${highlight(extensionPath)} ${note(`(${this.time} ms)`)}`);
 
 		} else if (executable) {
@@ -197,11 +204,10 @@ export default class Extension extends Command {
 	/**
 	 * Runs this extension's executable.
 	 *
-	 * @param {Array.<String>} [args] - An array of arguments to pass into the process.
 	 * @returns {Promise}
 	 * @access private
 	 */
-	run(args) {
+	exec() {
 		return new Promise((resolve, reject) => {
 			if (!this.executable) {
 				return reject(E.NO_EXECUTABLE('No executable to run', { name: 'executable', scope: 'Extension.run', value: this.executable }));
@@ -210,8 +216,8 @@ export default class Extension extends Command {
 			const stdout = this.get('stdout', process.stdout);
 			const stderr = this.get('stderr', process.stderr);
 
-			log(`Running: ${highlight(this.executable + ' ' + args.join(' '))}`);
-			const child = spawn(this.executable, args);
+			log(`Running: ${highlight(this.executable + ' ' + this.execArgs.join(' '))}`);
+			const child = spawn(this.executable, this.execArgs);
 
 			child.stdout.on('data', data => stdout.write(data.toString()));
 			child.stderr.on('data', data => stderr.write(data.toString()));

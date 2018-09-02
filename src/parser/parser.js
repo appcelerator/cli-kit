@@ -2,6 +2,7 @@ import camelCase from 'lodash.camelcase';
 import Context from './context';
 import debug, { pluralize } from '../lib/debug';
 import E from '../lib/errors';
+import Extension from './extension';
 import ParsedArgument from './parsed-argument';
 
 import { declareCLIKitClass } from '../lib/util';
@@ -514,7 +515,12 @@ export default class Parser {
 		// check if command and make sure we haven't already added a command this round
 		const cmd = lookup.commands[subject];
 		if (cmd) {
-			log(`Found command: ${highlight(cmd.name)}`);
+			if (cmd instanceof Extension) {
+				cmd.execArgs.push.apply(cmd.execArgs, args.slice(i + 1));
+				log(`Found extension: ${highlight(cmd.name)}`);
+			} else {
+				log(`Found command: ${highlight(cmd.name)}`);
+			}
 			return new ParsedArgument('command', {
 				command: cmd,
 				input: [ arg ]
