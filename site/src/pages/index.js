@@ -1,18 +1,8 @@
 import React from 'react'
-import Layout from '../layouts';
-import {
-	Button,
-	Segment,
-	Container,
-	Grid,
-	Header,
-	Icon
-} from "semantic-ui-react";
+import FrontPageLayout from '../layouts/front-page';
 
-const IndexPage = () => (
-	<Layout>
-		<p>Coming soon!</p>
-	</Layout>
+export default () => (
+	<FrontPageLayout>
+		<p>TODO</p>
+	</FrontPageLayout>
 );
-
-export default IndexPage
