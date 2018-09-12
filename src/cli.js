@@ -4,7 +4,7 @@ import debug from './lib/debug';
 import E from './lib/errors';
 import Extension from './parser/extension';
 import fs from 'fs-extra';
-import helpCommand from './commands/help';
+import helpCommand, { renderHelp } from './commands/help';
 import Parser from './parser/parser';
 import path from 'path';
 import OutputStream from './render/output-stream';
@@ -252,12 +252,12 @@ export default class CLI extends Context {
 			if (this.help && argv.help && (!(cmd instanceof Extension) || cmd.isCLIKitExtension)) {
 				log('Selected help command');
 				cmd = this.commands.get('help');
-				parser.contexts.unshift(cmd);
+				contexts.unshift(cmd);
 
 			} else if (!(cmd instanceof Command) && this.defaultCommand && this.commands.has(this.defaultCommand)) {
 				log(`Selected default command: ${this.defaultCommand}`);
 				cmd = this.commands.get(this.defaultCommand);
-				parser.contexts.unshift(cmd);
+				contexts.unshift(cmd);
 			}
 
 			// wire up the banner
@@ -277,6 +277,8 @@ export default class CLI extends Context {
 					this.stderr.on('start', showBanner);
 				}
 			}
+
+			results.help = () => renderHelp(cmd);
 
 			// execute the command
 			if (cmd && typeof cmd.action === 'function') {

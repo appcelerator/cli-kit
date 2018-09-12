@@ -7,6 +7,18 @@ const { log } = debug('cli-kit:help');
 const { highlight } = debug.styles;
 
 /**
+ * Renders help for a specific context, and its parent contexts, to a string.
+ *
+ * @param {Context} ctx - The context to render help.
+ * @returns {String}
+ */
+export async function renderHelp(ctx) {
+	const file = ctx.get('helpTemplate', path.resolve(__dirname, '..', '..', 'templates', 'help.tpl'));
+	log(`Rendering help template: ${highlight(file)}`);
+	return renderFile(file, await ctx.generateHelp());
+}
+
+/**
  * The built-in help command parameters.
  *
  * @type {Object}
@@ -31,7 +43,7 @@ export default {
 	 * @param {Array.<Error>} [params.warnings] - A list of warnings (error objects).
 	 * @returns {Promise}
 	 */
-	async action({ _, argv = {}, contexts, err, unknownCommand, warnings } = {}) {
+	async action({ _ = [], argv = {}, contexts, err, unknownCommand, warnings } = {}) {
 		let exitCode = +!!err;
 
 		// skip the built-in help command and find the first context

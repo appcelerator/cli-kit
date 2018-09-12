@@ -294,7 +294,9 @@ export default class Context extends HookEmitter {
 		return this.hook('generateHelp', () => {
 			const results = {
 				contexts: [],
-				suggestions: []
+				error: undefined,
+				suggestions: [],
+				warnings: undefined
 			};
 			const pkgJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'package.json'), 'utf8'));
 			const scopes = [];
