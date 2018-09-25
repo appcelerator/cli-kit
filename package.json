@@ -54,7 +54,7 @@
   "devDependencies": {
     "@babel/core": "latest",
     "@babel/register": "latest",
-    "babel-eslint": "^9.0.0",
+    "babel-eslint": "^10.0.0",
     "babel-plugin-istanbul": "^5.0.1",
     "babel-plugin-transform-class-properties": "next",
     "babel-plugin-transform-es2015-destructuring": "next",
