@@ -47,7 +47,6 @@ export default class Option {
 	 * @param {Boolean} [params.required] - Marks the option value as required.
 	 * @param {String|RegExp} [params.type] - The option type to coerce the data type into. If type
 	 * is a regular expression, then it'll use it to validate the option.
-	 * @param {Function} [params.validate] - A function to call to validate the option value.
 	 * @access public
 	 */
 	constructor(format, params) {

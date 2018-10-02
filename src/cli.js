@@ -1,17 +1,19 @@
+import Banner from './render/banner';
 import Command from './parser/command';
 import Context from './parser/context';
 import debug from './lib/debug';
+import defaults from './defaults';
 import E from './lib/errors';
 import Extension from './parser/extension';
 import fs from 'fs-extra';
 import helpCommand, { renderHelp } from './commands/help';
 import Parser from './parser/parser';
 import path from 'path';
-import OutputStream from './render/output-stream';
 import semver from 'semver';
 
 import { Console } from 'console';
 import { declareCLIKitClass } from './lib/util';
+import { EventEmitter } from 'events';
 
 const { error, log, warn } = debug('cli-kit:cli');
 const { highlight }  = debug.styles;
@@ -56,10 +58,11 @@ export default class CLI extends Context {
 	 * such as the display width.
 	 * @param {Boolean} [params.showBannerForExternalCLIs=false] - If `true`, shows the `CLI`
 	 * banner, assuming banner is enabled, for non-cli-kit enabled CLIs.
-	 * @param {Object|stream.Writable} [params.stdout=process.stdout] - A stream or an object with a
-	 * `write()` method to write output such as the help screen to.
 	 * @param {Object|stream.Writable} [params.stderr=process.stderr] - A stream or an object with a
 	 * `write()` method to write error messages to.
+	 * @param {stream.Readable} [params.stdin=process.stdin] - A stream for which to read input.
+	 * @param {Object|stream.Writable} [params.stdout=process.stdout] - A stream or an object with a
+	 * `write()` method to write output such as the help screen to.
 	 * @param {Boolean} [params.showHelpOnError=true] - If an error occurs and `help` is enabled,
 	 * then display the error before the help information.
 	 * @param {String} [params.title='Global'] - The title for the global context.
@@ -86,11 +89,13 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected help exit code to be a number', { name: 'helpExitCode', scope: 'CLI.constructor', value: params.helpExitCode });
 		}
 
-		if (params.stdout && (typeof params.stdout !== 'object' || typeof params.stdout.write !== 'function')) {
+		if (params.stdout && (!(params.stdout instanceof EventEmitter) || typeof params.stdout.write !== 'function')) {
 			throw E.INVALID_ARGUMENT('Expected stdout stream to be a writable stream', { name: 'stdout', scope: 'CLI.constructor', value: params.stdout });
 		}
 
-		if (params.stderr && (typeof params.stderr !== 'object' || typeof params.stderr.write !== 'function')) {
+		// TODO: validate params.stdin
+
+		if (params.stderr && (!(params.stderr instanceof EventEmitter) || typeof params.stderr.write !== 'function')) {
 			throw E.INVALID_ARGUMENT('Expected stderr stream to be a writable stream', { name: 'stderr', scope: 'CLI.constructor', value: params.stderr });
 		}
 
@@ -108,29 +113,22 @@ export default class CLI extends Context {
 
 		declareCLIKitClass(this, 'CLI');
 
-		this.appName                   = params.name;
-		this.banner                    = params.banner;
-		this.colors                    = params.colors !== false;
-		this.errorIfUnknownCommand     = params.errorIfUnknownCommand !== false;
-		this.helpExitCode              = params.helpExitCode;
-		this.nodeVersion               = params.nodeVersion;
-		this.warnings                  = [];
+		this.appName               = params.name;
+		this.banner                = params.banner;
+		this.colors                = params.colors !== false;
+		this.errorIfUnknownCommand = params.errorIfUnknownCommand !== false;
+		this.helpExitCode          = params.helpExitCode;
+		this.nodeVersion           = params.nodeVersion;
+		this.stderr                = params.stderr || defaults.stderr;
+		this.stdin                 = params.stdin || defaults.stdin;
+		this.stdout                = params.stdout || defaults.stdout;
+		this.warnings              = [];
 
-		const renderOpts = Object.assign({
-			markdown: true
-		}, params.renderOpts);
-
-		// init the output streams
-		this.stdout = new OutputStream(renderOpts);
-		this.stdout.pipe(params.stdout || process.stdout);
-
-		this.stderr = new OutputStream(renderOpts);
-		this.stderr.pipe(params.stderr || process.stderr);
-
-		process.on('exit', () => {
-			this.stdout.end();
-			this.stderr.end();
-		});
+		if (this.banner) {
+			this.bannerObj = new Banner(this);
+			this.stdout = this.bannerObj.stdout;
+			this.stderr = this.bannerObj.stderr;
+		}
 
 		this.console = new Console(this.stdout, this.stderr);
 
@@ -151,7 +149,7 @@ export default class CLI extends Context {
 		}
 
 		// add the --no-banner flag
-		if (this.banner && !params.hideNoBannerOption) {
+		if (params.banner && !params.hideNoBannerOption) {
 			this.option('--no-banner', {
 				desc: 'suppress the banner'
 			});
@@ -242,6 +240,7 @@ export default class CLI extends Context {
 			const results = {
 				_,
 				argv,
+				clikit: require('./index'),
 				console: this.console,
 				contexts,
 				unknown,
@@ -261,20 +260,11 @@ export default class CLI extends Context {
 			}
 
 			// wire up the banner
-			let banner = cmd.banner || this.get('banner');
-			if (banner) {
-				if (cmd instanceof Extension && !cmd.isCLIKitExtension && !cmd.get('showBannerForExternalCLIs')) {
-					// disable the banner for non-cli-kit extensions
-				} else {
-					banner = String(typeof banner === 'function' ? await banner() : banner).trim();
-					const showBanner = write => {
-						if (banner && argv.banner) {
-							write(`${banner}\n\n`);
-						}
-						banner = null;
-					};
-					this.stdout.on('start', showBanner);
-					this.stderr.on('start', showBanner);
+			if (this.bannerObj) {
+				if (!argv.banner || (cmd instanceof Extension && !cmd.isCLIKitExtension && !cmd.get('showBannerForExternalCLIs'))) {
+					this.bannerObj.enabled = false;
+				} else if (cmd.banner) {
+					this.bannerObj.banner = cmd.banner;
 				}
 			}
 
@@ -301,9 +291,6 @@ export default class CLI extends Context {
 			}
 
 			throw err;
-		} finally {
-			this.stdout.end();
-			this.stderr.end();
 		}
 	}
 }

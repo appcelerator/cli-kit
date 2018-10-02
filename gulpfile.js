@@ -57,8 +57,8 @@ gulp.task('docs', ['lint-src', 'clean-docs'], () => {
 					brand: {
 						title:       manifest.name,
 						description: manifest.description,
-						respository: 'https://github.com/cb1kenobi/cli-kit',
-						site:        'https://github.com/cb1kenobi/cli-kit'
+						respository: manifest.respository,
+						site:        manifest.homepage
 					}
 				}
 			},
@@ -91,10 +91,10 @@ gulp.task('lint-test', () => lint('test/**/test-*.js'));
 /*
  * test tasks
  */
-gulp.task('test', ['build', 'lint-test', 'build'], () => runTests());
-gulp.task('test-only', ['lint-test', 'build'], () => runTests());
-gulp.task('coverage', ['clean-coverage', 'lint-src', 'lint-test', 'build'], () => runTests(true));
-gulp.task('coverage-only', ['clean-coverage', 'lint-test', 'build'], () => runTests(true));
+gulp.task('test',          [ 'build', 'lint-test', 'build' ],                      () => runTests());
+gulp.task('test-only',     [ 'lint-test', 'build' ],                               () => runTests());
+gulp.task('coverage',      [ 'clean-coverage', 'lint-src', 'lint-test', 'build' ], () => runTests(true));
+gulp.task('coverage-only', [ 'clean-coverage', 'lint-test', 'build' ],             () => runTests(true));
 
 function runTests(cover) {
 	const args = [];
@@ -119,6 +119,7 @@ function runTests(cover) {
 			//   https://github.com/istanbuljs/istanbuljs/tree/master/packages/istanbul-reports/lib
 			'--reporter=html',
 			'--reporter=json',
+			'--reporter=lcov',
 			'--reporter=text',
 			'--reporter=text-summary',
 			'--require', path.join(__dirname, 'test', 'transpile.js'),

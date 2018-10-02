@@ -1,18 +1,14 @@
-> Note: cli-kit is under development.
-
 # cli-kit
-
-[![Greenkeeper badge](https://badges.greenkeeper.io/cb1kenobi/cli-kit.svg)](https://greenkeeper.io/)
 
 [![NPM Version][npm-image]][npm-url]
 [![NPM Downloads][downloads-image]][downloads-url]
 [![Travis CI Build][travis-image]][travis-url]
 [![Test Coverage][coveralls-image]][coveralls-url]
-[![Code Climate][codeclimate-image]][codeclimate-url]
+[![Greenkeeper badge][greenkeeper-image]][greenkeeper-url]
 [![Deps][david-image]][david-url]
 [![Dev Deps][david-dev-image]][david-dev-url]
 
-Everything you need to make awesome Command Line Interfaces.
+Everything you need to make awesome command line applications.
 
 ## Features
 
@@ -20,8 +16,7 @@ Everything you need to make awesome Command Line Interfaces.
 * Support for command hierarchies
 * Auto-generated help
 * CLI template engine
-* Markdown/kramdown rendering
-* Extension support (e.g. wrap external CLI's)
+* External CLI extension support
 
 ## Installation
 
@@ -36,21 +31,20 @@ npm i cli-kit --save
 ```js
 import CLI from 'cli-kit';
 
-new CLI({
-	options: {
-		'-f, --force': 'use the force',
-		'--timeout [value]': {
-			desc: 'the timeout duration',
-			type: 'int'
+(async () => {
+	const { argv, _ } = await new CLI({
+		options: {
+			'-f, --force': 'use the force',
+			'--timeout [value]': {
+				desc: 'the timeout duration',
+				type: 'int'
+			}
 		}
-	}
-})
-	.exec()
-	.then(({ argv, _ }) => {
-		console.log('options:', argv);
-		console.log('args:', _);
-	})
-	.catch(console.error);
+	}).exec();
+
+	console.log('options:', argv);
+	console.log('args:', _);
+})();
 ```
 
 ## Architecture
@@ -274,42 +268,111 @@ Adds an option or group of options to a `CLI` or `Command`.
 
 ## cli-kit vs other libraries
 
-> NOTE: Following data is incomplete and research is pending.
+<table>
 
-### Parsers
+<thead><tr><th></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/cli-kit">cli-kit</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/caporal">Caporal.js</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/commander">Commander.js</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/dashdash">dashdash</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/fields">fields</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/inquirer">inquirer</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/meow">meow</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/minimist">minimist</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/mri">mri</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/oclif">oclif</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/prompt">prompt</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/promptly">promptly</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/prompts">prompts</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/yargs">yargs</a></th></tr></thead>
 
-|                                               | cli-kit            | commander.js       | yargs              | Caporal.js         | n-args               | oclif              | meow               | dashdash                             | nomnom             | optimist           | minimist           | mri                |
-| --------------------------------------------- | ------------------ | ------------------ | ------------------ | ------------------ | -------------------- | ------------------ | ------------------ | ------------------------------------ | ------------------ | ------------------ | ------------------ | ------------------ |
-| Actively maintained <br> (within last year)   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:   |                    | :white_check_mark: | :warning: <br> Last release Nov 2016 | :x:                | :x:                | :x:                |                    |
-| Open Source                                   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                  | :white_check_mark: | :white_check_mark: | :white_check_mark:                   | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    |
-| Language                                      | JavaScript         | JavaScript         | JavaScript         | JavaScript         | JavaScript           | TypeScript         | JavaScript         | JavaScript                           | JavaScript         | JavaScript         | JavaScript         |                    |
-| Parse callbacks                               | :white_check_mark: |                    |                    |                    | :x:                  |                    |                    |                                      |                    |                    |                    |                    |
-| Command support                               | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    | :x:                  | :white_check_mark: |                    |                                      |                    |                    |                    |                    |
-| Options support                               | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    | :white_check_mark:   |                    |                    |                                      |                    |                    |                    |                    |
-| Option validation                             | :white_check_mark: | :white_check_mark: |                    |                    | :white_check_mark:   |                    |                    |                                      |                    |                    |                    |                    |
-| Default values                                | :white_check_mark: |                    |                    |                    |                      |                    |                    |                                      |                    |                    |                    |                    |
-| Flags support                                 | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    | :x:                  |                    |                    |                                      |                    |                    |                    |                    |
-| Argument support                              | :white_check_mark: | :white_check_mark: | :white_check_mark: |                    | :white_check_mark:   |                    |                    |                                      |                    |                    |                    |                    |
-| Argument validation                           | :white_check_mark: | :white_check_mark: |                    |                    | :white_check_mark:   |                    |                    |                                      |                    |                    |                    |                    |
-| Dynamic command hierarchies                   | :white_check_mark: |                    |                    |                    |                      |                    |                    |                                      |                    |                    |                    |                    |
-| Automatic parsed value data type coercion     | :white_check_mark: | :white_check_mark: | Numbers only       |                    | Numbers and Booleans |                    |                    |                                      |                    |                    |                    |                    |
-| Parsed value transforming                     | :white_check_mark: |                    |                    |                    |                      |                    |                    |                                      |                    |                    |                    |                    |
-| Auto-generated help screen                    | :white_check_mark: | :white_check_mark: |                    |                    | :x:                  |                    | :white_check_mark: |                                      |                    |                    |                    |                    |
-| Help exits with code                          | :white_check_mark: |                    |                    |                    |                      |                    | :white_check_mark: |                                      |                    |                    |                    |                    |
-| Internal hook system                          | :white_check_mark: |                    |                    |                    |                      |                    |                    |                                      |                    |                    |                    |                    |
+<thead><tr><th colspan="15" style="text-align:left;"><small>General</small></th></tr></thead>
 
-### Prompters
+<tbody>
+<tr><td>Version</td><td>0.3.0</td><td>0.10.0</td><td>2.18.0</td><td>1.14.1</td><td>0.1.24</td><td>6.2.0</td><td>5.0.0</td><td>1.2.0</td><td>1.1.1</td><td>1.12.1</td><td>1.0.0</td><td>3.0.3</td><td>1.1.1</td><td>12.0.2</td></tr>
+<tr><td>Actively maintained <br> (within last year)</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:warning:<br>Last release Dec 2016</td><td>:warning:<br>Last release Jul 2015</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:warning:<br>Last release Sep 2015</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:warning:<br>Last release Mar 2016</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td></tr>
+<tr><td>License</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td></tr>
+<tr><td>Language</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>TypeScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td></tr>
+<tr><td>Async/promise support</td><td>:white_check_mark:</td><td>:white_check_mark: <sub>1</sub></td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark: <sub>1</sub></td><td>:x:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:x:</td></tr>
+<tr><td>Data type coercion</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>:white_check_mark:</td></tr>
+<tr><td>User-defined input/output stream</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>n/a</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:x:</td></tr>
+</tbody>
 
-|                                               | cli-kit            | Caporal.js         | oclif              | meow               | inquirer                              | promptly           | fields             |
-| --------------------------------------------- | ------------------ | ------------------ | ------------------ | ------------------ | ------------------------------------- | ------------------ | ------------------ |
-| Actively maintained <br> (within last year)   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:                    | :white_check_mark: | :x:                |
-| Open Source                                   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:                    | :white_check_mark: | :white_check_mark: |
-| Language                                      | JavaScript         | JavaScript         | TypeScript         | JavaScript         | JavaScript                            | JavaScript         | JavaScript         |
-| Automatic prompt value data type coercion     | Coming soon!       |                    |                    |                    | :x:                                   |                    |                    |
-| Prompt value transforming                     | Coming soon!       |                    |                    |                    | :white_check_mark: <br> (via filters) |                    |                    |
-| Prompt value validation                       | Coming soon!       |                    |                    |                    | :white_check_mark:                    |                    |                    |
-| Built-in prompt types                         | Coming soon!       |                    |                    |                    | :white_check_mark:                    |                    | :white_check_mark: |
-| Internal hook system                          | :white_check_mark: |                    |                    |                    | :x:                                   |                    | :x:                |
+<thead><tr><th></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/cli-kit">cli-kit</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/caporal">Caporal.js</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/commander">Commander.js</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/dashdash">dashdash</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/fields">fields</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/inquirer">inquirer</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/meow">meow</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/minimist">minimist</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/mri">mri</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/oclif">oclif</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/prompt">prompt</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/promptly">promptly</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/prompts">prompts</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/yargs">yargs</a></th></tr></thead>
+
+<thead><tr><th colspan="15" style="text-align:left;"><small>Parsing</small></th></tr></thead>
+
+<tbody>
+<tr><td>Command</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:x:</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td></tr>
+<tr><td>Command aliases</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:x:</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td></tr>
+<tr><td>Subcommands</td><td>:white_check_mark:</td><td>:warning: <sub>2</sub></td><td>:warning: <sub>3</sub></td><td>:x:</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:warning: <sub>2</sub></td></tr>
+<tr><td>Options</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td></tr>
+<tr><td>Options aliases</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:x:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td></tr>
+<tr><td>Custom option validator</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:x:</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x: <sub>4</sub></td></tr>
+<tr><td>Flags (true/false)</td><td>:white_check_mark:</td><td>:x:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td></tr>
+<tr><td>Flag negation (`--no-<name>`)</td><td>:white_check_mark:</td><td>:x:</td><td>:white_check_mark:</td><td>:x:</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td></tr>
+<tr><td>Argument support</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td></tr>
+<tr><td>Custom argument validator</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:x:</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td></tr>
+<tr><td>Stop parsing `--`</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td></tr>
+<tr><td>Default option/argument values</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td></tr>
+<tr><td>Environment variable support</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark: <sub>5</sub></td></tr>
+<tr><td>Auto-generated help screen</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark: <sub>6</sub></td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td></tr>
+<tr><td>Custom help exit code</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td></tr>
+</tbody>
+
+<thead><tr><th></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/cli-kit">cli-kit</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/caporal">Caporal.js</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/commander">Commander.js</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/dashdash">dashdash</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/fields">fields</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/inquirer">inquirer</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/meow">meow</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/minimist">minimist</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/mri">mri</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/oclif">oclif</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/prompt">prompt</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/promptly">promptly</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/prompts">prompts</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/yargs">yargs</a></th></tr></thead>
+
+<thead><tr><th colspan="15" style="text-align:left;"><small>Prompting</small></th></tr></thead>
+
+<tbody>
+<tr><td>Single-line text prompting</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td></tr>
+<tr><td>Multi-line text prompting</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>n/a</td></tr>
+<tr><td>Password prompting</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td></tr>
+<tr><td>Confirm (yes/no) prompting</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark: <sub>7</sub></td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td></tr>
+<tr><td>Press any key to continue prompting</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:x:</td><td>:white_check_mark:</td><td>:x:</td><td>n/a</td></tr>
+<tr><td>Inline list prompting</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark: <sub>7</sub></td><td>:white_check_mark: <sub>8</sub></td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark: <sub>9</sub></td><td>n/a</td></tr>
+<tr><td>Numbered select list prompting</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>n/a</td></tr>
+<tr><td>Scrollable select list prompting</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td></tr>
+<tr><td>Multi-select/checkbox list prompting</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td></tr>
+<tr><td>File/directory prompting</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark: <sub>10</sub></td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>n/a</td></tr>
+<tr><td>Multiple prompt chaining</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td></tr>
+<tr><td>External editor support</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>n/a</td></tr>
+<tr><td>Custom value formatter/transformer</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark: <sub>11</sub></td><td>:white_check_mark: <sub>12</sub></td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:white_check_mark: <sub>13</sub></td><td>:white_check_mark: <sub>11</sub></td><td>:white_check_mark:</td><td>n/a</td></tr>
+<tr><td>Custom validation</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td></tr>
+<tr><td>Default prompt values</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td></tr>
+<tr><td>Prompt history</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>n/a</td></tr>
+<tr><td>Auto-suggest mismatch</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark: <sub>14</sub></td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>n/a</td></tr>
+<tr><td>Autocomplete</td><td>?</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td></tr>
+</tbody>
+
+<thead><tr><th></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/cli-kit">cli-kit</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/caporal">Caporal.js</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/commander">Commander.js</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/dashdash">dashdash</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/fields">fields</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/inquirer">inquirer</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/meow">meow</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/minimist">minimist</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/mri">mri</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/oclif">oclif</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/prompt">prompt</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/promptly">promptly</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/prompts">prompts</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/yargs">yargs</a></th></tr></thead>
+
+<thead><tr><th colspan="15" style="text-align:left;"><small>Logging</small></th></tr></thead>
+
+<tbody>
+<tr><td>Application logging</td><td>:white_check_mark:</td><td>:white_check_mark: <sub>15</sub></td><td>n/a</td><td>n/a</td><td>n/a</td><td>n/a</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>n/a</td></tr>
+<tr><td>Application debug logging</td><td>:white_check_mark: <sub>16</sub></td><td>:x:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>n/a</td><td>:x:</td><td>:x:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>n/a</td></tr>
+<tr><td>Internal debug logging</td><td>:white_check_mark:</td><td>:x:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>n/a</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark: <sub>17</sub></td><td>n/a</td><td>n/a</td><td>n/a</td><td>n/a</td></tr>
+</tbody>
+
+<thead><tr><th></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/cli-kit">cli-kit</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/caporal">Caporal.js</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/commander">Commander.js</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/dashdash">dashdash</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/fields">fields</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/inquirer">inquirer</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/meow">meow</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/minimist">minimist</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/mri">mri</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/oclif">oclif</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/prompt">prompt</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/promptly">promptly</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/prompts">prompts</a></th><th scope="col" style="white-space:nowrap;"><a href="https://npmjs.com/package/yargs">yargs</a></th></tr></thead>
+
+<thead><tr><th colspan="15" style="text-align:left;"><small>Misc</small></th></tr></thead>
+
+<tbody>
+<tr><td>Dedicated website</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td></tr>
+<tr><td>External CLI extensions</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td></tr>
+<tr><td>Internal hook system</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td></tr>
+<tr><td>Bash completion</td><td>Planned</td><td>:white_check_mark:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td></tr>
+<tr><td>REPL</td><td>Planned</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td></tr>
+<tr><td>Built-in i18n support</td><td>Planned</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td></tr>
+</tbody>
+
+</table>
+
+<small>1. Command actions only. The actually parsing is sync.</small><br>
+<small>2. Requires reparsing with subcommand context or manually subprocessing.</small><br>
+<small>3. Automatically spawns subcommand in new process, otherwise requires reparsing with subcommand context.</small><br>
+<small>4. Only the last parsed invalid option error is raised.</small><br>
+<small>5. Custom environment variable names are not supported. The names must match a prefixed option name.</small><br>
+<small>6. Options only. (e.g no usage, etc)</small><br>
+<small>7. Via select list input type.</small><br>
+<small>8. Via expand input type.</small><br>
+<small>9. Maximum 2 options via toggle input type.</small><br>
+<small>10. Via [inquirer-fuzzy-path](https://www.npmjs.com/package/inquirer-fuzzy-path).</small><br>
+<small>11. Via validator callback.</small><br>
+<small>12. Via filter callback.</small><br>
+<small>13. Via `before()` callback.</small><br>
+<small>14. Via [inquirer-prompt-suggest](https://www.npmjs.com/package/inquirer-prompt-suggest).</small><br>
+<small>15. Via [winston](https://npmjs.com/package/winston).</small><br>
+<small>16. Uses [snooplogg](https://npmjs.com/package/snooplogg).</small><br>
+<small>17. Uses [debug](https://npmjs.com/package/debug).</small><br>
 
 ## Who Uses cli-kit?
 
@@ -327,9 +390,25 @@ MIT
 [travis-url]: https://travis-ci.org/cb1kenobi/cli-kit
 [coveralls-image]: https://img.shields.io/coveralls/cb1kenobi/cli-kit/master.svg
 [coveralls-url]: https://coveralls.io/r/cb1kenobi/cli-kit
-[codeclimate-image]: https://img.shields.io/codeclimate/github/cb1kenobi/cli-kit.svg
-[codeclimate-url]: https://codeclimate.com/github/cb1kenobi/cli-kit
+[greenkeeper-image]: https://badges.greenkeeper.io/cb1kenobi/cli-kit.svg
+[greenkeeper-url]: https://greenkeeper.io/
 [david-image]: https://img.shields.io/david/cb1kenobi/cli-kit.svg
 [david-url]: https://david-dm.org/cb1kenobi/cli-kit
 [david-dev-image]: https://img.shields.io/david/dev/cb1kenobi/cli-kit.svg
 [david-dev-url]: https://david-dm.org/cb1kenobi/cli-kit#info=devDependencies
+
+[Caporal]: https://www.npmjs.com/package/caporal
+[cli-ux]: https://www.npmjs.com/package/cli-ux
+[Commander.js]: https://www.npmjs.com/package/commander
+[dashdash]: https://www.npmjs.com/package/dashdash
+[fields]: https://www.npmjs.com/package/fields
+[inquirer]: https://github.com/SBoudrias/Inquirer.js
+[meow]: https://www.npmjs.com/package/meow
+[minimist]: https://www.npmjs.com/package/minimist
+[mri]: https://www.npmjs.com/package/mri
+[oclif]: https://www.npmjs.com/package/oclif
+[prompt]: https://www.npmjs.com/package/prompt
+[promptly]: https://www.npmjs.com/package/promptly
+[prompts]: https://www.npmjs.com/package/prompts
+[read]: https://www.npmjs.com/package/read
+[yargs]: https://www.npmjs.com/package/yargs
