@@ -39,8 +39,10 @@ export default class FrontPageLayout extends React.PureComponent {
 						</Helmet>
 						<Header>
 							<div class="hero">
-								<h1>cli-kit</h1>
-								<h2>Node.js Command Line Interface Toolkit</h2>
+								<div>
+									<h1>cli-kit</h1>
+									<h2>Node.js Command Line Interface Toolkit</h2>
+								</div>
 							</div>
 						</Header>
 						<main>

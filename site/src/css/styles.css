@@ -1,29 +1,46 @@
+@import url('https://fonts.googleapis.com/css?family=Teko');
+
 body {
-	background: #313042!important;
+	background: #333 !important;
 }
 
 .hero {
 	align-items: center;
-	background-image: url(/images/galaxy.jpg);
+	background-image: url(/images/hero-bg.jpg);
+	background-position: center;
 	background-size: cover;
-	color: #fff;
 	display: flex;
 	flex-direction: column;
 	flex-wrap: nowrap;
 	height: 50vh;
 	justify-content: center;
-	min-height: 400px;
+	min-height: 360px;
 	padding: 20px;
 	text-align: center;
-	text-shadow: 0 2px 5px #000;
+}
+
+.hero > div {
+	background: rgba(255, 255, 255, 0.86);
+	border-top: solid 12px #1378d0;
+	border-bottom-left-radius: 10px;
+	border-bottom-right-radius: 10px;
+	box-shadow: 0 3px 25px #000;
+	color: #000;
+	padding: 10px 25px 18px 25px;
+}
+
+.hero h1,
+.hero h2 {
+	font-family: 'Teko', sans-serif !important;
+	margin: 0;
 }
 
 .hero h1 {
-	font-size: 3em;
+	font-size: 4em;
 }
 
 main {
-	background-color: #e5e5e5!important;
+	background-color: #e5e5e5 !important;
 	padding-top: 4em;
 }
 
