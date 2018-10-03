@@ -2,16 +2,16 @@
 	"name": "cli-kit",
 	"private": true,
 	"dependencies": {
-		"gatsby": "^2.0.0-rc.15",
-		"gatsby-plugin-manifest": "^2.0.2-rc.1",
-		"gatsby-plugin-offline": "^2.0.0-rc.6",
-		"gatsby-plugin-react-helmet": "^3.0.0-rc.1",
-		"gh-pages": "^1.2.0",
-		"react": "^16.5.0",
-		"react-dom": "^16.5.0",
+		"gatsby": "^2.0.17",
+		"gatsby-plugin-manifest": "^2.0.4",
+		"gatsby-plugin-offline": "^2.0.5",
+		"gatsby-plugin-react-helmet": "^3.0.0",
+		"gh-pages": "^2.0.0",
+		"react": "^16.5.2",
+		"react-dom": "^16.5.2",
 		"react-helmet": "^5.2.0",
-		"semantic-ui-css": "^2.3.3",
-		"semantic-ui-react": "^0.82.3"
+		"semantic-ui-css": "^2.4.0",
+		"semantic-ui-react": "^0.82.5"
 	},
 	"scripts": {
 		"build": "gatsby build",

@@ -1,8 +1,8 @@
 import React from 'react'
-import FrontPageLayout from '../layouts/front-page';
+import DefaultLayout from '../layouts/default';
 
 export default () => (
-	<FrontPageLayout>
+	<DefaultLayout>
 		<p>TODO</p>
-	</FrontPageLayout>
+	</DefaultLayout>
 );
