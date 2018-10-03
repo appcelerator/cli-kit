@@ -61,22 +61,8 @@ export default class Extension extends Command {
 
 		// first see if this is an executable
 		try {
-			// If the extensionPath is an absolute path that exists and the
-			// path is for a file then assume we should use that rather than
-			// a global executable
-			if (fs.existsSync(extensionPath) && fs.statSync(extensionPath).isFile()) {
-				// Check that the file is executable
-				try {
-					fs.accessSync(extensionPath, fs.constants.X_OK);
-					executable = extensionPath;
-					params.action = () => this.exec();
-				} catch (e) {
-					throw E.INVALID_EXTENSION(`Extension path is not executable: ${extensionPath}`);
-				}
-			} else {
-				executable = which.sync(extensionPath);
-				params.action = () => this.exec();
-			}
+			executable = which.sync(extensionPath);
+			params.action = () => this.exec();
 		} catch (e) {
 			// not an executable,
 			if (fs.existsSync(extensionPath)) {
