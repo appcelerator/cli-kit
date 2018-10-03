@@ -237,10 +237,13 @@ export default class CLI extends Context {
 				`${pluralize('context', contexts.length, true)}`
 			);
 
+			const clikit = Object.assign({}, require('./index'));
+
 			const results = {
 				_,
 				argv,
-				clikit: require('./index'),
+				cli: this,
+				clikit,
 				console: this.console,
 				contexts,
 				unknown,

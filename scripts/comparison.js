@@ -147,7 +147,10 @@ section('General')
 		oclif: false,
 		prompt: true,
 		promptly: true,
-		prompts: true,
+		prompts: {
+			value: 'warn',
+			note: 'Public API does not allow these options to actually be passed in.'
+		},
 		yargs: false
 	});
 
@@ -576,7 +579,42 @@ section('Prompting')
 		fields: true,
 		inquirer: {
 			value: true,
-			note: 'Via [inquirer-fuzzy-path](https://www.npmjs.com/package/inquirer-fuzzy-path).'
+			note: 'Via [inquirer-fuzzy-path](https://www.npmjs.com/package/inquirer-fuzzy-path) plugin.'
+		},
+		meow: null,
+		minimist: null,
+		mri: null,
+		oclif: false,
+		prompt: false,
+		promptly: false,
+		prompts: false,
+		yargs: null
+	})
+	.set('Numeric-only prompting', {
+		'cli-kit': undefined,
+		caporal: null,
+		commander: null,
+		dashdash: null,
+		fields: false,
+		inquirer: false,
+		meow: null,
+		minimist: null,
+		mri: null,
+		oclif: false,
+		prompt: false,
+		promptly: false,
+		prompts: true,
+		yargs: null
+	})
+	.set('Date prompting', {
+		'cli-kit': undefined,
+		caporal: null,
+		commander: null,
+		dashdash: null,
+		fields: false,
+		inquirer: {
+			value: true,
+			note: 'Via [inquirer-datepicker-prompt](https://www.npmjs.com/package/inquirer-datepicker-prompt) plugin.'
 		},
 		meow: null,
 		minimist: null,
@@ -685,7 +723,10 @@ section('Prompting')
 		commander: null,
 		dashdash: null,
 		fields: true,
-		inquirer: true,
+		inquirer: {
+			value: true,
+			note: 'Via [inquirer-command-prompt](https://www.npmjs.com/package/inquirer-command-prompt) plugin.'
+		},
 		meow: null,
 		minimist: null,
 		mri: null,
@@ -703,7 +744,7 @@ section('Prompting')
 		fields: true,
 		inquirer: {
 			value: true,
-			note: 'Via [inquirer-prompt-suggest](https://www.npmjs.com/package/inquirer-prompt-suggest).'
+			note: 'Via [inquirer-prompt-suggest](https://www.npmjs.com/package/inquirer-prompt-suggest) plugin.'
 		},
 		meow: null,
 		minimist: null,
@@ -728,6 +769,22 @@ section('Prompting')
 		prompt: false,
 		promptly: false,
 		prompts: true,
+		yargs: null
+	})
+	.set('Custom prompts', {
+		'cli-kit': undefined,
+		caporal: null,
+		commander: null,
+		dashdash: null,
+		fields: false,
+		inquirer: true,
+		meow: null,
+		minimist: null,
+		mri: null,
+		oclif: false,
+		prompt: false,
+		promptly: false,
+		prompts: false,
 		yargs: null
 	});
 
@@ -893,20 +950,18 @@ section('Misc')
 
 // PRINT THE TABLE
 
-const packageHeader = `<tr><th></th>${Object.keys(packages).map(n => `<th scope="col" style="white-space:nowrap;"><a href="${packages[n].url}">${packages[n].title || n}</a></th>`).join('')}</tr>`;
-const sectionHeader = name => `<thead><tr><th colspan="${Object.keys(packages).length + 1}" style="text-align:left;"><small>${name}</small></th></tr></thead>\n`;
+const packageHeader = name => `<thead><tr><td><h3>${name}</h3></td>${Object.keys(packages).map(n => `<th scope="col"><a href="${packages[n].url}">${packages[n].title || n}</a></th>`).join('')}</tr></thead>\n`;
 
 console.log('\n<table>\n');
 
 const notes = [];
 
 for (const [ sec, map ] of Object.entries(sections)) {
-	console.log(`<thead>${packageHeader}</thead>\n`);
-	console.log(sectionHeader(sec));
+	console.log(packageHeader(sec));
 	console.log('<tbody>');
 
 	for (const [ feature, pkgs ] of map.entries()) {
-		let row = `<tr><td>${feature}</td>`;
+		let row = '';
 
 		for (const name of Object.keys(packages)) {
 			const value = pkgs ? pkgs[name] : undefined;
@@ -945,7 +1000,7 @@ for (const [ sec, map ] of Object.entries(sections)) {
 			}
 		}
 
-		console.log(row + '</tr>');
+		console.log(`<tr><td>${feature}</td>${row}</tr>`);
 	}
 
 	console.log('</tbody>\n');
@@ -954,6 +1009,6 @@ for (const [ sec, map ] of Object.entries(sections)) {
 console.log('</table>\n');
 
 notes.forEach((note, i) => {
-	console.log(`<small>${i + 1}. ${note}</small><br>`);
+	console.log(`<sub>${i + 1}. ${note}</sub><br>`);
 });
 console.log();
