@@ -52,7 +52,7 @@ for (const name of Object.keys(packages)) {
 const months = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
 
 section('General')
-	.set('Version', Object.keys(packages).reduce((obj, name) => {
+	.set('Latest version', Object.keys(packages).reduce((obj, name) => {
 		obj[name] = packages[name].version;
 		return obj;
 	}, {}))
@@ -828,7 +828,10 @@ section('Logging')
 		yargs: null
 	})
 	.set('Internal debug logging', {
-		'cli-kit': true,
+		'cli-kit': {
+			value: true,
+			note: 'Uses [snooplogg](https://npmjs.com/package/snooplogg).'
+		},
 		caporal: false,
 		commander: null,
 		dashdash: null,
@@ -897,7 +900,7 @@ section('Misc')
 		yargs: false
 	})
 	.set('Bash completion', {
-		'cli-kit': 'Planned',
+		'cli-kit': undefined,
 		caporal: true,
 		commander: false,
 		dashdash: true,
@@ -913,7 +916,7 @@ section('Misc')
 		yargs: false
 	})
 	.set('REPL', {
-		'cli-kit': 'Planned',
+		'cli-kit': undefined,
 		caporal: false,
 		commander: false,
 		dashdash: false,
@@ -929,7 +932,7 @@ section('Misc')
 		yargs: false
 	})
 	.set('Built-in i18n support', {
-		'cli-kit': 'Planned',
+		'cli-kit': undefined,
 		caporal: false,
 		commander: false,
 		dashdash: false,
@@ -966,7 +969,7 @@ for (const [ sec, map ] of Object.entries(sections)) {
 		for (const name of Object.keys(packages)) {
 			const value = pkgs ? pkgs[name] : undefined;
 			if (value === undefined) {
-				row += '<td>?</td>';
+				row += '<td>:grey_question:</td>';
 			} else if (value === null) {
 				row += '<td>n/a</td>';
 			} else if (value === true) {
