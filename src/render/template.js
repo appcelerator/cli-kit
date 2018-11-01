@@ -3,8 +3,8 @@ import E from '../lib/errors';
 import fs from 'fs';
 
 const logger = debug('cli-kit:template:in');
-const log2 = logger('out').log;
 const { error, log } = logger;
+// const log2 = logger('out').log;
 
 /**
  * Matches intentional line breaks in multiline strings.
@@ -45,6 +45,7 @@ export function render(template, data) {
 			try {
 				printRegExp = new RegExp('(?<=^|\\n)([ \\t]*)(>+)(\\|\\?|\\?\\||\\||\\?)?(.*?)(?:(?<!\\\\)\\n|$)', 'gs');
 			} catch (e) {
+				// istanbul ignore next
 				throw new Error('Node.js version is too old; must be v8.10 or newer');
 			}
 		}
@@ -53,7 +54,7 @@ export function render(template, data) {
 			data = {};
 		}
 
-		log(template);
+		// log(template);
 
 		const vars = Object.keys(data);
 		let body = (vars.length ? `let { ${vars.join(', ')} } = __data;\n\n` : '') +
@@ -61,13 +62,14 @@ export function render(template, data) {
 				return `${ws}__print(\`${str.replace(/\\(?!\n)/g, '\\\\').replace(/`/g, '\\`').replace(breakRegExp, '\\n')}\`, ${lines.length - 1}, '${flags}');\n`;
 			});
 
-		log2(body);
+		// log2(body);
 
 		const fn = new Function('__data', '__print', body);
 		let output = '';
 		fn(data, (str, linebreaks, flags) => {
+			str = flags.includes('|') ? String(str).replace(/\s*$/g, '') : String(str).trim();
 			if (!flags.includes('?') || str) {
-				output += `${flags.includes('|') ? str : str.trim()}${linebreaks ? '\n'.repeat(linebreaks) : ''}`;
+				output += `${str}${linebreaks ? '\n'.repeat(linebreaks) : ''}`;
 			}
 		});
 

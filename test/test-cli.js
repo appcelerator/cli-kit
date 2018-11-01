@@ -1,4 +1,4 @@
-import CLI from '../dist/index';
+import CLI, { Terminal } from '../dist/index';
 import path from 'path';
 
 import { spawnSync } from 'child_process';
@@ -19,91 +19,33 @@ describe('CLI', () => {
 			});
 		});
 
-		it('should error if stdout is not an object with a write() method', () => {
+		it('should error if extensions parameter is not an object', () => {
 			expectThrow(() => {
 				new CLI({
-					stdout: 'foo'
+					extensions: 'foo'
 				});
 			}, {
 				type:  TypeError,
-				msg:   'Expected stdout stream to be a writable stream',
+				msg:   'Expected extensions to be an array of extension paths or an object of names to extension paths',
 				code:  'ERR_INVALID_ARGUMENT',
-				name:  'stdout',
+				name:  'extensions',
 				scope: 'CLI.constructor',
 				value: 'foo'
-			});
-
-			const obj = {};
-			expectThrow(() => {
-				new CLI({
-					stdout: obj
-				});
-			}, {
-				type:  TypeError,
-				msg:   'Expected stdout stream to be a writable stream',
-				code:  'ERR_INVALID_ARGUMENT',
-				name:  'stdout',
-				scope: 'CLI.constructor',
-				value: obj
-			});
-
-			obj.write = 'foo';
-
-			expectThrow(() => {
-				new CLI({
-					stdout: obj
-				});
-			}, {
-				type:  TypeError,
-				msg:   'Expected stdout stream to be a writable stream',
-				code:  'ERR_INVALID_ARGUMENT',
-				name:  'stdout',
-				scope: 'CLI.constructor',
-				value: obj
 			});
 		});
 
-		it('should error if stderr is not an object with a write() method', () => {
+		it('should error if terminal is not valid', () => {
 			expectThrow(() => {
 				new CLI({
-					stderr: 'foo'
+					terminal: 'foo'
 				});
 			}, {
 				type:  TypeError,
-				msg:   'Expected stderr stream to be a writable stream',
+				msg:   'Expected terminal to be a Terminal instance',
 				code:  'ERR_INVALID_ARGUMENT',
-				name:  'stderr',
+				name:  'terminal',
 				scope: 'CLI.constructor',
 				value: 'foo'
-			});
-
-			const obj = {};
-			expectThrow(() => {
-				new CLI({
-					stderr: obj
-				});
-			}, {
-				type:  TypeError,
-				msg:   'Expected stderr stream to be a writable stream',
-				code:  'ERR_INVALID_ARGUMENT',
-				name:  'stderr',
-				scope: 'CLI.constructor',
-				value: obj
-			});
-
-			obj.write = 'foo';
-
-			expectThrow(() => {
-				new CLI({
-					stderr: obj
-				});
-			}, {
-				type:  TypeError,
-				msg:   'Expected stderr stream to be a writable stream',
-				code:  'ERR_INVALID_ARGUMENT',
-				name:  'stderr',
-				scope: 'CLI.constructor',
-				value: obj
 			});
 		});
 
@@ -168,38 +110,46 @@ describe('CLI', () => {
 			});
 		});
 
-		it.skip('should display a banner before command output', async () => {
+		it('should display a banner before command output', async () => {
 			const banner = 'My Amazing CLI, version 1.2.3\nCopyright (c) 2018, Me';
 			const out = new WritableStream();
+			const terminal = new Terminal({
+				stdout: out,
+				stderr: out
+			});
 			const cli = new CLI({
 				banner,
 				colors: false,
 				help: true,
 				name: 'test-cli',
-				out
+				terminal
 			});
 
 			await cli.exec([]);
 
-			process.stdout.write(out.toString() + '\n');
+			// process.stdout.write(out.toString() + '\n');
 
-			// expect(out.toString()).to.equal([
-			// 	'My Amazing CLI, version 1.2.3',
-			// 	'Copyright (c) 2018, Me',
-			// 	'',
-			// 	'Usage: test-cli [options]',
-			// 	'',
-			// 	// 'Global options:',
-			// 	// '  -h, --help   displays the help screen',
-			// 	// '  --no-banner  suppress the banner',
-			// 	// '',
-			// 	''
-			// ].join('\n'));
+			expect(out.toString()).to.equal([
+				'My Amazing CLI, version 1.2.3',
+				'Copyright (c) 2018, Me',
+				'',
+				'USAGE: test-cli [options]',
+				'',
+				'GLOBAL OPTIONS:',
+				'  -h,--help  displays the help screen',
+				'  --no-banner  suppress the banner',
+				'',
+				''
+			].join('\n'));
 		});
 
-		it.skip('should display a banner when running a command', async () => {
+		it('should display a banner when running a command', async () => {
 			const banner = 'My Amazing CLI, version 1.2.3\nCopyright (c) 2018, Me\n\n';
 			const out = new WritableStream();
+			const terminal = new Terminal({
+				stdout: out,
+				stderr: out
+			});
 			const cli = new CLI({
 				banner,
 				commands: {
@@ -208,7 +158,7 @@ describe('CLI', () => {
 					}
 				},
 				name: 'test-cli',
-				out
+				terminal
 			});
 
 			await cli.exec([ 'foo' ]);
@@ -328,7 +278,10 @@ describe('CLI', () => {
 				this.slow(9000);
 				this.timeout(10000);
 
-				const { status, stdout, stderr } = spawnSync(process.execPath, [ path.join(__dirname, 'examples', 'version-test', 'ver.js'), '--version' ]);
+				const env = Object.assign({}, process.env);
+				delete env.SNOOPLOGG;
+
+				const { status, stdout, stderr } = spawnSync(process.execPath, [ path.join(__dirname, 'examples', 'version-test', 'ver.js'), '--version' ], { env });
 				expect(status).to.equal(0);
 				expect(stdout.toString()).to.equal('1.2.3\n');
 			});

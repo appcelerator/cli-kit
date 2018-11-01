@@ -58,6 +58,7 @@ export default class OptionList extends Map {
 				if (!opt.hidden) {
 					group.push({
 						name:     opt.name,
+						isFlag:   opt.isFlag,
 						long:     opt.long,
 						short:    opt.short,
 						desc:     opt.desc,

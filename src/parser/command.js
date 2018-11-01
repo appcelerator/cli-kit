@@ -44,6 +44,8 @@ export default class Command extends Context {
 					delete params.title;
 				}
 
+				delete params.terminal;
+
 				// add an action handler that eitehr executes a specific command or the help for
 				// for this command (e.g. this command is an extension)
 				params.action = async parser => {
@@ -59,7 +61,7 @@ export default class Command extends Context {
 				};
 			} else if (!params.clikit.has('Command')) {
 				// must be a command or extension
-				throw E.INVALID_CLIKIT_OBJECT('Expected command options to be a CLI or Command object', { name: 'params.clikit', scope: 'Command.constructor', value: params.clikit });
+				throw E.INVALID_CLIKIT_OBJECT('Expected command options to be a CLI or Command object', { name: 'clikit', scope: 'Command.constructor', value: params.clikit });
 			}
 
 		} else {
@@ -74,7 +76,7 @@ export default class Command extends Context {
 
 				for (const alias of params.aliases) {
 					if (!alias || typeof alias !== 'string') {
-						throw E.INVALID_ARGUMENT('Expected command aliases to be an array of strings', { name: 'params.aliases.alias', scope: 'Command.constructor', value: alias });
+						throw E.INVALID_ARGUMENT('Expected command aliases to be an array of strings', { name: 'aliases.alias', scope: 'Command.constructor', value: alias });
 					}
 
 					for (const a of alias.split(/[ ,|]+/)) {
@@ -93,7 +95,7 @@ export default class Command extends Context {
 		}
 
 		if (params.action && typeof params.action !== 'function') {
-			throw E.INVALID_ARGUMENT('Expected command action to be a function', { name: 'params.action', scope: 'Command.constructor', value: params.action });
+			throw E.INVALID_ARGUMENT('Expected command action to be a function', { name: 'action', scope: 'Command.constructor', value: params.action });
 		}
 
 		// ensure we have a title

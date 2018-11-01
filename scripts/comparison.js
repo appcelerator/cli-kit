@@ -1,9 +1,5 @@
 process.env.NO_UPDATE_NOTIFIER = '1';
 
-const spawnSync = require('child_process').spawnSync;
-const sections = {}
-const section = name => (sections[name] = new Map());
-
 const packages = {
 	'cli-kit': {},
 	caporal: {
@@ -14,6 +10,7 @@ const packages = {
 	},
 	dashdash: {},
 	fields: {},
+	getopts: {},
 	inquirer: {},
 	meow: {},
 	minimist: {},
@@ -24,6 +21,23 @@ const packages = {
 	prompts: {},
 	yargs: {}
 };
+
+const fs = require('fs');
+const path = require('path');
+const spawnSync = require('child_process').spawnSync;
+const sections = {}
+const section = name => (sections[name] = new Map());
+const months = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
+const readme = path.resolve(__dirname, '..', 'README.md');
+const contents = fs.readFileSync(readme, 'utf8');
+const startLabel = '<!-- COMPARISON START -->';
+const start = contents.indexOf(startLabel);
+const end = contents.indexOf('<!-- COMPARISON END -->');
+
+if (start === -1 || end === -1) {
+	console.error('Cannot find comparison comments in the readme!');
+	process.exit(1);
+}
 
 // populate info from npm
 for (const name of Object.keys(packages)) {
@@ -49,8 +63,6 @@ for (const name of Object.keys(packages)) {
 	packages[name].fresh = (new Date() - packages[name].time) < (365 * 24 * 60 * 60 * 1000);
 }
 
-const months = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
-
 section('General')
 	.set('Latest version', Object.keys(packages).reduce((obj, name) => {
 		obj[name] = packages[name].version;
@@ -70,6 +82,7 @@ section('General')
 		commander: 'MIT',
 		dashdash: 'MIT',
 		fields: 'MIT',
+		getopts: 'MIT',
 		inquirer: 'MIT',
 		meow: 'MIT',
 		minimist: 'MIT',
@@ -86,6 +99,7 @@ section('General')
 		commander: 'JavaScript',
 		dashdash: 'JavaScript',
 		fields: 'JavaScript',
+		getopts: 'JavaScript',
 		inquirer: 'JavaScript',
 		meow: 'JavaScript',
 		minimist: 'JavaScript',
@@ -105,6 +119,7 @@ section('General')
 		commander: false,
 		dashdash: false,
 		fields: false,
+		getopts: false,
 		inquirer: true,
 		meow: false,
 		minimist: false,
@@ -124,6 +139,7 @@ section('General')
 		commander: true,
 		dashdash: true,
 		fields: false,
+		getopts: true,
 		inquirer: false,
 		meow: true,
 		minimist: true,
@@ -139,7 +155,8 @@ section('General')
 		caporal: false,
 		commander: false,
 		dashdash: false,
-		fields: null,
+		fields: false,
+		getopts: false,
 		inquirer: true,
 		meow: false,
 		minimist: false,
@@ -147,10 +164,7 @@ section('General')
 		oclif: false,
 		prompt: true,
 		promptly: true,
-		prompts: {
-			value: 'warn',
-			note: 'Public API does not allow these options to actually be passed in.'
-		},
+		prompts: true,
 		yargs: false
 	});
 
@@ -161,6 +175,7 @@ section('Parsing')
 		commander: true,
 		dashdash: false,
 		fields: null,
+		getopts: false,
 		inquirer: null,
 		meow: false,
 		minimist: false,
@@ -177,6 +192,7 @@ section('Parsing')
 		commander: true,
 		dashdash: false,
 		fields: null,
+		getopts: false,
 		inquirer: null,
 		meow: false,
 		minimist: false,
@@ -199,6 +215,7 @@ section('Parsing')
 		},
 		dashdash: false,
 		fields: null,
+		getopts: false,
 		inquirer: null,
 		meow: false,
 		minimist: false,
@@ -218,6 +235,7 @@ section('Parsing')
 		commander: true,
 		dashdash: true,
 		fields: null,
+		getopts: true,
 		inquirer: null,
 		meow: true,
 		minimist: true,
@@ -234,6 +252,7 @@ section('Parsing')
 		commander: false,
 		dashdash: true,
 		fields: null,
+		getopts: true,
 		inquirer: null,
 		meow: true,
 		minimist: true,
@@ -250,6 +269,7 @@ section('Parsing')
 		commander: true,
 		dashdash: false,
 		fields: null,
+		getopts: false,
 		inquirer: null,
 		meow: false,
 		minimist: false,
@@ -269,6 +289,7 @@ section('Parsing')
 		commander: true,
 		dashdash: true,
 		fields: null,
+		getopts: true,
 		inquirer: null,
 		meow: true,
 		minimist: true,
@@ -279,12 +300,13 @@ section('Parsing')
 		prompts: null,
 		yargs: true
 	})
-	.set('Flag negation (`--no-<name>`)', {
+	.set('Flag negation (<code>--no-&lt;name&gt;</code>)', {
 		'cli-kit': true,
 		caporal: false,
 		commander: true,
 		dashdash: false,
 		fields: null,
+		getopts: false,
 		inquirer: null,
 		meow: true,
 		minimist: true,
@@ -301,6 +323,7 @@ section('Parsing')
 		commander: true,
 		dashdash: true,
 		fields: null,
+		getopts: true,
 		inquirer: null,
 		meow: true,
 		minimist: true,
@@ -317,6 +340,7 @@ section('Parsing')
 		commander: true,
 		dashdash: false,
 		fields: null,
+		getopts: false,
 		inquirer: null,
 		meow: false,
 		minimist: false,
@@ -327,12 +351,13 @@ section('Parsing')
 		prompts: null,
 		yargs: true
 	})
-	.set('Stop parsing `--`', {
+	.set('Stop parsing <code>--</code>', {
 		'cli-kit': true,
 		caporal: true,
 		commander: true,
 		dashdash: true,
 		fields: null,
+		getopts: true,
 		inquirer: null,
 		meow: true,
 		minimist: true,
@@ -349,6 +374,7 @@ section('Parsing')
 		commander: true,
 		dashdash: true,
 		fields: null,
+		getopts: true,
 		inquirer: null,
 		meow: true,
 		minimist: true,
@@ -365,6 +391,7 @@ section('Parsing')
 		commander: false,
 		dashdash: true,
 		fields: null,
+		getopts: false,
 		inquirer: null,
 		meow: false,
 		minimist: false,
@@ -387,6 +414,7 @@ section('Parsing')
 			note: 'Options only. (e.g no usage, etc)'
 		},
 		fields: null,
+		getopts: false,
 		inquirer: null,
 		meow: true,
 		minimist: false,
@@ -403,6 +431,7 @@ section('Parsing')
 		commander: false,
 		dashdash: false,
 		fields: null,
+		getopts: false,
 		inquirer: null,
 		meow: true,
 		minimist: false,
@@ -416,11 +445,12 @@ section('Parsing')
 
 section('Prompting')
 	.set('Single-line text prompting', {
-		'cli-kit': undefined,
+		'cli-kit': true,
 		caporal: null,
 		commander: null,
 		dashdash: null,
 		fields: true,
+		getopts: null,
 		inquirer: true,
 		meow: null,
 		minimist: null,
@@ -437,6 +467,7 @@ section('Prompting')
 		commander: null,
 		dashdash: null,
 		fields: false,
+		getopts: null,
 		inquirer: false,
 		meow: null,
 		minimist: null,
@@ -453,11 +484,15 @@ section('Prompting')
 		commander: null,
 		dashdash: null,
 		fields: true,
+		getopts: null,
 		inquirer: true,
 		meow: null,
 		minimist: null,
 		mri: null,
-		oclif: true,
+		oclif: {
+			value: true,
+			node: 'Via [password-prompt](https://www.npmjs.com/package/password-prompt).'
+		},
 		prompt: true,
 		promptly: true,
 		prompts: true,
@@ -472,6 +507,7 @@ section('Prompting')
 			value: true,
 			note: 'Via select list input type.'
 		},
+		getopts: null,
 		inquirer: true,
 		meow: null,
 		minimist: null,
@@ -488,6 +524,7 @@ section('Prompting')
 		commander: null,
 		dashdash: null,
 		fields: false,
+		getopts: null,
 		inquirer: false,
 		meow: null,
 		minimist: null,
@@ -507,6 +544,7 @@ section('Prompting')
 			value: true,
 			note: 'Via select list input type.'
 		},
+		getopts: null,
 		inquirer: {
 			value: true,
 			note: 'Via expand input type.'
@@ -529,6 +567,7 @@ section('Prompting')
 		commander: null,
 		dashdash: null,
 		fields: true,
+		getopts: null,
 		inquirer: true,
 		meow: null,
 		minimist: null,
@@ -545,6 +584,7 @@ section('Prompting')
 		commander: null,
 		dashdash: null,
 		fields: false,
+		getopts: null,
 		inquirer: true,
 		meow: null,
 		minimist: null,
@@ -561,6 +601,7 @@ section('Prompting')
 		commander: null,
 		dashdash: null,
 		fields: false,
+		getopts: null,
 		inquirer: true,
 		meow: null,
 		minimist: null,
@@ -577,6 +618,7 @@ section('Prompting')
 		commander: null,
 		dashdash: null,
 		fields: true,
+		getopts: null,
 		inquirer: {
 			value: true,
 			note: 'Via [inquirer-fuzzy-path](https://www.npmjs.com/package/inquirer-fuzzy-path) plugin.'
@@ -596,6 +638,7 @@ section('Prompting')
 		commander: null,
 		dashdash: null,
 		fields: false,
+		getopts: null,
 		inquirer: false,
 		meow: null,
 		minimist: null,
@@ -606,12 +649,13 @@ section('Prompting')
 		prompts: true,
 		yargs: null
 	})
-	.set('Date prompting', {
+	.set('Date/time prompting', {
 		'cli-kit': undefined,
 		caporal: null,
 		commander: null,
 		dashdash: null,
 		fields: false,
+		getopts: null,
 		inquirer: {
 			value: true,
 			note: 'Via [inquirer-datepicker-prompt](https://www.npmjs.com/package/inquirer-datepicker-prompt) plugin.'
@@ -626,11 +670,12 @@ section('Prompting')
 		yargs: null
 	})
 	.set('Multiple prompt chaining', {
-		'cli-kit': undefined,
+		'cli-kit': true,
 		caporal: null,
 		commander: null,
 		dashdash: null,
 		fields: true,
+		getopts: null,
 		inquirer: true,
 		meow: null,
 		minimist: null,
@@ -647,6 +692,7 @@ section('Prompting')
 		commander: null,
 		dashdash: null,
 		fields: false,
+		getopts: null,
 		inquirer: true,
 		meow: null,
 		minimist: null,
@@ -666,6 +712,7 @@ section('Prompting')
 			value: true,
 			note: 'Via validator callback.'
 		},
+		getopts: null,
 		inquirer: {
 			value: true,
 			note: 'Via filter callback.'
@@ -691,6 +738,7 @@ section('Prompting')
 		commander: null,
 		dashdash: null,
 		fields: false,
+		getopts: null,
 		inquirer: true,
 		meow: null,
 		minimist: null,
@@ -702,11 +750,12 @@ section('Prompting')
 		yargs: null
 	})
 	.set('Default prompt values', {
-		'cli-kit': undefined,
+		'cli-kit': true,
 		caporal: null,
 		commander: null,
 		dashdash: null,
 		fields: true,
+		getopts: null,
 		inquirer: true,
 		meow: null,
 		minimist: null,
@@ -723,6 +772,7 @@ section('Prompting')
 		commander: null,
 		dashdash: null,
 		fields: true,
+		getopts: null,
 		inquirer: {
 			value: true,
 			note: 'Via [inquirer-command-prompt](https://www.npmjs.com/package/inquirer-command-prompt) plugin.'
@@ -742,6 +792,7 @@ section('Prompting')
 		commander: null,
 		dashdash: null,
 		fields: true,
+		getopts: null,
 		inquirer: {
 			value: true,
 			note: 'Via [inquirer-prompt-suggest](https://www.npmjs.com/package/inquirer-prompt-suggest) plugin.'
@@ -761,6 +812,7 @@ section('Prompting')
 		commander: null,
 		dashdash: null,
 		fields: true,
+		getopts: null,
 		inquirer: true,
 		meow: null,
 		minimist: null,
@@ -771,12 +823,13 @@ section('Prompting')
 		prompts: true,
 		yargs: null
 	})
-	.set('Custom prompts', {
-		'cli-kit': undefined,
+	.set('Custom prompt types/plugins', {
+		'cli-kit': true,
 		caporal: null,
 		commander: null,
 		dashdash: null,
 		fields: false,
+		getopts: null,
 		inquirer: true,
 		meow: null,
 		minimist: null,
@@ -798,6 +851,7 @@ section('Logging')
 		commander: null,
 		dashdash: null,
 		fields: null,
+		getopts: null,
 		inquirer: null,
 		meow: null,
 		minimist: null,
@@ -817,6 +871,7 @@ section('Logging')
 		commander: null,
 		dashdash: null,
 		fields: null,
+		getopts: null,
 		inquirer: null,
 		meow: true,
 		minimist: null,
@@ -835,7 +890,8 @@ section('Logging')
 		caporal: false,
 		commander: null,
 		dashdash: null,
-		fields: null,
+		fields: false,
+		getopts: false,
 		inquirer: null,
 		meow: null,
 		minimist: null,
@@ -857,6 +913,7 @@ section('Misc')
 		commander: false,
 		dashdash: false,
 		fields: false,
+		getopts: false,
 		inquirer: false,
 		meow: false,
 		minimist: false,
@@ -873,6 +930,7 @@ section('Misc')
 		commander: false,
 		dashdash: false,
 		fields: null,
+		getopts: null,
 		inquirer: null,
 		meow: true,
 		minimist: false,
@@ -889,6 +947,7 @@ section('Misc')
 		commander: false,
 		dashdash: false,
 		fields: false,
+		getopts: false,
 		inquirer: false,
 		meow: false,
 		minimist: false,
@@ -905,6 +964,7 @@ section('Misc')
 		commander: false,
 		dashdash: true,
 		fields: null,
+		getopts: false,
 		inquirer: null,
 		meow: false,
 		minimist: false,
@@ -921,6 +981,7 @@ section('Misc')
 		commander: false,
 		dashdash: false,
 		fields: false,
+		getopts: false,
 		inquirer: false,
 		meow: false,
 		minimist: false,
@@ -937,6 +998,47 @@ section('Misc')
 		commander: false,
 		dashdash: false,
 		fields: true,
+		getopts: false,
+		inquirer: false,
+		meow: false,
+		minimist: false,
+		mri: false,
+		oclif: false,
+		prompt: false,
+		promptly: false,
+		prompts: false,
+		yargs: false
+	})
+	.set('Project generator CLI', {
+		'cli-kit': undefined,
+		caporal: false,
+		commander: {
+			value: true,
+			note: 'Via [generator-commander](https://www.npmjs.com/package/generator-commander) and [generator-node-cli-commander](https://www.npmjs.com/package/generator-node-cli-commander) Yeoman plugin.'
+		},
+		dashdash: false,
+		fields: false,
+		getopts: false,
+		inquirer: false,
+		meow: false,
+		minimist: false,
+		mri: false,
+		oclif: true,
+		prompt: false,
+		promptly: false,
+		prompts: false,
+		yargs: {
+			value: true,
+			note: 'Via [generator-yargs](https://www.npmjs.com/package/generator-yargs) Yeoman plugin.'
+		}
+	})
+	.set('Built-in update notifications', {
+		'cli-kit': undefined,
+		caporal: false,
+		commander: false,
+		dashdash: false,
+		fields: false,
+		getopts: false,
 		inquirer: false,
 		meow: false,
 		minimist: false,
@@ -954,14 +1056,11 @@ section('Misc')
 // PRINT THE TABLE
 
 const packageHeader = name => `<thead><tr><td><h3>${name}</h3></td>${Object.keys(packages).map(n => `<th scope="col"><a href="${packages[n].url}">${packages[n].title || n}</a></th>`).join('')}</tr></thead>\n`;
-
-console.log('\n<table>\n');
-
 const notes = [];
+let output = '<table>';
 
 for (const [ sec, map ] of Object.entries(sections)) {
-	console.log(packageHeader(sec));
-	console.log('<tbody>');
+	output += `\n${packageHeader(sec)}\n<tbody>\n`;
 
 	for (const [ feature, pkgs ] of map.entries()) {
 		let row = '';
@@ -992,7 +1091,7 @@ for (const [ sec, map ] of Object.entries(sections)) {
 						p = notes.length;
 						notes.push(value.note);
 					}
-					row += `<td>${value.value} <sub>${p + 1}</sub></td>`;
+					row += `<td>${value.value} <sub><a href="#comparison-footnote-${p + 1}">${p + 1}</a></sub></td>`;
 				} else if (value.value !== undefined) {
 					row += `<td>${value.value}${value.text || ''}</td>`;
 				} else {
@@ -1003,15 +1102,23 @@ for (const [ sec, map ] of Object.entries(sections)) {
 			}
 		}
 
-		console.log(`<tr><td>${feature}</td>${row}</tr>`);
+		output += `<tr><td>${feature}</td>${row}</tr>\n`;
 	}
 
-	console.log('</tbody>\n');
+	output += '</tbody>\n';
 }
 
-console.log('</table>\n');
+output += '</table>\n\n';
 
 notes.forEach((note, i) => {
-	console.log(`<sub>${i + 1}. ${note}</sub><br>`);
+	output += `<sub id="comparison-footnote-${i + 1}">${i + 1}. ${note}</sub><br>\n`;
 });
-console.log();
+
+const updated = contents.substring(0, start + startLabel.length) + '\n' + output + contents.substring(end);
+
+if (updated === contents) {
+	console.log('Comparison has not changed :)');
+} else {
+	fs.writeFileSync(readme, updated, 'utf8');
+	console.log('Updated readme with latest comparison');
+}

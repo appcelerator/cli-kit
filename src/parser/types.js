@@ -104,11 +104,11 @@ export class Type {
 		}
 
 		if (!params.name || typeof params.name !== 'string') {
-			throw E.TYPE_ERROR('Missing type name', { name: 'params.name', scope: 'Type.constructor', value: params.name });
+			throw E.TYPE_ERROR('Missing type name', { name: 'name', scope: 'Type.constructor', value: params.name });
 		}
 
 		if (params.transform && typeof params.transform !== 'function') {
-			throw E.TYPE_ERROR('Expected transform to be a function', { name: 'params.transform', scope: 'Type.constructor', value: params.transform });
+			throw E.TYPE_ERROR('Expected transform to be a function', { name: 'transform', scope: 'Type.constructor', value: params.transform });
 		}
 
 		this.name = params.name;

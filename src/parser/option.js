@@ -95,7 +95,7 @@ export default class Option {
 
 		params.name = params.name || params.long || params.short || params.format;
 		if (!params.name) {
-			throw E.INVALID_OPTION('Option has no name', { name: 'params.name', scope: 'Option.constructor', value: params.name });
+			throw E.INVALID_OPTION('Option has no name', { name: 'name', scope: 'Option.constructor', value: params.name });
 		}
 
 		let hint = params.type !== 'count' && params.hint || m[3];

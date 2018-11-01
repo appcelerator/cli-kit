@@ -62,23 +62,23 @@ export default class Context extends HookEmitter {
 	 */
 	constructor(params = {}) {
 		if (!params || typeof params !== 'object' || (params.clikit instanceof Set && !params.clikit.has('Context'))) {
-			throw E.INVALID_ARGUMENT('Expected parameters to be an object, CLI, Command, or Context', { name: 'params.clikit', scope: 'Context.constructor', value: params.clikit });
+			throw E.INVALID_ARGUMENT('Expected parameters to be an object, CLI, Command, or Context', { name: 'clikit', scope: 'Context.constructor', value: params.clikit });
 		}
 
 		if (params.args && !Array.isArray(params.args)) {
-			throw E.INVALID_ARGUMENT('Expected args to be an array', { name: 'params.args', scope: 'Context.constructor', value: params.args });
+			throw E.INVALID_ARGUMENT('Expected args to be an array', { name: 'args', scope: 'Context.constructor', value: params.args });
 		}
 
 		if (params.commands && (typeof params.commands !== 'object' || Array.isArray(params.commands))) {
-			throw E.INVALID_ARGUMENT('Expected commands to be an object', { name: 'params.commands', scope: 'Context.constructor', value: params.commands });
+			throw E.INVALID_ARGUMENT('Expected commands to be an object', { name: 'commands', scope: 'Context.constructor', value: params.commands });
 		}
 
 		if (params.options && typeof params.options !== 'object') {
-			throw E.INVALID_ARGUMENT('Expected options to be an object or an array', { name: 'params.options', scope: 'Context.constructor', value: params.options });
+			throw E.INVALID_ARGUMENT('Expected options to be an object or an array', { name: 'options', scope: 'Context.constructor', value: params.options });
 		}
 
 		if (params.extensions && typeof params.extensions !== 'object') {
-			throw E.INVALID_ARGUMENT('Expected extensions to be an object or an array', { name: 'params.extensions', scope: 'Context.constructor', value: params.extensions });
+			throw E.INVALID_ARGUMENT('Expected extensions to be an object or an array', { name: 'extensions', scope: 'Context.constructor', value: params.extensions });
 		}
 
 		super();
@@ -153,7 +153,7 @@ export default class Context extends HookEmitter {
 				let group = null;
 				for (const groupOrOption of params.options) {
 					if (!groupOrOption || (typeof groupOrOption !== 'string' && typeof groupOrOption !== 'object') || Array.isArray(groupOrOption)) {
-						throw E.INVALID_ARGUMENT('Expected options array element to be a string or an object', { name: 'params.options', scope: 'Context.constructor', value: groupOrOption });
+						throw E.INVALID_ARGUMENT('Expected options array element to be a string or an object', { name: 'options', scope: 'Context.constructor', value: groupOrOption });
 					}
 					if (typeof groupOrOption === 'string') {
 						group = groupOrOption;
@@ -301,6 +301,7 @@ export default class Context extends HookEmitter {
 			const pkgJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', '..', 'package.json'), 'utf8'));
 			const scopes = [];
 			let ctx = this;
+
 			while (ctx) {
 				scopes.push({
 					title: `${ctx.title} options`,
@@ -309,6 +310,37 @@ export default class Context extends HookEmitter {
 				});
 				results.contexts.unshift(ctx.name);
 				ctx = ctx.parent;
+			}
+
+			// remove duplicate options
+			const longs = new Set();
+			const shorts = new Set();
+			let j = scopes.length;
+			while (j--) {
+				for (const [ group, options ] of Object.entries(scopes[j].groups)) {
+					for (let i = 0; i < options.length; i++) {
+						const { long, short } = options[i];
+						let nuke = false;
+						if (long !== null) {
+							if (longs.has(long)) {
+								nuke = true;
+							} else {
+								longs.add(long);
+							}
+						}
+						if (short !== null) {
+							if (shorts.has(short)) {
+								nuke = true;
+							} else {
+								shorts.add(short);
+							}
+						}
+						if (nuke) {
+							scopes[j].count--;
+							options.splice(i--, 1);
+						}
+					}
+				}
 			}
 
 			// set the description
@@ -371,6 +403,22 @@ export default class Context extends HookEmitter {
 		let value = this[name];
 		for (let p = this.parent; p; p = p.parent) {
 			value = p.get(name, value);
+		}
+		return value !== undefined ? value : defaultValue;
+	}
+
+	/**
+	 * Scan parent contexts to find the specified property in the bottom-most context.
+	 *
+	 * @param {String} name - The property name.
+	 * @param {*} defaultValue - A default value if no value is found.
+	 * @returns {*}
+	 * @access private
+	 */
+	prop(name, defaultValue) {
+		let value = this[name];
+		for (let p = this.parent; value === undefined && p; p = p.parent) {
+			value = p.prop(name, value);
 		}
 		return value !== undefined ? value : defaultValue;
 	}

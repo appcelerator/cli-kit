@@ -1,43 +1,39 @@
 if (error) {
-	>> ::: error
-	>> ${error.message}
-	>>> :::
+	>>> ${error.message}
 }
 
 if (suggestions.length) {
 	>> Did you mean?
 	for (const s of suggestions) {
-		>>|  ==${s.name}==${s.desc ? ' - ' + s.desc : ''}
+		>>|  ${s.name}  ${s.desc ? ' - ' + s.desc : ''}
 	}
 	>>
 }
 
 if (Array.isArray(warnings) && warnings.length) {
 	for (const warning of warnings) {
-		>> ::: warning
-		>> ${warning.message}
-		>>> :::
+		>>> ${warning.message}
 	}
 }
 
 if (usage) {
-	>>> # ==${usage.title}:== ${usage.text}
+	>>> ${usage.title.toUpperCase()}: ${usage.text}
 }
 
->>>? ${desc}
+>>>? ${desc || ''}
 
 if (commands.count) {
-	>> # ==${commands.title}:==
+	>> ${commands.title.toUpperCase()}:
 	for (const cmd of commands.entries) {
-		>>|| ${cmd.name} | ${cmd.desc || ''} |
+		>>|  ${cmd.name}  ${cmd.desc || ''}
 	}
 	>>
 }
 
 if (arguments.count) {
-	>> # ==${arguments.title}:==
+	>> ${arguments.title.toUpperCase()}:
 	for (const arg of arguments.entries) {
-		>>|| ${arg.name}${arg.multiple ? '...' : ''} | ${arg.desc || ''} |
+		>>|  ${arg.name}${arg.multiple ? '...' : ''}  ${arg.desc || ''}
 	}
 	>>
 }
@@ -45,18 +41,17 @@ if (arguments.count) {
 if (options.count) {
 	for (const scope of options.scopes) {
 		if (scope.count) {
-			>> # ==${scope.title}:==
+			>> ${scope.title.toUpperCase()}:
 			for (const [ group, options ] of Object.entries(scope.groups)) {
 				if (group) {
-					>> ## ${group}
+					>> ${group}
 				}
 				for (const option of options) {
+					let s = '';
 					if (option.short) {
-						> | -${option.short},
-					} else {
-						> |
+						s += `-${option.short},`;
 					}
-					>>| | --${option.long} | ${option.desc || ''} |
+					>>|  ${s}--${option.long}${option.isFlag ? '' : ('=<' + (options.hint || 'value') + '>')}  ${option.desc || ''}
 				}
 			}
 			>>

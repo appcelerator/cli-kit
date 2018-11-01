@@ -1,9 +1,10 @@
 /* eslint no-control-regex:0 */
 
-import CLI, { Extension } from '../dist/index';
+import CLI, { Extension, Terminal } from '../dist/index';
 import path from 'path';
 import snooplogg from 'snooplogg';
 
+import { spawnSync } from 'child_process';
 import { tmpDir } from 'tmp';
 import { WritableStream } from 'memory-streams';
 
@@ -53,27 +54,23 @@ describe('Extension', () => {
 	});
 
 	describe('Executable Extensions', () => {
-		it('should wire up extension that is a native binary', async () => {
-			const extension = new Extension({
-				extensionPath: 'ping'
-			});
-			expect(extension.name).to.equal('ping');
-			expect(extension.pkg).to.be.null;
+		it('should wire up extension that is a native binary', function () {
+			this.slow(9000);
+			this.timeout(10000);
 
-			if (process.platform === 'win32') {
-				expect(extension.executable.toLowerCase()).to.equal(path.join(process.env.SystemRoot, 'system32', 'ping.exe').toLowerCase());
-			} else {
-				expect(extension.executable).to.match(/^\/s?bin\/ping$/);
-			}
+			const env = { ...process.env };
+			delete env.SNOOPLOGG;
 
-			const output = await runCLI(extension, [ 'ping' ], true);
-
-			expect(output).to.match(/usage: ping/im);
+			const { status, stdout, stderr } = spawnSync(process.execPath, [
+				path.join(__dirname, 'examples', 'external-binary', 'extbin.js'), 'ping'
+			], { env });
+			expect(status).to.equal(0);
+			expect(stdout.toString().trim() + stderr.toString().trim()).to.match(/usage: ping/im);
 		});
 	});
 
 	describe('cli-kit Node Extensions', () => {
-		it.skip('should load and merge a cli-kit Node package', async () => {
+		it('should load and merge a cli-kit Node package', async () => {
 			const extension = new Extension({
 				extensionPath: path.join(__dirname, 'fixtures', 'cli-kit-ext')
 			});
@@ -84,14 +81,14 @@ describe('Extension', () => {
 			// console.log(output);
 
 			expect(output).to.equal([
-				'Usage: test-cli <command> [options]',
+				'USAGE: test-cli <command> [options]',
 				'',
-				// 'Commands:',
-				// '  cli-kit-extension',
-				// '',
-				// 'Global options:',
-				// '  -h, --help  displays the help screen',
-				// '',
+				'COMMANDS:',
+				'  cli-kit-extension',
+				'',
+				'GLOBAL OPTIONS:',
+				'  -h,--help  displays the help screen',
+				'',
 				''
 			].join('\n'));
 
@@ -100,53 +97,55 @@ describe('Extension', () => {
 			// console.log(output);
 
 			expect(output).to.equal([
-				'Usage: test-cli cli-kit-extension <command> [options] [<foo>] [<bar>]',
+				'USAGE: test-cli cli-kit-extension <command> [options] [<foo>] [<bar>]',
 				'',
-				// 'Commands:',
-				// '  stuff  perform magic',
-				// '',
-				// 'cli-kit-extension arguments:',
-				// '  foo  the first arg',
-				// '  bar',
-				// '',
-				// 'cli-kit-extension options:',
-				// '  --baz=<value>  set baz',
-				// '  -a, --append',
-				// '  --no-color     disable colors',
-				// '',
-				// 'Global options:',
-				// '  -h, --help  displays the help screen',
-				// '',
+				'CLI-KIT-EXTENSION COMMANDS:',
+				'  stuff  perform magic',
+				'',
+				'CLI-KIT-EXTENSION ARGUMENTS:',
+				'  foo  the first arg',
+				'  bar',
+				'',
+				'CLI-KIT-EXTENSION OPTIONS:',
+				'  -a,--append',
+				'  --baz=<value>  set baz',
+				'  --no-color  disable colors',
+				'',
+				'GLOBAL OPTIONS:',
+				'  -h,--help  displays the help screen',
+				'',
 				''
 			].join('\n'));
 		});
 	});
 
 	describe('JavaScript Extensions', () => {
-		it('should run a JavaScript file', async function () {
-			this.slow(4000);
-			this.timeout(5000);
+		it('should run a JavaScript file', function () {
+			this.slow(9000);
+			this.timeout(10000);
 
-			const extension = new Extension({
-				extensionPath: path.join(__dirname, 'fixtures', 'simple', 'simple.js')
-			});
-			expect(extension.name).to.equal('simple_js');
+			const env = { ...process.env };
+			delete env.SNOOPLOGG;
 
-			const output = await runCLI(extension, [ 'simple_js', 'foo', 'bar' ]);
-			expect(output).to.equal(`${process.version} foo bar\n`);
+			const { status, stdout, stderr } = spawnSync(process.execPath, [
+				path.join(__dirname, 'examples', 'external-js-file', 'extjsfile.js'), 'simple_js', 'foo', 'bar'
+			], { env });
+			expect(status).to.equal(0);
+			expect(stdout.toString().trim() + stderr.toString().trim()).to.equal(`${process.version} foo bar`);
 		});
 
-		it('should run a simple Node.js module', async function () {
-			this.slow(4000);
-			this.timeout(5000);
+		it('should run a simple Node.js module', function () {
+			this.slow(9000);
+			this.timeout(10000);
 
-			const extension = new Extension({
-				extensionPath: path.join(__dirname, 'fixtures', 'simple-module')
-			});
-			expect(extension.name).to.equal('foo');
+			const env = { ...process.env };
+			delete env.SNOOPLOGG;
 
-			const output = await runCLI(extension, [ 'foo', 'bar' ]);
-			expect(output).to.equal(`${process.version} bar\n`);
+			const { status, stdout, stderr } = spawnSync(process.execPath, [
+				path.join(__dirname, 'examples', 'external-module', 'extmod.js'), 'foo', 'bar'
+			], { env });
+			expect(status).to.equal(0);
+			expect(stdout.toString().trim() + stderr.toString().trim()).to.equal(`${process.version} bar`);
 		});
 	});
 
@@ -178,7 +177,7 @@ describe('Extension', () => {
 			}).to.throw(Error, `Unable to find extension's main file: ${extensionPath}`);
 		});
 
-		it.skip('should ignore a cli-kit extension that has bad syntax', async () => {
+		it('should ignore a cli-kit extension that has bad syntax', async () => {
 			const extensionPath = path.join(__dirname, 'fixtures', 'bad-cli-kit-ext');
 			const extension = new Extension({
 				extensionPath,
@@ -187,13 +186,13 @@ describe('Extension', () => {
 
 			let output = await runCLI(extension, []);
 			expect(output).to.equal([
-				'Usage: test-cli <command> [options]',
+				'USAGE: test-cli <command> [options]',
 				'',
-				'Commands:',
+				'COMMANDS:',
 				'  bad-cli-kit-extension',
 				'',
-				'Global options:',
-				'  -h, --help  displays the help screen',
+				'GLOBAL OPTIONS:',
+				'  -h,--help  displays the help screen',
 				'',
 				''
 			].join('\n'));
@@ -240,8 +239,10 @@ async function runCLI(extension, argv, noHelp) {
 		renderOpts: {
 			markdown: false
 		},
-		stdout: out,
-		stderr: out
+		terminal: new Terminal({
+			stdout: out,
+			stderr: out
+		})
 	});
 
 	await cli.exec(argv);

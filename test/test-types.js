@@ -21,7 +21,7 @@ describe('Types', () => {
 			type:  TypeError,
 			code: 'ERR_TYPE_ERROR',
 			msg:   'Missing type name',
-			name:  'params.name',
+			name:  'name',
 			scope: 'Type.constructor',
 			value: undefined
 		});
@@ -34,7 +34,7 @@ describe('Types', () => {
 			type:  TypeError,
 			code:  'ERR_TYPE_ERROR',
 			msg:   'Missing type name',
-			name:  'params.name',
+			name:  'name',
 			scope: 'Type.constructor',
 			value: name
 		});
@@ -47,7 +47,7 @@ describe('Types', () => {
 			type:  TypeError,
 			code:  'ERR_TYPE_ERROR',
 			msg:   'Expected transform to be a function',
-			name:  'params.transform',
+			name:  'transform',
 			scope: 'Type.constructor',
 			value: 123
 		});
@@ -60,7 +60,7 @@ describe('Types', () => {
 			type:  TypeError,
 			code:  'ERR_TYPE_ERROR',
 			msg:   'Expected transform to be a function',
-			name:  'params.transform',
+			name:  'transform',
 			scope: 'Type.constructor',
 			value: transform
 		});

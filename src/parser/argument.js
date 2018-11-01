@@ -64,7 +64,7 @@ export default class Argument {
 		}
 
 		if (!params.name || typeof params.name !== 'string') {
-			throw E.INVALID_ARGUMENT('Expected argument name to be a non-empty string', { name: 'params.name', scope: 'Argument.constructor', value: params.name });
+			throw E.INVALID_ARGUMENT('Expected argument name to be a non-empty string', { name: 'name', scope: 'Argument.constructor', value: params.name });
 		}
 
 		if (params.clikit instanceof Set && params.clikit.has('Argument')) {

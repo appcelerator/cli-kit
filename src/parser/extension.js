@@ -54,7 +54,7 @@ export default class Extension extends Command {
 		let startTime = Date.now();
 
 		if (!extensionPath || typeof extensionPath !== 'string') {
-			throw E.INVALID_ARGUMENT('Expected extension path to be a non-empty string', { extensionPath, name: 'params.extensionPath', scope: 'Extension.constructor', value: extensionPath });
+			throw E.INVALID_ARGUMENT('Expected extension path to be a non-empty string', { extensionPath, name: 'extensionPath', scope: 'Extension.constructor', value: extensionPath });
 		}
 
 		name = String(name || '').trim();
@@ -104,7 +104,7 @@ export default class Extension extends Command {
 
 					} else if (params.ignoreInvalidExtensions || (params.parent && params.parent.get('ignoreInvalidExtensions', false))) {
 						params.action = () => {
-							const stderr = this.get('stderr', process.stderr);
+							const { stderr } = this.get('terminal');
 							if (err) {
 								stderr.write(`Bad extension: ${pkg.json.name}\n`);
 								stderr.write(`  ${err.toString()}\n`);
@@ -160,6 +160,7 @@ export default class Extension extends Command {
 		super(name || path.basename(extensionPath), params);
 		declareCLIKitClass(this, 'Extension');
 
+		this.banner            = params.banner;
 		this.executable        = executable;
 		this.isCLIKitExtension = isCLIKitExtension;
 		this.pkg               = pkg;
@@ -190,8 +191,8 @@ export default class Extension extends Command {
 
 		} else if (this.get('ignoreMissingExtensions', false)) {
 			this.action = () => {
-				const stdout = this.get('stdout', process.stdout);
-				stdout.write(`Extension not found: ${highlight(extensionPath)}\n`);
+				const { stderr } = this.get('terminal');
+				stderr.write(`Extension not found: ${highlight(extensionPath)}\n`);
 			};
 
 			log(`Loaded invalid extension: ${highlight(extensionPath)} ${note(`(${this.time} ms)`)}`);
@@ -213,14 +214,22 @@ export default class Extension extends Command {
 				return reject(E.NO_EXECUTABLE('No executable to run', { name: 'executable', scope: 'Extension.run', value: this.executable }));
 			}
 
-			const stdout = this.get('stdout', process.stdout);
-			const stderr = this.get('stderr', process.stderr);
+			const { stderr, stdin, stdout } = this.get('terminal');
+			const stdio = [
+				!this.isCLIKitExtension || stdin === process.stdin   ? 'inherit' : 'pipe',
+				!this.isCLIKitExtension || stdout === process.stdout ? 'inherit' : 'pipe',
+				!this.isCLIKitExtension || stderr === process.stderr ? 'inherit' : 'pipe'
+			];
 
-			log(`Running: ${highlight(this.executable + ' ' + this.execArgs.join(' '))}`);
-			const child = spawn(this.executable, this.execArgs);
+			log(`Running: ${highlight(this.executable + this.execArgs.map(s => ' ' + s))} ${note(JSON.stringify(stdio))}`);
+			const child = spawn(this.executable, this.execArgs, { stdio });
 
-			child.stdout.on('data', data => stdout.write(data.toString()));
-			child.stderr.on('data', data => stderr.write(data.toString()));
+			if (stdio[1] === 'pipe') {
+				child.stdout.pipe(stdout);
+			}
+			if (stdio[2] === 'pipe') {
+				child.stderr.pipe(stderr);
+			}
 
 			child.on('close', (code = 0) => resolve({ code }));
 		});

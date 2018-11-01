@@ -75,7 +75,7 @@ describe('Template', () => {
 			it('should respect the whitespace', () => {
 				expect(render('>| foo1')).to.equal(' foo1');
 				expect(render('>|  foo2')).to.equal('  foo2');
-				expect(render('>|  foo3 ')).to.equal('  foo3 ');
+				expect(render('>|  foo3 ')).to.equal('  foo3');
 			});
 		});
 

@@ -84,7 +84,7 @@ export default {
 			help.warnings = Array.isArray(warnings) ? warnings.map(formatError) : null;
 
 			// determine the output stream
-			const out = ctx.get(err ? 'stderr' : 'stdout');
+			const out = ctx.get('terminal')[err ? 'stderr' : 'stdout'];
 
 			// print the help output
 			if (argv.json) {

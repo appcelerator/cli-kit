@@ -1,8 +1,6 @@
-import Banner from './render/banner';
 import Command from './parser/command';
 import Context from './parser/context';
 import debug from './lib/debug';
-import defaults from './defaults';
 import E from './lib/errors';
 import Extension from './parser/extension';
 import fs from 'fs-extra';
@@ -10,10 +8,10 @@ import helpCommand, { renderHelp } from './commands/help';
 import Parser from './parser/parser';
 import path from 'path';
 import semver from 'semver';
+import Terminal from './terminal';
 
-import { Console } from 'console';
 import { declareCLIKitClass } from './lib/util';
-import { EventEmitter } from 'events';
+import { terminal } from './index';
 
 const { error, log, warn } = debug('cli-kit:cli');
 const { highlight }  = debug.styles;
@@ -58,13 +56,10 @@ export default class CLI extends Context {
 	 * such as the display width.
 	 * @param {Boolean} [params.showBannerForExternalCLIs=false] - If `true`, shows the `CLI`
 	 * banner, assuming banner is enabled, for non-cli-kit enabled CLIs.
-	 * @param {Object|stream.Writable} [params.stderr=process.stderr] - A stream or an object with a
-	 * `write()` method to write error messages to.
-	 * @param {stream.Readable} [params.stdin=process.stdin] - A stream for which to read input.
-	 * @param {Object|stream.Writable} [params.stdout=process.stdout] - A stream or an object with a
-	 * `write()` method to write output such as the help screen to.
 	 * @param {Boolean} [params.showHelpOnError=true] - If an error occurs and `help` is enabled,
 	 * then display the error before the help information.
+	 * @param {Terminal} [params.terminal] - A custom terminal instance, otherwise uses the default
+	 * global terminal instance.
 	 * @param {String} [params.title='Global'] - The title for the global context.
 	 * @param {String} [params.version] - The program version.
 	 * @access public
@@ -89,16 +84,6 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected help exit code to be a number', { name: 'helpExitCode', scope: 'CLI.constructor', value: params.helpExitCode });
 		}
 
-		if (params.stdout && (!(params.stdout instanceof EventEmitter) || typeof params.stdout.write !== 'function')) {
-			throw E.INVALID_ARGUMENT('Expected stdout stream to be a writable stream', { name: 'stdout', scope: 'CLI.constructor', value: params.stdout });
-		}
-
-		// TODO: validate params.stdin
-
-		if (params.stderr && (!(params.stderr instanceof EventEmitter) || typeof params.stderr.write !== 'function')) {
-			throw E.INVALID_ARGUMENT('Expected stderr stream to be a writable stream', { name: 'stderr', scope: 'CLI.constructor', value: params.stderr });
-		}
-
 		super({
 			args:                           params.args,
 			camelCase:                      params.camelCase,
@@ -115,22 +100,17 @@ export default class CLI extends Context {
 
 		this.appName               = params.name;
 		this.banner                = params.banner;
+		this.bannerEnabled         = true;
 		this.colors                = params.colors !== false;
 		this.errorIfUnknownCommand = params.errorIfUnknownCommand !== false;
 		this.helpExitCode          = params.helpExitCode;
 		this.nodeVersion           = params.nodeVersion;
-		this.stderr                = params.stderr || defaults.stderr;
-		this.stdin                 = params.stdin || defaults.stdin;
-		this.stdout                = params.stdout || defaults.stdout;
 		this.warnings              = [];
 
-		if (this.banner) {
-			this.bannerObj = new Banner(this);
-			this.stdout = this.bannerObj.stdout;
-			this.stderr = this.bannerObj.stderr;
+		if (params.terminal && !(params.terminal instanceof Terminal)) {
+			throw E.INVALID_ARGUMENT('Expected terminal to be a Terminal instance', { name: 'terminal', scope: 'CLI.constructor', value: params.terminal });
 		}
-
-		this.console = new Console(this.stdout, this.stderr);
+		this.terminal = params.terminal || terminal;
 
 		// set the default command
 		this.defaultCommand = params.defaultCommand;
@@ -143,7 +123,7 @@ export default class CLI extends Context {
 			}
 
 			// note: we must clone the help command params since the object gets modified
-			this.command('help', Object.assign({}, helpCommand));
+			this.command('help', { ...helpCommand });
 
 			this.option('-h, --help', 'displays the help screen');
 		}
@@ -168,7 +148,7 @@ export default class CLI extends Context {
 			this.option('-v, --version', {
 				callback: async ({ next, value }) => {
 					if (await next()) {
-						this.get('stdout').write(`${params.version}\n`);
+						this.terminal.stdout.write(`${params.version}\n`);
 						process.exit(0);
 					}
 				},
@@ -237,14 +217,12 @@ export default class CLI extends Context {
 				`${pluralize('context', contexts.length, true)}`
 			);
 
-			const clikit = Object.assign({}, require('./index'));
-
 			const results = {
 				_,
 				argv,
 				cli: this,
-				clikit,
-				console: this.console,
+				clikit: { ...require('./index') },
+				console: this.terminal.console,
 				contexts,
 				unknown,
 				warnings: this.warnings
@@ -262,13 +240,18 @@ export default class CLI extends Context {
 				contexts.unshift(cmd);
 			}
 
-			// wire up the banner
-			if (this.bannerObj) {
-				if (!argv.banner || (cmd instanceof Extension && !cmd.isCLIKitExtension && !cmd.get('showBannerForExternalCLIs'))) {
-					this.bannerObj.enabled = false;
-				} else if (cmd.banner) {
-					this.bannerObj.banner = cmd.banner;
+			// handle the banner
+			this.get('terminal').once('output', () => {
+				let banner = cmd.prop('banner');
+				if (banner && this.bannerEnabled) {
+					banner = String(typeof banner === 'function' ? banner() : banner).trim();
+					this.get('terminal').stdout.write(`${banner}\n\n`);
 				}
+			});
+			if (!argv.banner || (cmd instanceof Extension && !cmd.isCLIKitExtension && !cmd.get('showBannerForExternalCLIs'))) {
+				this.bannerEnabled = false;
+			} else if (cmd.banner) {
+				this.banner = cmd.banner;
 			}
 
 			results.help = () => renderHelp(cmd);
