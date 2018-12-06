@@ -208,7 +208,6 @@ export default class CLI extends Context {
 
 		try {
 			const { _, argv, contexts, unknown } = await parser.parse(unparsedArgs || process.argv.slice(2), this);
-			let cmd = contexts[0];
 
 			log('Parsing complete: ' +
 				`${pluralize('option', Object.keys(argv).length, true)}, ` +
@@ -220,49 +219,51 @@ export default class CLI extends Context {
 			const results = {
 				_,
 				argv,
-				cli: this,
-				clikit: { ...require('./index') },
-				console: this.terminal.console,
+				cli:      this,
+				clikit:   { ...require('./index') },
+				cmd:      contexts[0],
+				console:  this.terminal.console,
 				contexts,
+				help:     () => renderHelp(results.cmd),
+				result:   undefined,
 				unknown,
 				warnings: this.warnings
 			};
 
 			// determine the command to run
-			if (this.help && argv.help && (!(cmd instanceof Extension) || cmd.isCLIKitExtension)) {
+			if (this.help && argv.help && (!(results.cmd instanceof Extension) || results.cmd.isCLIKitExtension)) {
 				log('Selected help command');
-				cmd = this.commands.get('help');
-				contexts.unshift(cmd);
+				results.cmd = this.commands.get('help');
+				contexts.unshift(results.cmd);
 
-			} else if (!(cmd instanceof Command) && this.defaultCommand && this.commands.has(this.defaultCommand)) {
+			} else if (!(results.cmd instanceof Command) && this.defaultCommand && this.commands.has(this.defaultCommand)) {
 				log(`Selected default command: ${this.defaultCommand}`);
-				cmd = this.commands.get(this.defaultCommand);
-				contexts.unshift(cmd);
+				results.cmd = this.commands.get(this.defaultCommand);
+				contexts.unshift(results.cmd);
 			}
 
 			// handle the banner
 			this.get('terminal').once('output', () => {
-				let banner = cmd.prop('banner');
+				let banner = results.cmd.prop('banner');
 				if (banner && this.bannerEnabled) {
 					banner = String(typeof banner === 'function' ? banner() : banner).trim();
 					this.get('terminal').stdout.write(`${banner}\n\n`);
 				}
 			});
-			if (!argv.banner || (cmd instanceof Extension && !cmd.isCLIKitExtension && !cmd.get('showBannerForExternalCLIs'))) {
+			if (!argv.banner || (results.cmd instanceof Extension && !results.cmd.isCLIKitExtension && !results.cmd.get('showBannerForExternalCLIs'))) {
 				this.bannerEnabled = false;
-			} else if (cmd.banner) {
-				this.banner = cmd.banner;
+			} else if (results.cmd.banner) {
+				this.banner = results.cmd.banner;
 			}
-
-			results.help = () => renderHelp(cmd);
 
 			// execute the command
-			if (cmd && typeof cmd.action === 'function') {
-				log(`Executing command: ${highlight(cmd.name)}`);
-				return await cmd.action(results);
+			if (results.cmd && typeof results.cmd.action === 'function') {
+				log(`Executing command: ${highlight(results.cmd.name)}`);
+				results.result = await results.cmd.action(results);
+			} else {
+				log('No command to execute, returning parsed arguments');
 			}
 
-			log('No command to execute, returning parsed arguments');
 			return results;
 		} catch (err) {
 			error(err);

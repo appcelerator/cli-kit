@@ -445,7 +445,7 @@ section('Parsing')
 
 section('Prompting')
 	.set('Single-line text prompting', {
-		'cli-kit': true,
+		'cli-kit': undefined,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -670,7 +670,7 @@ section('Prompting')
 		yargs: null
 	})
 	.set('Multiple prompt chaining', {
-		'cli-kit': true,
+		'cli-kit': undefined,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -750,7 +750,7 @@ section('Prompting')
 		yargs: null
 	})
 	.set('Default prompt values', {
-		'cli-kit': true,
+		'cli-kit': undefined,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -824,7 +824,7 @@ section('Prompting')
 		yargs: null
 	})
 	.set('Custom prompt types/plugins', {
-		'cli-kit': true,
+		'cli-kit': undefined,
 		caporal: null,
 		commander: null,
 		dashdash: null,
