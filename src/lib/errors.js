@@ -18,6 +18,7 @@ createError('INVALID_OPTION_FORMAT',       TypeError,  'Unable to parse an optio
 createError('INVALID_PACKAGE_JSON',        Error,      'A package.json file does not exist, did not contain valid JSON, or define an object');
 createError('INVALID_VALUE',               Error,      'Unable to transform the value to the desired data type or conform to the required format');
 createError('MISSING_REQUIRED_ARGUMENT',   Error,      'A required command line argument was not found');
+createError('MISSING_REQUIRED_OPTION',     Error,      'A required command line option was not found');
 createError('NO_EXECUTABLE',               Error,      'Attempted to run an undefined executable');
 createError('NOT_AN_OPTION',               Error,      'An option is not an option and should be treated as an argument');
 createError('NOT_YES_NO',                  RangeError, 'The value is not "yes", "y", "no", or "n"');

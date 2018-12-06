@@ -1,5 +1,11 @@
 if (error) {
-	>>> ${error.message}
+	>> ${error.message}
+	if (error.code === 'ERR_MISSING_REQUIRED_OPTION') {
+		for (const option of error.meta.required) {
+			>>|  ${option.format}  ${option.desc}
+		}
+	}
+	>>
 }
 
 if (suggestions.length) {
@@ -51,7 +57,7 @@ if (options.count) {
 					if (option.short) {
 						s += `-${option.short},`;
 					}
-					>>|  ${s}--${option.long}${option.isFlag ? '' : ('=<' + (options.hint || 'value') + '>')}  ${option.desc || ''}
+					>>|  ${s}--${option.long}${option.isFlag ? '' : ('=<' + (option.hint || 'value') + '>')}  ${option.desc || ''}
 				}
 			}
 			>>

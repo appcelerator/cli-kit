@@ -57,17 +57,18 @@ export default class OptionList extends Map {
 			for (const opt of options.sort(sortFn)) {
 				if (!opt.hidden) {
 					group.push({
-						name:     opt.name,
+						aliases:  Object.keys(opt.aliases).filter(a => opt.aliases[a]),
+						datatype: opt.datatype,
+						default:  opt.default,
+						desc:     opt.desc,
+						hint:     opt.hint,
 						isFlag:   opt.isFlag,
 						long:     opt.long,
-						short:    opt.short,
-						desc:     opt.desc,
-						datatype: opt.datatype,
-						aliases:  Object.keys(opt.aliases).filter(a => opt.aliases[a]),
-						default:  opt.default,
 						max:      opt.max,
 						min:      opt.min,
-						required: opt.required
+						name:     opt.name,
+						required: opt.required,
+						short:    opt.short
 					});
 					count++;
 				}

@@ -102,7 +102,6 @@ export default class Option {
 		if (hint) {
 			const value = hint.match(valueRegExp);
 			if (value) {
-				params.required = value[1] === '<';
 				params.hint = hint = value[2].trim();
 			} else {
 				params.hint = hint;

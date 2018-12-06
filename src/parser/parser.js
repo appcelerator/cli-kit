@@ -85,6 +85,11 @@ export default class Parser {
 		const len = this.contexts.length;
 		log(`Processing default options and environment variables for ${highlight(len)} ${pluralize('context', len)}`);
 
+		const requiredOptions = {
+			long: {},
+			short: {}
+		};
+
 		for (let i = len; i; i--) {
 			const ctx = this.contexts[i - 1];
 
@@ -110,6 +115,22 @@ export default class Parser {
 							env[name] = option.transform(process.env[option.env]);
 						}
 					}
+
+					if (option.required) {
+						if (option.long) {
+							requiredOptions.long[option.long] = option;
+						}
+						if (option.short) {
+							requiredOptions.short[option.short] = option;
+						}
+					} else {
+						if (option.long) {
+							delete requiredOptions.long[option.long];
+						}
+						if (option.short) {
+							delete requiredOptions.short[option.short];
+						}
+					}
 				}
 			}
 
@@ -133,7 +154,12 @@ export default class Parser {
 			}
 		}
 
-		return env;
+		const required = new Set(Object.values(requiredOptions.long));
+		for (const option of Object.values(requiredOptions.short)) {
+			required.add(option);
+		}
+
+		return { env, required };
 	}
 
 	/**
@@ -167,7 +193,7 @@ export default class Parser {
 			ctx = this.contexts[0];
 
 			// gather the default option values and environment variable values
-			const env = this.applyDefaults();
+			const { env, required } = this.applyDefaults();
 
 			// loop over the parsed args and fill in the `argv` and `_`
 			log('Filling argv and _');
@@ -227,6 +253,9 @@ export default class Parser {
 						} else {
 							this.argv[name] = parsedArg.value;
 						}
+						if (this.argv[name] !== undefined) {
+							required.delete(parsedArg.option);
+						}
 						break;
 
 					case 'unknown':
@@ -252,13 +281,20 @@ export default class Parser {
 			// add the extra items
 			this._.push.apply(this._, extra);
 
-			// check for missing arguments if help is not specified
+			// check for missing arguments and options if help is not specified
 			if (!this.argv.help) {
 				// note that `i` has been incrementing above for each known argument
 				for (const len = ctx.args.length; i < len; i++) {
 					if (ctx.args[i].required) {
 						throw E.MISSING_REQUIRED_ARGUMENT(`Missing required argument "${ctx.args[i].name}"`, { name: 'args', scope: 'Parser.parse', value: ctx.args[i] });
 					}
+				}
+
+				if (required.size) {
+					throw E.MISSING_REQUIRED_OPTION(
+						`Missing ${required.size} missing option${required.size === 1 ? '' : 's'}:`,
+						{ name: 'options', scope: 'Parser.parse', required: required.values() }
+					);
 				}
 			}
 

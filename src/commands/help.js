@@ -75,6 +75,7 @@ export default {
 				return err ? {
 					code:    err.code,
 					message: err.message,
+					meta:    err.meta,
 					stack:   err.stack,
 					type:    err.constructor && err.constructor.name || null
 				} : null;
