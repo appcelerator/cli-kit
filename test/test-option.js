@@ -81,42 +81,36 @@ describe('Option', () => {
 			const opt = new Option('-p <name>');
 			expect(opt.short).to.equal('p');
 			expect(opt.hint).to.equal('name');
-			expect(opt.required).to.be.true;
 		});
 
 		it('should parse long required option hint', () => {
 			const opt = new Option('--platform <name>');
 			expect(opt.long).to.equal('platform');
 			expect(opt.hint).to.equal('name');
-			expect(opt.required).to.be.true;
 		});
 
 		it('should parse short and long required option hint', () => {
 			const opt = new Option('-p, --platform <name>');
 			expect(opt.long).to.equal('platform');
 			expect(opt.hint).to.equal('name');
-			expect(opt.required).to.be.true;
 		});
 
 		it('should parse short optional option hint', () => {
 			const opt = new Option('-p [name]');
 			expect(opt.short).to.equal('p');
 			expect(opt.hint).to.equal('name');
-			expect(opt.required).to.be.false;
 		});
 
 		it('should parse long optional option hint', () => {
 			const opt = new Option('--platform [name]');
 			expect(opt.long).to.equal('platform');
 			expect(opt.hint).to.equal('name');
-			expect(opt.required).to.be.false;
 		});
 
 		it('should parse short and long optional option hint', () => {
 			const opt = new Option('-p, --platform [name]');
 			expect(opt.long).to.equal('platform');
 			expect(opt.hint).to.equal('name');
-			expect(opt.required).to.be.false;
 		});
 
 		it('should parse negated option', () => {
