@@ -64,7 +64,7 @@
     "esdoc-standard-plugin": "^1.0.0",
     "eslint-plugin-security": "^1.4.0",
     "fs-extra": "^7.0.1",
-    "gulp": "^3.9.1",
+    "gulp": "^4.0.0",
     "gulp-babel": "next",
     "gulp-debug": "^4.0.0",
     "gulp-eslint": "^5.0.0",
