@@ -1,9 +1,10 @@
 import camelCase from 'lodash.camelcase';
 import Context from './context';
-import debug, { pluralize } from '../lib/debug';
+import debug from '../lib/debug';
 import E from '../lib/errors';
 import Extension from './extension';
 import ParsedArgument from './parsed-argument';
+import pluralize from 'pluralize';
 
 import { declareCLIKitClass } from '../lib/util';
 import { transformValue } from './types';

@@ -15,6 +15,7 @@ import * as template from './render/template';
 import * as types from './parser/types';
 import * as util from './lib/util';
 
+import pluralize from 'pluralize';
 import snooplogg from 'snooplogg';
 
 export default CLI;
@@ -27,6 +28,7 @@ export {
 	Command,
 	Option,
 	Extension,
+	pluralize,
 	snooplogg,
 	template,
 	Terminal,
@@ -34,4 +36,4 @@ export {
 	util
 };
 
-export const { chalk, humanize, moment, pluralize, symbols } = snooplogg;
+export const { chalk } = snooplogg;

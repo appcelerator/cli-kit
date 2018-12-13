@@ -5,6 +5,7 @@ A command line application toolkit for Node.js.
 [![NPM Version][npm-image]][npm-url]
 [![NPM Downloads][downloads-image]][downloads-url]
 [![Travis CI Build][travis-image]][travis-url]
+[![Appveyor CI Build][appveyor-image]][appveyor-url]
 [![Test Coverage][coveralls-image]][coveralls-url]
 [![Greenkeeper badge][greenkeeper-image]][greenkeeper-url]
 [![Deps][david-image]][david-url]
@@ -270,7 +271,7 @@ Adds an option or group of options to a `CLI` or `Command`.
 <thead><tr><td><h3>General</h3></td><th scope="col"><a href="https://npmjs.com/package/cli-kit">cli-kit</a></th><th scope="col"><a href="https://npmjs.com/package/caporal">Caporal.js</a></th><th scope="col"><a href="https://npmjs.com/package/commander">Commander.js</a></th><th scope="col"><a href="https://npmjs.com/package/dashdash">dashdash</a></th><th scope="col"><a href="https://npmjs.com/package/fields">fields</a></th><th scope="col"><a href="https://npmjs.com/package/getopts">getopts</a></th><th scope="col"><a href="https://npmjs.com/package/inquirer">inquirer</a></th><th scope="col"><a href="https://npmjs.com/package/meow">meow</a></th><th scope="col"><a href="https://npmjs.com/package/minimist">minimist</a></th><th scope="col"><a href="https://npmjs.com/package/mri">mri</a></th><th scope="col"><a href="https://npmjs.com/package/oclif">oclif</a></th><th scope="col"><a href="https://npmjs.com/package/prompt">prompt</a></th><th scope="col"><a href="https://npmjs.com/package/promptly">promptly</a></th><th scope="col"><a href="https://npmjs.com/package/prompts">prompts</a></th><th scope="col"><a href="https://npmjs.com/package/yargs">yargs</a></th></tr></thead>
 
 <tbody>
-<tr><td>Latest version</td><td>0.4.0</td><td>1.1.0</td><td>2.19.0</td><td>1.14.1</td><td>0.1.24</td><td>2.2.3</td><td>6.2.1</td><td>5.0.0</td><td>1.2.0</td><td>1.1.1</td><td>1.12.7</td><td>1.0.0</td><td>3.0.3</td><td>1.2.1</td><td>12.0.5</td></tr>
+<tr><td>Latest version</td><td>0.4.1</td><td>1.1.0</td><td>2.19.0</td><td>1.14.1</td><td>0.1.24</td><td>2.2.3</td><td>6.2.1</td><td>5.0.0</td><td>1.2.0</td><td>1.1.1</td><td>1.12.7</td><td>1.0.0</td><td>3.0.3</td><td>2.0.0</td><td>12.0.5</td></tr>
 <tr><td>Actively maintained <br> (within last year)</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:warning:<br>Last release Dec 2016</td><td>:warning:<br>Last release Jul 2015</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:warning:<br>Last release Sep 2015</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:warning:<br>Last release Mar 2016</td><td>:white_check_mark:</td><td>:white_check_mark:</td><td>:white_check_mark:</td></tr>
 <tr><td>License</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td><td>MIT</td></tr>
 <tr><td>Language</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>TypeScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td><td>JavaScript</td></tr>
@@ -323,6 +324,7 @@ Adds an option or group of options to a `CLI` or `Command`.
 <tr><td>Auto-suggest mismatch</td><td>:grey_question:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>n/a</td><td>:white_check_mark: <sub><a href="#comparison-footnote-16">16</a></sub></td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:white_check_mark:</td><td>:x:</td><td>:x:</td><td>n/a</td></tr>
 <tr><td>Autocomplete</td><td>:grey_question:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:white_check_mark:</td><td>n/a</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td></tr>
 <tr><td>Custom prompt types/plugins</td><td>:grey_question:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>n/a</td><td>:white_check_mark:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:x:</td><td>n/a</td></tr>
+<tr><td>Multiple answers (repeat prompt)</td><td>:grey_question:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>n/a</td><td>:x:</td><td>n/a</td><td>n/a</td><td>n/a</td><td>:x:</td><td>:x:</td><td>:x:</td><td>:white_check_mark:</td><td>n/a</td></tr>
 </tbody>
 
 <thead><tr><td><h3>Logging</h3></td><th scope="col"><a href="https://npmjs.com/package/cli-kit">cli-kit</a></th><th scope="col"><a href="https://npmjs.com/package/caporal">Caporal.js</a></th><th scope="col"><a href="https://npmjs.com/package/commander">Commander.js</a></th><th scope="col"><a href="https://npmjs.com/package/dashdash">dashdash</a></th><th scope="col"><a href="https://npmjs.com/package/fields">fields</a></th><th scope="col"><a href="https://npmjs.com/package/getopts">getopts</a></th><th scope="col"><a href="https://npmjs.com/package/inquirer">inquirer</a></th><th scope="col"><a href="https://npmjs.com/package/meow">meow</a></th><th scope="col"><a href="https://npmjs.com/package/minimist">minimist</a></th><th scope="col"><a href="https://npmjs.com/package/mri">mri</a></th><th scope="col"><a href="https://npmjs.com/package/oclif">oclif</a></th><th scope="col"><a href="https://npmjs.com/package/prompt">prompt</a></th><th scope="col"><a href="https://npmjs.com/package/promptly">promptly</a></th><th scope="col"><a href="https://npmjs.com/package/prompts">prompts</a></th><th scope="col"><a href="https://npmjs.com/package/yargs">yargs</a></th></tr></thead>
@@ -384,8 +386,10 @@ MIT
 [npm-url]: https://npmjs.org/package/cli-kit
 [downloads-image]: https://img.shields.io/npm/dm/cli-kit.svg
 [downloads-url]: https://npmjs.org/package/cli-kit
-[travis-image]: https://img.shields.io/travis/cb1kenobi/cli-kit.svg
+[travis-image]: https://travis-ci.org/cb1kenobi/cli-kit.svg?branch=master
 [travis-url]: https://travis-ci.org/cb1kenobi/cli-kit
+[appveyor-image]: https://ci.appveyor.com/api/projects/status/nhbqpsx6jc10xnjw?svg=true
+[appveyor-url]: https://ci.appveyor.com/project/cb1kenobi/cli-kit
 [coveralls-image]: https://img.shields.io/coveralls/cb1kenobi/cli-kit/master.svg
 [coveralls-url]: https://coveralls.io/r/cb1kenobi/cli-kit
 [greenkeeper-image]: https://badges.greenkeeper.io/cb1kenobi/cli-kit.svg

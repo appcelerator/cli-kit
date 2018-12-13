@@ -7,6 +7,7 @@ import fs from 'fs-extra';
 import helpCommand, { renderHelp } from './commands/help';
 import Parser from './parser/parser';
 import path from 'path';
+import pluralize from 'pluralize';
 import semver from 'semver';
 import Terminal from './terminal';
 
@@ -15,7 +16,6 @@ import { terminal } from './index';
 
 const { error, log, warn } = debug('cli-kit:cli');
 const { highlight }  = debug.styles;
-const { pluralize } = debug;
 
 /**
  * The required Node.js version for cli-kit. This is used to assert the Node version at runtime.

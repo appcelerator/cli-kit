@@ -839,6 +839,23 @@ section('Prompting')
 		promptly: false,
 		prompts: false,
 		yargs: null
+	})
+	.set('Multiple answers (repeat prompt)', {
+		'cli-kit': undefined,
+		caporal: null,
+		commander: null,
+		dashdash: null,
+		fields: false,
+		getopts: null,
+		inquirer: false,
+		meow: null,
+		minimist: null,
+		mri: null,
+		oclif: false,
+		prompt: false,
+		promptly: false,
+		prompts: true,
+		yargs: null
 	});
 
 section('Logging')

@@ -11,5 +11,3 @@ export const logger = snooplogg.config({
 });
 
 export default logger;
-
-export const { pluralize } = snooplogg;
