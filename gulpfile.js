@@ -11,9 +11,10 @@ const spawnSync  = require('child_process').spawnSync;
 
 const { parallel, series } = gulp;
 
-const coverageDir = path.join(__dirname, 'coverage');
-const distDir     = path.join(__dirname, 'dist');
-const docsDir     = path.join(__dirname, 'docs');
+const coverageDir   = path.join(__dirname, 'coverage');
+const distDir       = path.join(__dirname, 'dist');
+const docsDir       = path.join(__dirname, 'docs');
+const testCLIKitDir = path.join(__dirname, 'test', 'fixtures', 'cli-kit-ext', 'node_modules', 'cli-kit');
 
 /*
  * Clean tasks
@@ -21,7 +22,8 @@ const docsDir     = path.join(__dirname, 'docs');
 async function cleanCoverage() { return fs.remove(coverageDir); }
 async function cleanDist() { return fs.remove(distDir); }
 async function cleanDocs() { return fs.remove(docsDir); }
-exports.clean = parallel(cleanCoverage, cleanDist, cleanDocs);
+async function cleanTest() { return fs.remove(testCLIKitDir); }
+exports.clean = parallel(cleanCoverage, cleanDist, cleanDocs, cleanTest);
 
 /*
  * lint tasks
@@ -42,7 +44,9 @@ exports.lint = parallel(lintSrc, lintTest);
 /*
  * build tasks
  */
-async function build() {
+const build = series(parallel(cleanDist, cleanTest, lintSrc), function build() {
+	fs.copySync(path.join(__dirname, 'package.json'), path.resolve(testCLIKitDir, 'package.json'));
+
 	return gulp
 		.src('src/**/*.js')
 		.pipe($.plumber())
@@ -52,10 +56,10 @@ async function build() {
 			sourceRoot: 'src'
 		}))
 		.pipe($.sourcemaps.write())
-		.pipe(gulp.dest(distDir));
-}
-exports.build = series(parallel(cleanDist, lintSrc), build);
-exports.default = exports.build;
+		.pipe(gulp.dest(distDir))
+		.pipe(gulp.dest(path.join(testCLIKitDir, 'dist')));
+});
+exports.build = exports.default = build;
 
 exports.docs = series(parallel(cleanDocs, lintSrc), async () => {
 	const esdoc = require('esdoc').default;
@@ -184,7 +188,7 @@ function resolveModule(name) {
 	}
 }
 
-exports.test             = series(parallel(lintTest, build),                () => runTests());
-exports['test-only']     = series(lintTest,                                 () => runTests());
-exports.coverage         = series(parallel(cleanCoverage, lintTest, build), () => runTests(true));
-exports['coverage-only'] = series(parallel(cleanCoverage, lintTest),        () => runTests(true));
+exports.test             = series(parallel(lintTest, build),                function test() { return runTests(); });
+exports['test-only']     = exports.test;
+exports.coverage         = series(parallel(cleanCoverage, lintTest), build, function test() { return runTests(true); });
+exports['coverage-only'] = exports.coverage;
