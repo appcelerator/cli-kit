@@ -411,7 +411,8 @@ export default class Parser {
 							}
 							throw err;
 						})
-						.then(resolve, reject);
+						.then(resolve)
+						.catch(reject);
 				});
 			}
 		}
