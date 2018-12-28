@@ -104,6 +104,7 @@ export default class CLI extends Context {
 		this.colors                = params.colors !== false;
 		this.errorIfUnknownCommand = params.errorIfUnknownCommand !== false;
 		this.helpExitCode          = params.helpExitCode;
+		this.showHelpOnError       = params.showHelpOnError === false ? false : true;
 		this.nodeVersion           = params.nodeVersion;
 		this.warnings              = [];
 

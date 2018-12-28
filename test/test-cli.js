@@ -81,6 +81,26 @@ describe('CLI', () => {
 				scope: 'Context.registerCommand'
 			});
 		});
+
+		it('should throw exception showHelpOnError is false', () => {
+			const out = new WritableStream();
+			const cli = new CLI({
+				showHelpOnError: false,
+				commands: {
+					foo() {
+						throw new Error('errors!');
+					}
+				},
+				name: 'test-cli'
+			});
+			expect(cli.showHelpOnError).to.equal(false);
+
+			return cli.exec([ 'foo' ])
+				.then(() => expect.fail('unexpected'))
+				.catch(err => {
+					expect(err.message).to.equal('errors!');
+				});
+		});
 	});
 
 	describe('Banner', () => {
