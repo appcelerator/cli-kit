@@ -206,7 +206,7 @@ export default class CLI extends Context {
 		}
 
 		const parser = new Parser();
-		let showHelpOnError = this.showHelpOnError;
+		let { showHelpOnError } = this;
 
 		try {
 			const { _, argv, contexts, unknown } = await parser.parse(unparsedArgs || process.argv.slice(2), this);
@@ -259,9 +259,7 @@ export default class CLI extends Context {
 			}
 
 			// allow command to override showHelpOnError if not set already
-			if (showHelpOnError === undefined && results.cmd.get('showHelpOnError') === false) {
-				showHelpOnError = false;
-			}
+			showHelpOnError = results.cmd.prop('showHelpOnError');
 
 			// execute the command
 			if (results.cmd && typeof results.cmd.action === 'function') {
