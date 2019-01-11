@@ -2,6 +2,7 @@ process.env.NO_UPDATE_NOTIFIER = '1';
 
 const packages = {
 	'cli-kit': {},
+	arg: {},
 	caporal: {
 		title: 'Caporal.js'
 	},
@@ -78,6 +79,7 @@ section('General')
 	}, {}))
 	.set('License', {
 		'cli-kit': 'MIT',
+		arg: 'MIT',
 		caporal: 'MIT',
 		commander: 'MIT',
 		dashdash: 'MIT',
@@ -95,6 +97,7 @@ section('General')
 	})
 	.set('Language', {
 		'cli-kit': 'JavaScript',
+		arg: 'JavaScript',
 		caporal: 'JavaScript',
 		commander: 'JavaScript',
 		dashdash: 'JavaScript',
@@ -112,6 +115,7 @@ section('General')
 	})
 	.set('Async/promise support', {
 		'cli-kit': true,
+		arg: false,
 		caporal: {
 			value: true,
 			note: 'Command actions only. The actually parsing is sync.'
@@ -135,6 +139,7 @@ section('General')
 	})
 	.set('Data type coercion', {
 		'cli-kit': true,
+		arg: true,
 		caporal: true,
 		commander: true,
 		dashdash: true,
@@ -152,6 +157,7 @@ section('General')
 	})
 	.set('User-defined input/output stream', {
 		'cli-kit': true,
+		arg: false,
 		caporal: false,
 		commander: false,
 		dashdash: false,
@@ -171,6 +177,7 @@ section('General')
 section('Parsing')
 	.set('Command', {
 		'cli-kit': true,
+		arg: false,
 		caporal: true,
 		commander: true,
 		dashdash: false,
@@ -188,6 +195,7 @@ section('Parsing')
 	})
 	.set('Command aliases', {
 		'cli-kit': true,
+		arg: false,
 		caporal: true,
 		commander: true,
 		dashdash: false,
@@ -205,6 +213,7 @@ section('Parsing')
 	})
 	.set('Subcommands', {
 		'cli-kit': true,
+		arg: false,
 		caporal: {
 			value: 'warn',
 			note: 'Requires reparsing with subcommand context or manually subprocessing.'
@@ -231,6 +240,7 @@ section('Parsing')
 	})
 	.set('Options', {
 		'cli-kit': true,
+		arg: true,
 		caporal: true,
 		commander: true,
 		dashdash: true,
@@ -248,6 +258,7 @@ section('Parsing')
 	})
 	.set('Options aliases', {
 		'cli-kit': true,
+		arg: true,
 		caporal: false,
 		commander: false,
 		dashdash: true,
@@ -265,6 +276,7 @@ section('Parsing')
 	})
 	.set('Custom option validator', {
 		'cli-kit': true,
+		arg: true,
 		caporal: true,
 		commander: true,
 		dashdash: false,
@@ -285,6 +297,7 @@ section('Parsing')
 	})
 	.set('Flags (true/false)', {
 		'cli-kit': true,
+		arg: true,
 		caporal: false,
 		commander: true,
 		dashdash: true,
@@ -302,6 +315,7 @@ section('Parsing')
 	})
 	.set('Flag negation (<code>--no-&lt;name&gt;</code>)', {
 		'cli-kit': true,
+		arg: false,
 		caporal: false,
 		commander: true,
 		dashdash: false,
@@ -319,6 +333,7 @@ section('Parsing')
 	})
 	.set('Argument support', {
 		'cli-kit': true,
+		arg: true,
 		caporal: true,
 		commander: true,
 		dashdash: true,
@@ -336,6 +351,7 @@ section('Parsing')
 	})
 	.set('Custom argument validator', {
 		'cli-kit': true,
+		arg: false,
 		caporal: true,
 		commander: true,
 		dashdash: false,
@@ -353,6 +369,7 @@ section('Parsing')
 	})
 	.set('Stop parsing <code>--</code>', {
 		'cli-kit': true,
+		arg: true,
 		caporal: true,
 		commander: true,
 		dashdash: true,
@@ -370,6 +387,7 @@ section('Parsing')
 	})
 	.set('Default option/argument values', {
 		'cli-kit': true,
+		arg: false,
 		caporal: true,
 		commander: true,
 		dashdash: true,
@@ -387,6 +405,7 @@ section('Parsing')
 	})
 	.set('Environment variable support', {
 		'cli-kit': true,
+		arg: false,
 		caporal: false,
 		commander: false,
 		dashdash: true,
@@ -407,6 +426,7 @@ section('Parsing')
 	})
 	.set('Auto-generated help screen', {
 		'cli-kit': true,
+		arg: false,
 		caporal: true,
 		commander: true,
 		dashdash: {
@@ -427,6 +447,7 @@ section('Parsing')
 	})
 	.set('Custom help exit code', {
 		'cli-kit': true,
+		arg: false,
 		caporal: false,
 		commander: false,
 		dashdash: false,
@@ -446,6 +467,7 @@ section('Parsing')
 section('Prompting')
 	.set('Single-line text prompting', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -463,6 +485,7 @@ section('Prompting')
 	})
 	.set('Multi-line text prompting', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -480,6 +503,7 @@ section('Prompting')
 	})
 	.set('Password prompting', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -500,6 +524,7 @@ section('Prompting')
 	})
 	.set('Confirm (yes/no) prompting', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -520,6 +545,7 @@ section('Prompting')
 	})
 	.set('Press any key to continue prompting', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -537,6 +563,7 @@ section('Prompting')
 	})
 	.set('Inline list prompting', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -563,6 +590,7 @@ section('Prompting')
 	})
 	.set('Numbered select list prompting', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -580,6 +608,7 @@ section('Prompting')
 	})
 	.set('Scrollable select list prompting', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -597,6 +626,7 @@ section('Prompting')
 	})
 	.set('Multi-select/checkbox list prompting', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -614,6 +644,7 @@ section('Prompting')
 	})
 	.set('File/directory prompting', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -634,6 +665,7 @@ section('Prompting')
 	})
 	.set('Numeric-only prompting', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -651,6 +683,7 @@ section('Prompting')
 	})
 	.set('Date/time prompting', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -671,6 +704,7 @@ section('Prompting')
 	})
 	.set('Multiple prompt chaining', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -688,6 +722,7 @@ section('Prompting')
 	})
 	.set('External editor support', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -705,6 +740,7 @@ section('Prompting')
 	})
 	.set('Custom value formatter/transformer', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -734,6 +770,7 @@ section('Prompting')
 	})
 	.set('Custom validation', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -751,6 +788,7 @@ section('Prompting')
 	})
 	.set('Default prompt values', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -768,6 +806,7 @@ section('Prompting')
 	})
 	.set('Prompt history', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -788,6 +827,7 @@ section('Prompting')
 	})
 	.set('Auto-suggest mismatch', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -808,6 +848,7 @@ section('Prompting')
 	})
 	.set('Autocomplete', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -825,6 +866,7 @@ section('Prompting')
 	})
 	.set('Custom prompt types/plugins', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -842,6 +884,7 @@ section('Prompting')
 	})
 	.set('Multiple answers (repeat prompt)', {
 		'cli-kit': undefined,
+		arg: null,
 		caporal: null,
 		commander: null,
 		dashdash: null,
@@ -861,6 +904,7 @@ section('Prompting')
 section('Logging')
 	.set('Application logging', {
 		'cli-kit': true,
+		arg: null,
 		caporal: {
 			value: true,
 			note: 'Via [winston](https://npmjs.com/package/winston).'
@@ -884,6 +928,7 @@ section('Logging')
 			value: true,
 			note: 'Uses [snooplogg](https://npmjs.com/package/snooplogg).'
 		},
+		arg: null,
 		caporal: false,
 		commander: null,
 		dashdash: null,
@@ -904,28 +949,30 @@ section('Logging')
 			value: true,
 			note: 'Uses [snooplogg](https://npmjs.com/package/snooplogg).'
 		},
+		arg: false,
 		caporal: false,
-		commander: null,
-		dashdash: null,
+		commander: false,
+		dashdash: false,
 		fields: false,
 		getopts: false,
-		inquirer: null,
-		meow: null,
-		minimist: null,
-		mri: null,
+		inquirer: false,
+		meow: false,
+		minimist: false,
+		mri: false,
 		oclif: {
 			value: true,
 			note: 'Uses [debug](https://npmjs.com/package/debug).'
 		},
-		prompt: null,
-		promptly: null,
-		prompts: null,
-		yargs: null
+		prompt: false,
+		promptly: false,
+		prompts: false,
+		yargs: false
 	});
 
 section('Misc')
 	.set('Dedicated website', {
 		'cli-kit': true,
+		arg: false,
 		caporal: false,
 		commander: false,
 		dashdash: false,
@@ -943,6 +990,7 @@ section('Misc')
 	})
 	.set('External CLI extensions', {
 		'cli-kit': true,
+		arg: false,
 		caporal: false,
 		commander: false,
 		dashdash: false,
@@ -960,6 +1008,7 @@ section('Misc')
 	})
 	.set('Internal hook system', {
 		'cli-kit': true,
+		arg: false,
 		caporal: false,
 		commander: false,
 		dashdash: false,
@@ -977,6 +1026,7 @@ section('Misc')
 	})
 	.set('Bash completion', {
 		'cli-kit': undefined,
+		arg: false,
 		caporal: true,
 		commander: false,
 		dashdash: true,
@@ -994,6 +1044,7 @@ section('Misc')
 	})
 	.set('REPL', {
 		'cli-kit': undefined,
+		arg: false,
 		caporal: false,
 		commander: false,
 		dashdash: false,
@@ -1011,6 +1062,7 @@ section('Misc')
 	})
 	.set('Built-in i18n support', {
 		'cli-kit': undefined,
+		arg: false,
 		caporal: false,
 		commander: false,
 		dashdash: false,
@@ -1028,6 +1080,7 @@ section('Misc')
 	})
 	.set('Project generator CLI', {
 		'cli-kit': undefined,
+		arg: false,
 		caporal: false,
 		commander: {
 			value: true,
@@ -1051,6 +1104,7 @@ section('Misc')
 	})
 	.set('Built-in update notifications', {
 		'cli-kit': undefined,
+		arg: false,
 		caporal: false,
 		commander: false,
 		dashdash: false,
