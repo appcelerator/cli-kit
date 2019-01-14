@@ -64,6 +64,34 @@ describe('CLI', () => {
 			});
 		});
 
+		it('should error if default command is not a string or function', () => {
+			expectThrow(() => {
+				new CLI({
+					defaultCommand: null
+				});
+			}, {
+				type:  Error,
+				msg:   'Expected default command to be a string or function',
+				code:  'ERR_INVALID_ARGUMENT',
+				name:  'defaultCommand',
+				scope: 'CLI.constructor',
+				value: null
+			});
+
+			expectThrow(() => {
+				new CLI({
+					defaultCommand: 123
+				});
+			}, {
+				type:  Error,
+				msg:   'Expected default command to be a string or function',
+				code:  'ERR_INVALID_ARGUMENT',
+				name:  'defaultCommand',
+				scope: 'CLI.constructor',
+				value: 123
+			});
+		});
+
 		it('should error if when adding an existing command', () => {
 			expectThrow(() => {
 				const cli = new CLI({

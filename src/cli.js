@@ -38,7 +38,8 @@ export default class CLI extends Context {
 	 * @param {String|Function} [params.banner] - A banner or a function that returns the banner
 	 * to be displayed before each command.
 	 * @param {Boolean} [params.colors=true] - Enables colors, specifically on the help screen.
-	 * @param {Boolean} [params.defaultCommand] - The default command to execute.
+	 * @param {String|Function} [params.defaultCommand] - The default command to execute. When a
+	 * string, it will lookup the command
 	 * @param {Boolean} [params.errorIfUnknownCommand=true] - When `true`, `help` is enabled, and
 	 * the parser didn't find a command, but it did find an unknown argument, it will show the help
 	 * screen with an unknown command error.
@@ -114,7 +115,11 @@ export default class CLI extends Context {
 		this.terminal = params.terminal || terminal;
 
 		// set the default command
-		this.defaultCommand = params.defaultCommand;
+		const { defaultCommand } = params;
+		if (defaultCommand !== undefined && typeof defaultCommand !== 'string' && typeof defaultCommand !== 'function') {
+			throw E.INVALID_ARGUMENT('Expected default command to be a string or function', { name: 'defaultCommand', scope: 'CLI.constructor', value: defaultCommand });
+		}
+		this.defaultCommand = defaultCommand;
 
 		// add the built-in help
 		this.help = !!params.help;
@@ -238,9 +243,12 @@ export default class CLI extends Context {
 				results.cmd = this.commands.get('help');
 				contexts.unshift(results.cmd);
 
-			} else if (!(results.cmd instanceof Command) && this.defaultCommand && this.commands.has(this.defaultCommand)) {
+			} else if (!(results.cmd instanceof Command) && typeof this.defaultCommand === 'string') {
 				log(`Selected default command: ${this.defaultCommand}`);
 				results.cmd = this.commands.get(this.defaultCommand);
+				if (!(results.cmd instanceof Command)) {
+					throw E.DEFAULT_COMMAND_NOT_FOUND(`The default command "${this.defaultCommand}" was not found!`);
+				}
 				contexts.unshift(results.cmd);
 			}
 
@@ -265,6 +273,9 @@ export default class CLI extends Context {
 			if (results.cmd && typeof results.cmd.action === 'function') {
 				log(`Executing command: ${highlight(results.cmd.name)}`);
 				results.result = await results.cmd.action(results);
+			} else if (typeof this.defaultCommand  === 'function') {
+				log(`Executing default command: ${highlight(this.defaultCommand.name || 'anonymous')}`);
+				results.result = await this.defaultCommand(results);
 			} else {
 				log('No command to execute, returning parsed arguments');
 			}

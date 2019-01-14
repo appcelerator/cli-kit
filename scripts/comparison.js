@@ -26,9 +26,10 @@ const packages = {
 const fs = require('fs');
 const path = require('path');
 const spawnSync = require('child_process').spawnSync;
-const sections = {}
+const sections = {};
 const section = name => (sections[name] = new Map());
 const months = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
+const pkgJson = require('../package.json');
 const readme = path.resolve(__dirname, '..', 'README.md');
 const contents = fs.readFileSync(readme, 'utf8');
 const startLabel = '<!-- COMPARISON START -->';
@@ -42,26 +43,33 @@ if (start === -1 || end === -1) {
 
 // populate info from npm
 for (const name of Object.keys(packages)) {
-	const { status, stdout, stderr } = spawnSync('npm', [ 'view', name, '--json' ]);
-	if (status) {
-		console.error(`Failed to get npm info for "${name}" (code ${status}):`);
-		console.error(stderr.toString().trim());
-		process.exit(1);
-	}
+	if (name === 'cli-kit') {
+		packages[name].version = pkgJson.version;
+		packages[name].url = `https://npmjs.com/package/${name}`;
+		packages[name].time = new Date();
+		packages[name].fresh = true;
+	} else {
+		const { status, stdout, stderr } = spawnSync('npm', [ 'view', name, '--json' ]);
+		if (status) {
+			console.error(`Failed to get npm info for "${name}" (code ${status}):`);
+			console.error(stderr.toString().trim());
+			process.exit(1);
+		}
 
-	let json;
-	try {
-		json = JSON.parse(stdout.toString());
-	} catch (e) {
-		console.error(`Unable to JSON parse npm info for "${name}":`);
-		console.error(e);
-		process.exit(1);
-	}
+		let json;
+		try {
+			json = JSON.parse(stdout.toString());
+		} catch (e) {
+			console.error(`Unable to JSON parse npm info for "${name}":`);
+			console.error(e);
+			process.exit(1);
+		}
 
-	packages[name].version = json.version;
-	packages[name].url = `https://npmjs.com/package/${name}`;
-	packages[name].time = new Date(json.time[json.version]);
-	packages[name].fresh = (new Date() - packages[name].time) < (365 * 24 * 60 * 60 * 1000);
+		packages[name].version = json.version;
+		packages[name].url = `https://npmjs.com/package/${name}`;
+		packages[name].time = new Date(json.time[json.version]);
+		packages[name].fresh = (new Date() - packages[name].time) < (365 * 24 * 60 * 60 * 1000);
+	}
 }
 
 section('General')
@@ -211,6 +219,24 @@ section('Parsing')
 		prompts: null,
 		yargs: true
 	})
+	.set('Default command', {
+		'cli-kit': true,
+		arg: false,
+		caporal: false,
+		commander: false,
+		dashdash: false,
+		fields: null,
+		getopts: false,
+		inquirer: null,
+		meow: false,
+		minimist: false,
+		mri: false,
+		oclif: false,
+		prompt: null,
+		promptly: null,
+		prompts: null,
+		yargs: true
+	})
 	.set('Subcommands', {
 		'cli-kit': true,
 		arg: false,
@@ -229,7 +255,10 @@ section('Parsing')
 		meow: false,
 		minimist: false,
 		mri: false,
-		oclif: true,
+		oclif: {
+			value: 'warn',
+			note: 'Subcommands must be prefixed with the parent command and a colon in order to be a valid topic name.'
+		},
 		prompt: null,
 		promptly: null,
 		prompts: null,
