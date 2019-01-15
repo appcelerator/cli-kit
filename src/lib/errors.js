@@ -5,6 +5,7 @@ createError('ALREADY_EXISTS',              Error,      'A object with the same n
 createError('CONFLICT',                    Error,      'A parameter conflicts with the value of another parameter');
 createError('DEFAULT_COMMAND_NOT_FOUND',   Error,      'The default command was not found');
 createError('EMPTY_STRING',                Error,      'A string value was undefined, null, empty, or false');
+createError('FILE_NOT_FOUND',              Error,      'The file does not exist or access is restricted');
 createError('INVALID_ALIAS',               TypeError,  'An alias is empty, not a string, or an invalid format');
 createError('INVALID_ARGUMENT',            TypeError,  'A function argument is undefined or the incorrect data type');
 createError('INVALID_CLIKIT_OBJECT',       TypeError,  'A function was passed a cli-kit object that is not supported');

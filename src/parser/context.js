@@ -41,7 +41,9 @@ export default class Context extends HookEmitter {
 	 * @param {Object} [params] - Various parameters.
 	 * @param {Array<Object>} [params.args] - An array of arguments.
 	 * @param {Boolean} [params.camelCase=true] - Camel case option names.
-	 * @param {Object|Map} [params.commands] - A map of command names to command descriptors.
+	 * @param {Object|Map|String|Array.<String>} [params.commands] - A map of command names to
+	 * command descriptors, a path to command .js file, a path to a directory of .js files, or an
+	 * array of paths to files or directories.
 	 * @param {String} [params.desc] - The description of the CLI or command displayed in the help
 	 * output.
 	 * @param {Object|Array.<String>} [params.extensions] - An map of extension names to extension
@@ -67,10 +69,6 @@ export default class Context extends HookEmitter {
 
 		if (params.args && !Array.isArray(params.args)) {
 			throw E.INVALID_ARGUMENT('Expected args to be an array', { name: 'args', scope: 'Context.constructor', value: params.args });
-		}
-
-		if (params.commands && (typeof params.commands !== 'object' || Array.isArray(params.commands))) {
-			throw E.INVALID_ARGUMENT('Expected commands to be an object', { name: 'commands', scope: 'Context.constructor', value: params.commands });
 		}
 
 		if (params.options && typeof params.options !== 'object') {
@@ -108,11 +106,50 @@ export default class Context extends HookEmitter {
 		this.camelCase = params.camelCase !== false;
 
 		// initialize the commands
-		if (params.commands) {
-			const isMap = params.commands instanceof Map;
-			const entries = isMap ? params.commands.entries() : Object.entries(params.commands);
-			for (const [ name, cmd ] of entries) {
-				this.command(name, cmd);
+		let { commands } = params;
+		if (commands) {
+			if (typeof commands === 'string') {
+				commands = [ commands ];
+			}
+
+			if (Array.isArray(commands)) {
+				const js = /^(.+)\.js$/;
+
+				for (let commandPath of commands) {
+					let m;
+					let stat;
+
+					commandPath = path.resolve(commandPath);
+
+					try {
+						stat = fs.statSync(commandPath);
+					} catch (e) {
+						if (e.code === 'ENOENT') {
+							throw E.FILE_NOT_FOUND(`Command path does not exist: ${commandPath}`, { name: 'commands', scope: 'Context.constructor', value: commandPath });
+						}
+						throw e;
+					}
+
+					if (stat.isDirectory()) {
+						for (const filename of fs.readdirSync(commandPath)) {
+							if (m = filename.match(js)) {
+								this.command(m[1], require(path.join(commandPath, filename)));
+							}
+						}
+					} else if (stat.isFile() && (m = commandPath.match(js))) {
+						this.command(m[1], require(commandPath));
+					}
+				}
+
+			} else if (typeof params.commands === 'object') {
+				const isMap = params.commands instanceof Map;
+				const entries = isMap ? params.commands.entries() : Object.entries(params.commands);
+				for (const [ name, cmd ] of entries) {
+					this.command(name, cmd);
+				}
+
+			} else {
+				throw E.INVALID_ARGUMENT('Expected commands to be an object, map, path, or array of paths', { name: 'commands', scope: 'Context.constructor', value: params.commands });
 			}
 		}
 

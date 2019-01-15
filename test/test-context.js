@@ -2,6 +2,7 @@ import Command from '../dist/parser/command';
 import Context from '../dist/parser/context';
 import Option from '../dist/parser/option';
 import Parser from '../dist/parser/parser';
+import path from 'path';
 
 describe('Context', () => {
 	describe('Constructor', () => {
@@ -33,12 +34,14 @@ describe('Context', () => {
 					commands: 123
 				});
 			}).to.throw(TypeError, 'Expected commands to be an object');
+		});
 
+		it('should error if commands path is invalid', () => {
 			expect(() => {
 				new Context({
-					commands: 'foo'
+					commands: 'does_not_exist'
 				});
-			}).to.throw(TypeError, 'Expected commands to be an object');
+			}).to.throw(Error, `Command path does not exist: ${path.resolve('.', 'does_not_exist')}`);
 		});
 
 		it('should error if options is invalid', () => {
