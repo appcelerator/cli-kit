@@ -133,11 +133,13 @@ export default class Context extends HookEmitter {
 					if (stat.isDirectory()) {
 						for (const filename of fs.readdirSync(commandPath)) {
 							if (m = filename.match(js)) {
-								this.command(m[1], require(path.join(commandPath, filename)));
+								const module = require(path.join(commandPath, filename));
+								this.command(m[1], module.__esModule ? module.default : module);
 							}
 						}
 					} else if (stat.isFile() && (m = commandPath.match(js))) {
-						this.command(m[1], require(commandPath));
+						const module = require(commandPath);
+						this.command(m[1], module.__esModule ? module.default : module);
 					}
 				}
 
