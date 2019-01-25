@@ -223,12 +223,14 @@ export default class CLI extends Context {
 				`${pluralize('context', contexts.length, true)}`
 			);
 
+			const cmd = contexts[0];
+
 			const results = {
 				_,
 				argv,
 				cli:      this,
 				clikit:   { ...require('./index') },
-				cmd:      contexts[0],
+				cmd,
 				console:  this.terminal.console,
 				contexts,
 				help:     () => renderHelp(results.cmd),
@@ -238,12 +240,12 @@ export default class CLI extends Context {
 			};
 
 			// determine the command to run
-			if (this.help && argv.help && (!(results.cmd instanceof Extension) || results.cmd.isCLIKitExtension)) {
+			if (this.help && argv.help && (!(cmd instanceof Extension) || cmd.isCLIKitExtension)) {
 				log('Selected help command');
 				results.cmd = this.commands.get('help');
 				contexts.unshift(results.cmd);
 
-			} else if (!(results.cmd instanceof Command) && typeof this.defaultCommand === 'string') {
+			} else if (!(cmd instanceof Command) && typeof this.defaultCommand === 'string') {
 				log(`Selected default command: ${this.defaultCommand}`);
 				results.cmd = this.commands.get(this.defaultCommand);
 				if (!(results.cmd instanceof Command)) {
@@ -254,7 +256,7 @@ export default class CLI extends Context {
 
 			// handle the banner
 			this.get('terminal').once('output', () => {
-				let banner = results.cmd.prop('banner');
+				let banner = cmd.prop('banner');
 				if (banner && this.bannerEnabled) {
 					banner = String(typeof banner === 'function' ? banner() : banner).trim();
 					this.get('terminal').stdout.write(`${banner}\n\n`);
