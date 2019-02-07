@@ -19,6 +19,22 @@ module.exports = {
 				icon: 'src/images/icon.png'
 			}
 		},
-		'gatsby-plugin-offline'
+		'gatsby-plugin-offline',
+		'gatsby-plugin-sass',
+		{
+			resolve: 'gatsby-transformer-remark',
+			options: {
+				plugins: [
+					'gatsby-remark-prismjs'
+				]
+			}
+		},
+		{
+			resolve: `gatsby-source-filesystem`,
+			options: {
+				path: `${__dirname}/src/docs`,
+				name: "docs"
+			}
+		}
 	]
 };

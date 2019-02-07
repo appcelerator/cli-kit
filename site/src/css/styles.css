@@ -18,7 +18,45 @@ header h1 > a:hover {
 
 main {
 	background-color: #e5e5e5 !important;
-	padding-top: 4em;
+}
+
+main > .container:first-child {
+	padding: 4.5em 0 1.5em;
+}
+
+.hero {
+	background-blend-mode: multiply;
+	background-image: url(/images/hero-bg.png), linear-gradient(#606c88, #3f4c6b);
+	background-position: center;
+	background-repeat: repeat;
+	padding: 3.2em 0;
+}
+
+.hero > .container {
+	margin: 3em 0 2em;
+	text-align: center;
+	text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+}
+
+.hero > .container > h1 {
+	color: #fff;
+	font-family: 'Teko', sans-serif !important;
+	font-size: 4.5em;
+	line-height: 0.9em;
+	margin: 0;
+}
+
+.hero > .container > blockquote {
+	color: #fff;
+	font-size: 1.5em;
+	line-height: 1.5em;
+	margin: 0;
+}
+
+.hero > .container > blockquote > span {
+	background: url(/images/underline.png) no-repeat center bottom / 100% auto;
+	display: inline-block;
+	height: 1.75em;
 }
 
 footer {
