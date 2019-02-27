@@ -5,7 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import which from 'which';
 
-import { declareCLIKitClass, findPackage } from '../lib/util';
+import { declareCLIKitClass, findPackage, split } from '../lib/util';
 import { spawn } from 'child_process';
 
 const { log } = debug('cli-kit:extension');
@@ -49,6 +49,7 @@ export default class Extension extends Command {
 
 		let { extensionPath, name, parent } = params;
 		let executable = null;
+		let executableArgs = null;
 		let pkg = null;
 		let isCLIKitExtension = false;
 		let startTime = Date.now();
@@ -61,10 +62,18 @@ export default class Extension extends Command {
 
 		// first see if this is an executable
 		try {
-			executable = which.sync(extensionPath);
+			let bin = extensionPath;
+			try {
+				executableArgs = split(bin);
+				bin = executableArgs.shift();
+			} catch (err) {
+				// this shouldn't happen, but if it does, just fallback to the original value
+			}
+
+			executable = which.sync(bin);
 			params.action = () => this.exec();
 		} catch (e) {
-			// not an executable,
+			// not an executable
 			if (fs.existsSync(extensionPath)) {
 				// check if we have a JavaScript file or Node.js module
 				pkg = findPackage(extensionPath);
@@ -162,6 +171,7 @@ export default class Extension extends Command {
 
 		this.banner            = params.banner;
 		this.executable        = executable;
+		this.executableArgs    = executableArgs;
 		this.isCLIKitExtension = isCLIKitExtension;
 		this.pkg               = pkg;
 		this.time              = Date.now() - startTime;
@@ -221,8 +231,10 @@ export default class Extension extends Command {
 				!this.isCLIKitExtension || stderr === process.stderr ? 'inherit' : 'pipe'
 			];
 
-			log(`Running: ${highlight(this.executable + this.execArgs.map(s => ' ' + s))} ${note(JSON.stringify(stdio))}`);
-			const child = spawn(this.executable, this.execArgs, { stdio });
+			const args = (this.executableArgs || []).concat(this.execArgs);
+
+			log(`Running: ${highlight(this.executable + args.map(s => ' ' + s))} ${note(JSON.stringify(stdio))}`);
+			const child = spawn(this.executable, args, { stdio });
 
 			if (stdio[1] === 'pipe') {
 				child.stdout.pipe(stdout);

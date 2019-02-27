@@ -67,6 +67,20 @@ describe('Extension', () => {
 			expect(status).to.equal(0);
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.match(/usage: ping/im);
 		});
+
+		it('should curry args to a native binary', function () {
+			this.slow(9000);
+			this.timeout(10000);
+
+			const env = { ...process.env };
+			// delete env.SNOOPLOGG;
+
+			const { status, stdout, stderr } = spawnSync(process.execPath, [
+				path.join(__dirname, 'examples', 'run-node', 'run.js'), 'run', 'console.log(\'It works\')'
+			], { env });
+			expect(status).to.equal(0);
+			expect(stdout.toString().trim() + stderr.toString().trim()).to.match(/It works/m);
+		});
 	});
 
 	describe('cli-kit Node Extensions', () => {

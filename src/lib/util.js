@@ -1,3 +1,4 @@
+import argvSplit from 'argv-split';
 import fs from 'fs';
 import E from './errors';
 import path from 'path';
@@ -105,6 +106,19 @@ export function isFile(file) {
 		// squelch
 	}
 	return false;
+}
+
+/**
+ * Splits an argv (argument vector) string.
+ *
+ * This function is just a wrapper around argv-split just in case we ever want to replace it.
+ * https://www.npmjs.com/package/argv-split.
+ *
+ * @param {String} it - The argv string to split.
+ * @returns {Array.<String>}
+ */
+export function split(it) {
+	return argvSplit(it);
 }
 
 /**
