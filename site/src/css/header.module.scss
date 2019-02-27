@@ -1,0 +1,61 @@
+.header {
+	background-color: #101318;
+	left: 0;
+	margin: 0;
+	position: fixed;
+	top: 0;
+	width: 100%;
+	z-index: 101;
+}
+
+.header :global {
+	.ui.container {
+		align-items: center;
+		display: flex;
+		flex-direction: row;
+		line-height: 2rem;
+	}
+
+	@media only screen and (min-width: 1200px) {
+		.ui.container {
+			width: 933px;
+		}
+	}
+
+	.project {
+		font-family: 'Teko', sans-serif !important;
+		font-size: 2rem;
+		margin: 0.4rem 3rem 0 0 !important;
+	}
+
+	a,
+	a:hover {
+		color: #3bca3b;
+	}
+}
+
+.primary {
+	align-self: flex-end;
+	display: flex;
+
+	> a {
+		line-height: 2.5rem;
+		padding: 0 1.2rem 0.2rem;
+		text-transform: uppercase;
+	}
+
+	> a.active {
+		border-bottom: solid 0.2rem #3bca3b;
+		padding-bottom: 0;
+	}
+}
+
+.secondary {
+	font-size: 1.5rem;
+	flex-grow: 1;
+	text-align: right;
+
+	> a {
+		margin: 0 .4rem;
+	}
+}

@@ -9,88 +9,88 @@
 	color: #fff;
 	line-height: 3em;
 	margin: 1.5em 0;
+
+	code {
+		background-color: #14191f;
+		color: #fff;
+		font-family: Menlo, Monaco, "Courier New", monospace;
+		font-size: 1.2rem;
+		text-align: center;
+		width: 24rem;
+	}
+
+	button {
+		background-color: #444b52;
+		border: 0;
+		border-top-right-radius: .5em;
+		border-bottom-right-radius: .5em;
+		cursor: pointer;
+		padding: 0 1.5em;
+	}
 }
 
 .switch {
 	display: block;
 	position: relative;
 	width: 8em;
-}
 
-.switch > input {
-	opacity: 0;
-	position: absolute;
-	z-index: 3;
-}
+	> input {
+		opacity: 0;
+		position: absolute;
+		z-index: 3;
+	}
 
-.switch > span {
-	background-color: #444b52;
-	border-top-left-radius: .5em;
-	border-bottom-left-radius: .5em;
-	cursor: pointer;
-	display: block;
-	min-height: 2em;
-	position: relative;
-	overflow: hidden;
-}
+	> span {
+		background-color: #444b52;
+		border-top-left-radius: .5em;
+		border-bottom-left-radius: .5em;
+		cursor: pointer;
+		display: block;
+		min-height: 2em;
+		position: relative;
+		overflow: hidden;
+	}
 
-.switch span span,
-.switch input:checked ~ span span:first-child {
-	color: #ccc;
-	font-weight: bold;
-	text-align: center;
-}
+	span span,
+	input:checked ~ span span:first-child {
+		color: #ccc;
+		font-weight: bold;
+		text-align: center;
+	}
 
-.switch input ~ span span:first-child,
-.switch input:checked ~ span span:nth-child(2),
-.switch input:checked + label {
-	color: #fff;
-	text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
-}
+	input ~ span span:first-child,
+	input:checked ~ span span:nth-child(2),
+	input:checked + label {
+		color: #fff;
+		text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+	}
 
-.switch span span {
-	display: block;
-	float: left;
-	position: relative;
-	text-align: center;
-	user-select: none;
-	width: 50%;
-	z-index: 2;
-}
+	span span {
+		display: block;
+		float: left;
+		position: relative;
+		text-align: center;
+		user-select: none;
+		width: 50%;
+		z-index: 2;
+	}
 
-.switch a {
-	background-color: #475273;
-	background-image: linear-gradient(rgba(255, 255, 255, 0.2), transparent);
-	border: 1px solid #333;
-	border-radius: 3px;
-	display: block;
-	height: 100%;
-	position: absolute;
-	right: 50%;
-	top: 0;
-	transition: all 0.2s ease-out;
-	width: 50%;
-	z-index: 1;
-}
+	a {
+		background-color: #475273;
+		background-image: linear-gradient(rgba(255, 255, 255, 0.2), transparent);
+		border: 1px solid #333;
+		border-radius: 3px;
+		display: block;
+		height: 100%;
+		position: absolute;
+		right: 50%;
+		top: 0;
+		transition: all 0.2s ease-out;
+		width: 50%;
+		z-index: 1;
+	}
 
-.switch input:checked ~ span a {
-	right: 0%;
-}
-
-code {
-	background-color: #14191f;
-	color: #fff;
-	font-family: Menlo, Monaco, "Courier New", monospace;
-	font-size: 1.2rem;
-	text-align: center;
-	width: 24rem;
-}
-
-button {
-	background-color: #444b52;
-	border: 0;
-	border-top-right-radius: .5em;
-	border-bottom-right-radius: .5em;
-	cursor: pointer;
-	padding: 0 1.5em;
+	input:checked ~ span a {
+		right: 0%;
+	}
 }

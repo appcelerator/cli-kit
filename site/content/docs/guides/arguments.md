@@ -1,0 +1,5 @@
+---
+title: "Arguments"
+---
+
+foo

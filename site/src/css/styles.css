@@ -1,44 +1,71 @@
 @import url('https://fonts.googleapis.com/css?family=Teko');
 
 body {
-	background: #333 !important;
+	background: #222831!important;
 }
 
-header h1 {
-	font-family: 'Teko', sans-serif !important;
-	font-size: 2rem;
-	line-height: 3rem;
-	margin: .1em 0 0 !important;
-}
-
-header h1 > a,
-header h1 > a:hover {
-	color: #fff;
+@media only screen and (min-width: 1200px) {
+	footer .ui.container {
+		width: 933px;
+	}
 }
 
 main {
 	background-color: #e5e5e5 !important;
 }
 
-main > .container:first-child {
-	padding: 4.5em 0 1.5em;
-}
-
-.hero {
+main.hex {
+	background-attachment: fixed;
 	background-blend-mode: multiply;
-	background-image: url(/images/hero-bg.png), linear-gradient(#606c88, #3f4c6b);
+	background-color: transparent !important;
+	background-image: url(/images/hexellence.png), linear-gradient(#70a870, #3f6b43);
 	background-position: center;
 	background-repeat: repeat;
-	padding: 3.2em 0;
 }
 
-.hero > .container {
-	margin: 3em 0 2em;
+main > .ui.container:first-child {
+	padding-top: 3em;
+}
+
+main .ui.grid {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
+main h1 {
+	font-size: 4rem;
+}
+
+content {
+	background-color: #fafafa;
+}
+
+.content > h2 {
+	margin-top: -1em;
+	position: relative;
+	padding-top: 2em;
+}
+
+.content > :has(+ h2) {
+	margin-bottom: 0;
+}
+
+/* Background pattern from Toptal Subtle Patterns <https://www.toptal.com/designers/subtlepatterns> */
+.hero {
+	background-blend-mode: multiply;
+	background-image: url(/images/what-the-hex.png), linear-gradient(#70a870, #3f6b43);
+	background-position: center;
+	background-repeat: repeat;
+	padding: 3em 0;
+}
+
+.hero > .ui.container {
+	margin: 2.5em 0 1em;
 	text-align: center;
 	text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
 }
 
-.hero > .container > h1 {
+.hero > .ui.container > h1 {
 	color: #fff;
 	font-family: 'Teko', sans-serif !important;
 	font-size: 4.5em;
@@ -59,6 +86,6 @@ main > .container:first-child {
 	height: 1.75em;
 }
 
-footer {
-	color: #fff;
+.edit-page {
+	color: #999;
 }

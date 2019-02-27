@@ -1,0 +1,58 @@
+{
+	"primary": [
+		{
+			"name": "Docs",
+			"path": "/docs"
+		},
+		{
+			"name": "Blog",
+			"path": "/blog"
+		}
+	],
+	"secondary": [
+		{
+			"hint": "GitHub",
+			"path": "https://github.com/cb1kenobi/cli-kit",
+			"icon": "github"
+		},
+		{
+			"hint": "npm",
+			"path": "https://npmjs.org/package/cli-kit",
+			"icon": "npm"
+		}
+	],
+	"docs": {
+		"Overview": [
+			"/",
+			"/getting-started",
+			"/architecture",
+			"/faq",
+			"/comparison"
+		],
+		"Guides": [
+			"/cli",
+			"/parsing",
+			"/commands",
+			"/options",
+			"/arguments",
+			"/extensions",
+			"/help",
+			"/error-handling",
+			"/hooks",
+			"/template-engine",
+			"/project-structure",
+			"/best-practices"
+		],
+		"API": [
+			"/CLI",
+			"/Terminal",
+			"/template"
+		],
+		"Community": [
+			"/contributing",
+			[ "Issues", "https://github.com/cb1kenobi/cli-kit/issues" ],
+			[ "Travis CI", "https://travis-ci.org/cb1kenobi/cli-kit" ],
+			[ "Code Coverage", "https://coveralls.io/github/cb1kenobi/cli-kit" ]
+		]
+	}
+}

@@ -8,16 +8,16 @@ import Header from '../components/header';
 import Footer from '../components/footer';
 
 import '../css/styles.css';
-import 'semantic-ui-css/semantic.min.css';
+import '../../semantic/dist/semantic.min.css';
 
 export default class DefaultLayout extends React.PureComponent {
 	render() {
-		const { children } = this.props;
+		const { children, className, title } = this.props;
 
 		return (
 			<StaticQuery
 				query={graphql`
-					query SiteTitleQuery {
+					query {
 						site {
 							siteMetadata {
 								title
@@ -29,7 +29,7 @@ export default class DefaultLayout extends React.PureComponent {
 				render={data => (
 					<>
 						<Helmet
-							title={data.site.siteMetadata.title}
+							title={`${title ? `${title} - ` : ''}${data.site.siteMetadata.title}`}
 							meta={[
 								{ name: 'description', content: 'cli-kit: Node.js Command Line Interface Toolkit' },
 								{ name: 'keywords', content: 'node, cli, command line, climl, parser, prompting' }
@@ -38,8 +38,8 @@ export default class DefaultLayout extends React.PureComponent {
 							<html lang="en" />
 						</Helmet>
 						<Header />
-						<main>
-							<Container>
+						<main className="hex">
+							<Container className={className}>
 								{children}
 							</Container>
 						</main>

@@ -1,11 +1,11 @@
-import React from 'react'
+import React, { PureComponent } from 'react'
 import { Terminal } from 'xterm';
 import 'xterm/dist/xterm.css';
 import * as fit from 'xterm/lib/addons/fit/fit';
 
 Terminal.applyAddon(fit);
 
-export default class Term extends React.Component {
+export default class Term extends PureComponent {
 	container = React.createRef();
 
 	componentDidMount() {

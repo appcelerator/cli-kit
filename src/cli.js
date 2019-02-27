@@ -21,6 +21,7 @@ const { highlight }  = debug.styles;
  * The required Node.js version for cli-kit. This is used to assert the Node version at runtime.
  * If the `CLI` instance is created with a `nodeVersion`, then it assert the greater of the two
  * Node versions.
+ *
  * @type {String}
  */
 const clikitNodeVersion = fs.readJsonSync(path.resolve(__dirname, '..', 'package.json')).engines.node;
@@ -35,6 +36,9 @@ export default class CLI extends Context {
 	 * Created a CLI instance.
 	 *
 	 * @param {Object} [params] - Various options.
+	 * @param {Boolean} [params.autoHideBanner=true] - When `true` and a `banner` is set, it will
+	 * detect if the first characters written to `stdout` or `stderr` match a JSON object/array or
+	 * XML document, then suppresses the banner.
 	 * @param {String|Function} [params.banner] - A banner or a function that returns the banner
 	 * to be displayed before each command.
 	 * @param {Boolean} [params.colors=true] - Enables colors, specifically on the help screen.
@@ -100,6 +104,7 @@ export default class CLI extends Context {
 		declareCLIKitClass(this, 'CLI');
 
 		this.appName               = params.name;
+		this.autoHideBanner        = params.autoHideBanner !== false;
 		this.banner                = params.banner;
 		this.bannerEnabled         = true;
 		this.colors                = params.colors !== false;
@@ -255,13 +260,15 @@ export default class CLI extends Context {
 			}
 
 			// handle the banner
-			this.get('terminal').once('output', () => {
-				let banner = cmd.prop('banner');
-				if (banner && this.bannerEnabled) {
-					banner = String(typeof banner === 'function' ? banner() : banner).trim();
-					this.get('terminal').stdout.write(`${banner}\n\n`);
-				}
-			});
+			if (this.get('autoHideBanner') !== false) {
+				this.get('terminal').once('output', () => {
+					let banner = cmd.prop('banner');
+					if (banner && this.bannerEnabled) {
+						banner = String(typeof banner === 'function' ? banner() : banner).trim();
+						this.get('terminal').stdout.write(`${banner}\n\n`);
+					}
+				});
+			}
 			if (!argv.banner || (results.cmd instanceof Extension && !results.cmd.isCLIKitExtension && !results.cmd.get('showBannerForExternalCLIs'))) {
 				this.bannerEnabled = false;
 			} else if (results.cmd.banner) {

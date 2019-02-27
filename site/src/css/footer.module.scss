@@ -1,0 +1,24 @@
+.footer {
+	color: #6f7a8d;
+	line-height: 1em;
+	padding: 2em 0;
+
+	.copyright {
+		font-size: .7em;
+	}
+}
+
+.footer :global {
+	p {
+		line-height: 1em;
+		margin-bottom: .3em;
+	}
+
+	a {
+		color: #95a4be;
+	}
+
+	a:hover {
+		color: #fff;
+	}
+}

@@ -7,7 +7,7 @@ import Header from '../components/header';
 import Footer from '../components/footer';
 
 import '../css/styles.css';
-import 'semantic-ui-css/semantic.min.css';
+import '../../semantic/dist/semantic.min.css';
 
 export default class HomeLayout extends React.PureComponent {
 	render() {
@@ -16,10 +16,11 @@ export default class HomeLayout extends React.PureComponent {
 		return (
 			<StaticQuery
 				query={graphql`
-					query HomeTitleQuery {
+					query {
 						site {
 							siteMetadata {
 								title
+								caption
 							}
 						}
 					}
@@ -28,9 +29,9 @@ export default class HomeLayout extends React.PureComponent {
 				render={data => (
 					<>
 						<Helmet
-							title={data.site.siteMetadata.title}
+							title={`${data.site.siteMetadata.title}: ${data.site.siteMetadata.caption}`}
 							meta={[
-								{ name: 'description', ent: 'cli-kit: Node.js Command Line Interface Toolkit' },
+								{ name: 'description', content: 'cli-kit: Node.js Command Line Interface Toolkit' },
 								{ name: 'keywords', content: 'node, cli, command line, climl, parser, prompting' }
 							]}
 						>

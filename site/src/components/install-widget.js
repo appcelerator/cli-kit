@@ -1,3 +1,5 @@
+/* eslint-disable jsx-a11y/anchor-has-content, jsx-a11y/anchor-is-valid */
+
 import React from 'react'
 import styles from '../css/install-widget.module.scss';
 
@@ -42,7 +44,7 @@ export default class InstallWidget extends React.Component {
 					</div>
 				</div>
 				<textarea
-					readonly={true}
+					readOnly={true}
 					ref={this.field}
 					style={{ left: '-9999px', position: 'absolute' }}
 					value={code} />

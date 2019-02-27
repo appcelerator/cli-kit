@@ -1,19 +1,13 @@
 import React from 'react'
-import { Container, Grid } from 'semantic-ui-react';
+import styles from '../css/footer.module.scss';
+import { Container } from 'semantic-ui-react';
+import { Link } from 'gatsby';
 
 export default () => (
-	<footer>
-		<Container className="inverted">
-			<Grid columns={2} divided>
-				<Grid.Row>
-					<Grid.Column>
-						Copyright © 2018
-					</Grid.Column>
-					<Grid.Column>
-						Sitemap
-					</Grid.Column>
-				</Grid.Row>
-			</Grid>
+	<footer className={styles.footer}>
+		<Container>
+			<p><Link to="/">cli-kit</Link>: Open source command line toolkit</p>
+			<p className={styles.copyright}>© 2015-{new Date().getFullYear()} cli-kit contributors</p>
 		</Container>
 	</footer>
 );

@@ -1,6 +1,7 @@
 ._*
 .DS_Store*
 .nyc_output
+.vscode
 /coverage
 /dist
 /docs

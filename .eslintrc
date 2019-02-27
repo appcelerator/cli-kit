@@ -37,6 +37,7 @@
         "no-cond-assign": "off",
         "no-console": "off",
         "no-control-regex": "off",
+        "no-debugger": "warn",
         "no-empty": "warn",
         "no-inner-declarations": "off",
         "no-mixed-spaces-and-tabs": "error",

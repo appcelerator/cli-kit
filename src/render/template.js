@@ -46,7 +46,7 @@ export function render(template, data) {
 				printRegExp = new RegExp('(?<=^|\\n)([ \\t]*)(>+)(\\|\\?|\\?\\||\\||\\?)?(.*?)(?:(?<!\\\\)\\n|$)', 'gs');
 			} catch (e) {
 				// istanbul ignore next
-				throw new Error('Node.js version is too old; must be v8.10 or newer');
+				throw E.INVALID_NODE_JS('Node.js version is too old; must be v8.10 or newer');
 			}
 		}
 
