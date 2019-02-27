@@ -215,6 +215,23 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected arguments to be an array', { name: 'args', scope: 'CLI.exec', value: unparsedArgs });
 		}
 
+		this.once('banner', ({ argv, ctx = this }) => {
+			if (this.get('autoHideBanner') !== false) {
+				this.get('terminal').once('output', () => {
+					let banner = ctx.prop('banner');
+					if (banner && this.bannerEnabled) {
+						banner = String(typeof banner === 'function' ? banner() : banner).trim();
+						this.get('terminal').stdout.write(`${banner}\n\n`);
+					}
+				});
+			}
+			if ((argv && !argv.banner) || (ctx instanceof Extension && !ctx.isCLIKitExtension && !ctx.get('showBannerForExternalCLIs'))) {
+				this.bannerEnabled = false;
+			} else if (ctx.banner) {
+				this.banner = ctx.banner;
+			}
+		});
+
 		const parser = new Parser();
 		let { showHelpOnError } = this;
 
@@ -260,20 +277,7 @@ export default class CLI extends Context {
 			}
 
 			// handle the banner
-			if (this.get('autoHideBanner') !== false) {
-				this.get('terminal').once('output', () => {
-					let banner = cmd.prop('banner');
-					if (banner && this.bannerEnabled) {
-						banner = String(typeof banner === 'function' ? banner() : banner).trim();
-						this.get('terminal').stdout.write(`${banner}\n\n`);
-					}
-				});
-			}
-			if (!argv.banner || (results.cmd instanceof Extension && !results.cmd.isCLIKitExtension && !results.cmd.get('showBannerForExternalCLIs'))) {
-				this.bannerEnabled = false;
-			} else if (results.cmd.banner) {
-				this.banner = results.cmd.banner;
-			}
+			await this.emit('banner', { argv, ctx: results.cmd });
 
 			// allow command to override showHelpOnError if not set already
 			showHelpOnError = results.cmd.prop('showHelpOnError');
@@ -292,6 +296,8 @@ export default class CLI extends Context {
 			return results;
 		} catch (err) {
 			error(err);
+
+			await this.emit('banner');
 
 			const help = this.help && showHelpOnError !== false && this.commands.get('help');
 			if (help) {

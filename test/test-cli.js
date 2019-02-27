@@ -220,6 +220,50 @@ describe('CLI', () => {
 			].join('\n'));
 		});
 
+		it('should display a banner when a validation error occurs', async () => {
+			const banner = 'My Amazing CLI, version 1.2.3\nCopyright (c) 2018, Me';
+			const out = new WritableStream();
+			const terminal = new Terminal({
+				stdout: out,
+				stderr: out
+			});
+			const cli = new CLI({
+				banner,
+				colors: false,
+				help: true,
+				name: 'test-cli',
+				terminal,
+				args: [
+					{
+						name: 'foo',
+						required: true
+					}
+				]
+			});
+
+			await cli.exec([]);
+
+			// process.stdout.write(out.toString() + '\n');
+
+			expect(out.toString()).to.equal([
+				'My Amazing CLI, version 1.2.3',
+				'Copyright (c) 2018, Me',
+				'',
+				'Missing required argument "foo"',
+				'',
+				'USAGE: test-cli [options] <foo>',
+				'',
+				'ARGUMENTS:',
+				'  foo',
+				'',
+				'GLOBAL OPTIONS:',
+				'  -h,--help  displays the help screen',
+				'  --no-banner  suppress the banner',
+				'',
+				''
+			].join('\n'));
+		});
+
 		it('should not display a banner when outputting JSON', async () => {
 			const banner = 'My Amazing CLI, version 1.2.3\nCopyright (c) 2018, Me\n\n';
 			const out = new WritableStream();
