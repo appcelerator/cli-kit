@@ -16,9 +16,9 @@ export default class Option {
 	/**
 	 * Creates an option descriptor.
 	 *
-	 * @param {String|Object} format - The option format containing the general info or an `Option`
-	 * object to clone.
-	 * @param {Object} [params] - Additional parameters.
+	 * @param {String|Object} format - The option format or a option parameters.
+	 * @param {String|Object} [params] - Either a description or parameters when `format` is a
+	 * `String`.
 	 * @param {Array.<String>|String} [params.aliases] - An array of aliases. If an alias starts
 	 * with a `!`, then it is hidden from the help.
 	 * @param {Function} [params.callback] - A function to call when the option has been parsed.
@@ -33,8 +33,10 @@ export default class Option {
 	 * @param {Boolean} [params.hidden=false] - When `true`, the option is not displayed on the help
 	 * screen or auto-suggest.
 	 * @param {String} [params.hint] - The hint label if the option expects a value.
-	 * @param {Number} [params.min] - When `type` is `int`, `number`, or `positiveInt`, then checks
-	 * that the option's value is at greater than or equal to the specified value.
+	 * @param {Number} [params.max] - When `type` is `int`, `number`, or `positiveInt`, the
+	 * validator will assert the value is less than or equal to the specified value.
+	 * @param {Number} [params.min] - When `type` is `int`, `number`, or `positiveInt`, the
+	 * validator will assert the value is greater than or equal to the specified value.
 	 * @param {Boolean} [params.multiple] - When `true`, if this option is parsed more than once,
 	 * the values are put in an array. When `false`, the last parsed value overwrites the previously
 	 * parsed value.
@@ -58,75 +60,86 @@ export default class Option {
 		if (!format || typeof format !== 'string') {
 			throw E.INVALID_ARGUMENT('Expected option format to be a non-empty string', { name: 'format', scope: 'Option.constructor', value: format });
 		}
-		format = format.trim();
 
-		params || (params = {});
+		if (params === undefined || params === null) {
+			params = {};
+		} else if (typeof params === 'string') {
+			params = { desc: params };
+		}
+
 		if (typeof params !== 'object' || Array.isArray(params)) {
 			throw E.INVALID_ARGUMENT('Expected params to be an object', { name: 'params', scope: 'Option.constructor', value: params });
 		}
 
-		params.format   = format;
-		params.hidden   = !!params.hidden;
-		params.long     = null;
-		params.max      = params.max || null;
-		params.min      = params.min || null;
-		params.multiple = !!params.multiple;
-		params.negate   = false;
-		params.order    = params.order || Infinity;
-		params.regex    = params.type instanceof RegExp ? params.type : null;
-		params.required = !!params.required;
-
-		// first try to see if we have a valid option format
-		const m = format.match(formatRegExp);
-		if (!m || (!m[1] && !m[2])) {
-			throw E.INVALID_OPTION_FORMAT(`Invalid option format "${format}"`, { name: 'format', scope: 'Option.constructor', value: format });
+		if (params.callback && typeof params.callback !== 'function') {
+			throw E.INVALID_ARGUMENT('Expected option callback to be a function', { name: 'params.callback', scope: 'Option.constructor', value: params.callback });
 		}
 
-		params.aliases  = processAliases(params.aliases);
-		params.short    = m[1] || null;
+		this.callback = params.callback;
+		this.desc     = params.desc;
+		this.env      = params.env;
+		this.errorMsg = params.errorMsg;
+		this.format   = format.trim();
+		this.hidden   = !!params.hidden;
+		this.max      = params.max || null;
+		this.min      = params.min || null;
+		this.multiple = !!params.multiple;
+		this.negate   = false;
+		this.order    = params.order || Infinity;
+		this.regex    = params.type instanceof RegExp ? params.type : null;
+		this.required = !!params.required;
+		this.type     = params.type;
+
+		// first try to see if we have a valid option format
+		const m = this.format.match(formatRegExp);
+		if (!m || (!m[1] && !m[2])) {
+			throw E.INVALID_OPTION_FORMAT(`Invalid option format "${this.format}"`, { name: 'format', scope: 'Option.constructor', value: this.format });
+		}
+
+		this.aliases  = processAliases(params.aliases);
+		this.short    = m[1] || null;
 
 		// check if we have a long option and name
 		if (m[2]) {
 			const negate  = m[2].match(negateRegExp);
-			params.negate = !!negate;
-			params.name   = negate ? negate[1] : m[2];
-			params.long   = m[2];
+			this.negate = !!negate;
+			this.name   = negate ? negate[1] : m[2];
+			this.long   = m[2];
 		}
 
-		params.name = params.name || params.long || params.short || params.format;
-		if (!params.name) {
-			throw E.INVALID_OPTION('Option has no name', { name: 'name', scope: 'Option.constructor', value: params.name });
+		this.name = this.name || params.long || params.short || this.format;
+		if (!this.name) {
+			throw E.INVALID_OPTION(`Option "${this.format}" has no name`, { name: 'name', scope: 'Option.constructor', value: params.name });
 		}
 
-		let hint = params.type !== 'count' && params.hint || m[3];
+		let hint = this.type !== 'count' && params.hint || m[3];
 		if (hint) {
 			const value = hint.match(valueRegExp);
 			if (value) {
-				params.hint = hint = value[2].trim();
+				this.hint = hint = value[2].trim();
 			} else {
-				params.hint = hint;
+				this.hint = hint;
 			}
 		}
-		params.camelCase = params.name ? params.camelCase !== false : false;
-		params.isFlag    = !hint;
+		this.camelCase = this.name ? params.camelCase !== false : false;
+		this.isFlag    = !hint;
 
 		// determine the datatype
-		if (params.isFlag) {
-			params.datatype = checkType(params.type, 'bool');
-			if (params.datatype !== 'bool' && params.datatype !== 'count') {
-				throw E.CONFLICT(`Option "${params.format}" is a flag and must be type bool`, { name: 'flag', scope: 'Option.constructor', value: params.dataType });
+		if (this.isFlag) {
+			this.datatype = checkType(params.type, 'bool');
+			if (this.datatype !== 'bool' && this.datatype !== 'count') {
+				throw E.CONFLICT(`Option "${this.format}" is a flag and must be type bool`, { name: 'flag', scope: 'Option.constructor', value: params.dataType });
 			}
 		} else {
-			params.datatype = checkType(params.type, params.hint, 'string');
+			this.datatype = checkType(params.type, this.hint, 'string');
 		}
 
-		if (params.datatype !== 'bool' && params.negate) {
-			throw E.CONFLICT(`Option "${params.format}" is negated and must be type bool`, { name: 'negate', scope: 'Option.constructor', value: params.negate });
+		if (this.datatype !== 'bool' && this.negate) {
+			throw E.CONFLICT(`Option "${this.format}" is negated and must be type bool`, { name: 'negate', scope: 'Option.constructor', value: params.negate });
 		}
 
-		params.default = params.default !== undefined ? params.default : (params.datatype === 'bool' && params.negate ? true : undefined);
+		this.default = this.default !== undefined ? this.default : (this.datatype === 'bool' && this.negate ? true : undefined);
 
-		Object.assign(this, params);
 		declareCLIKitClass(this, 'Option');
 	}
 

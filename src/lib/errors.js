@@ -9,6 +9,7 @@ createError('FILE_NOT_FOUND',              Error,      'The file does not exist 
 createError('INVALID_ALIAS',               TypeError,  'An alias is empty, not a string, or an invalid format');
 createError('INVALID_ARGUMENT',            TypeError,  'A function argument is undefined or the incorrect data type');
 createError('INVALID_CLIKIT_OBJECT',       TypeError,  'A function was passed a cli-kit object that is not supported');
+createError('INVALID_COMMAND',             Error,      'The specified command or command parameters are not valid');
 createError('INVALID_DATA_TYPE',           Error,      'The CLI argument or option has been assigned an unsupported data type');
 createError('INVALID_DATE',                RangeError, 'A value was not a valid date');
 createError('INVALID_EXTENSION',           Error,      'Unable to load an extension due to bad path, bad package.json, missing main file, etc');

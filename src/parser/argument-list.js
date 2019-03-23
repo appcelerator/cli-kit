@@ -1,4 +1,5 @@
 import Argument from './argument';
+import E from '../lib/errors';
 
 import { declareCLIKitClass } from '../lib/util';
 
@@ -21,11 +22,15 @@ export default class ArgumentList extends Array {
 	/**
 	 * Adds an argument to the list.
 	 *
-	 * @param {Argument|Object} arg - The argument to add.
+	 * @param {Object|String|Argument|ArgumentList|Array<Object|String|Argument>} arg - An object
+	 * of argument names to argument descriptors, an argument name, an `Argument` instance, an
+	 * `ArgumentList` instance, or array of object descriptors, argument names, and `Argument`
+	 * instances.
 	 * @access public
 	 */
 	add(arg) {
-		this.push(arg instanceof Argument ? arg : new Argument(arg));
+		const args = Array.isArray(arg) ? arg : [ arg ];
+		this.push.apply(this, args.map(a => new Argument(a)));
 	}
 
 	/**

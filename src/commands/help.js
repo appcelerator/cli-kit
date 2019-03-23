@@ -44,7 +44,17 @@ export default {
 	 * @returns {Promise}
 	 */
 	async action({ _ = [], argv = {}, contexts, err, unknownCommand, warnings } = {}) {
-		let exitCode = +!!err;
+		let exitCode = +!!err; // 0=success, 1=error
+
+		const formatError = err => {
+			return err ? {
+				code:    err.code,
+				message: err.message,
+				meta:    err.meta,
+				stack:   err.stack,
+				type:    err.constructor && err.constructor.name || null
+			} : null;
+		};
 
 		// skip the built-in help command and find the first context
 		for (const ctx of contexts) {
@@ -70,16 +80,6 @@ export default {
 						return r !== 0 ? r : a.name.localeCompare(b.name);
 					});
 			}
-
-			const formatError = err => {
-				return err ? {
-					code:    err.code,
-					message: err.message,
-					meta:    err.meta,
-					stack:   err.stack,
-					type:    err.constructor && err.constructor.name || null
-				} : null;
-			};
 
 			help.error = formatError(err);
 			help.warnings = Array.isArray(warnings) ? warnings.map(formatError) : null;

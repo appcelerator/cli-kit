@@ -2,7 +2,6 @@ import camelCase from 'lodash.camelcase';
 import Context from './context';
 import debug from '../lib/debug';
 import E from '../lib/errors';
-import Extension from './extension';
 import ParsedArgument from './parsed-argument';
 import pluralize from 'pluralize';
 
@@ -336,7 +335,7 @@ export default class Parser {
 	 * @returns {Promise}
 	 * @access private
 	 */
-	parseArg(ctx, i) {
+	async parseArg(ctx, i) {
 		if (i === this.args.length) {
 			const cmd = this.contexts[0];
 			if (cmd !== ctx) {
@@ -344,12 +343,12 @@ export default class Parser {
 				return this.parseWithContext(cmd);
 			}
 			log('End of the line');
-			return Promise.resolve();
+			return;
 		}
 
-		const arg = this.createParsedArgument(ctx, i);
+		const arg = await this.createParsedArgument(ctx, i);
 		if (arg) {
-			if (arg.type !== 'command' || this.contexts[0] === ctx) {
+			if ((arg.type !== 'command' && arg.type !== 'extension') || this.contexts[0] === ctx) {
 				this.args[i] = arg;
 			}
 
@@ -360,6 +359,13 @@ export default class Parser {
 
 				// add the context to the stack
 				this.contexts.unshift(arg.command);
+
+			} else if (arg.type === 'extension' && this.contexts[0] === ctx) {
+				// link the context hook emitters
+				arg.extension.link(ctx);
+
+				// add the context to the stack
+				this.contexts.unshift(arg.extension);
 
 			} else if (arg.type === 'option' && typeof arg.option.callback === 'function') {
 				return new Promise((resolve, reject) => {
@@ -425,11 +431,11 @@ export default class Parser {
 	 *
 	 * @param {CLI|Command} ctx - The context to apply when parsing the command line arguments.
 	 * @param {Number} i - The argument index number to parse.
-	 * @returns {?ParsedArgument} Returns a `ParsedArgument` or `undefined` if the argument was
-	 * already a `ParsedArgument` and didn't change.
+	 * @returns {Promise<?ParsedArgument>} Resolves a `ParsedArgument` or `undefined` if the
+	 * argument was already a `ParsedArgument` and didn't change.
 	 * @access private
 	 */
-	createParsedArgument(ctx, i) {
+	async createParsedArgument(ctx, i) {
 		const { args } = this;
 		if (i >= args.length) {
 			throw E.RANGE_ERROR(`Expected argument index to be between 0 and ${args.length}`, { name: 'index', scope: 'Parser.createParsedArgument', value: i, range: [ 0, args.length - 1 ] });
@@ -545,24 +551,29 @@ export default class Parser {
 		}
 
 		// check if the argument is a command
-		if (type === 'command') {
-			log(`Skipping known command: ${highlight(arg.command.name)}`);
+		if (type === 'command' || type === 'extension') {
+			log(`Skipping known ${type}: ${highlight(arg[type].name)}`);
 			return;
 		}
 
 		// check if command and make sure we haven't already added a command this round
 		const cmd = lookup.commands[subject];
 		if (cmd) {
-			if (cmd instanceof Extension) {
-				cmd.execArgs.push.apply(cmd.execArgs, args.slice(i + 1));
-				log(`Found extension: ${highlight(cmd.name)}`);
-			} else {
-				log(`Found command: ${highlight(cmd.name)}`);
-			}
+			log(`Found command: ${highlight(cmd.name)}`);
 			return new ParsedArgument('command', {
 				command: cmd,
 				input: [ arg ]
 			});
+		} else {
+			const ext = lookup.extensions[subject];
+			if (ext) {
+				await ext.load(args.slice(i + 1));
+				log(`Found extension: ${highlight(ext.name)}`);
+				return new ParsedArgument('extension', {
+					extension: ext,
+					input: [ arg ]
+				});
+			}
 		}
 
 		if (!type) {

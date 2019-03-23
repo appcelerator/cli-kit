@@ -1,14 +1,12 @@
 import Command from './command';
 import debug from '../lib/debug';
 import E from '../lib/errors';
-import fs from 'fs';
-import path from 'path';
-import which from 'which';
+import helpCommand from '../commands/help';
 
-import { declareCLIKitClass, findPackage, split } from '../lib/util';
+import { declareCLIKitClass, filename, findPackage, isExecutable } from '../lib/util';
 import { spawn } from 'child_process';
 
-const { log } = debug('cli-kit:extension');
+const { log, warn } = debug('cli-kit:extension');
 const { highlight, note } = debug.styles;
 
 /**
@@ -17,12 +15,6 @@ const { highlight, note } = debug.styles;
  * @extends {Command}
  */
 export default class Extension extends Command {
-	/**
-	 * An array of args to pass to the extension.
-	 * @type {Array.<String>}
-	 */
-	execArgs = [];
-
 	/**
 	 * Set to `true` if this extension is a cli-kit extension. It shall remain `false` for native
 	 * binaries and non-cli-kit CLI's.
@@ -33,119 +25,79 @@ export default class Extension extends Command {
 	/**
 	 * Detects the extension defined in the specified path and initializes it.
 	 *
-	 * @param {Object} params - Various parameters.
-	 * @param {String} params.extensionPath - The path to the extension. The path can be an
-	 * executable, a JavaScript file, or Node.js package. If the path is a Node.js package with a
-	 * `package.json` containing a `"cli-kit"` propertly, it will merge the external cli-kit context
-	 * tree into this namespace.
+	 * @param {String|Object} pathOrParams - The path to the extension or a params object. If the
+	 * path is a Node.js package with a `package.json` containing a `"cli-kit"` property, it will
+	 * merge the external cli-kit context tree into this namespace.
+	 * @param {Object} [params] - Various parameters when `extensionPath` is a `String`.
 	 * @param {String} [params.name] - The extension name. If not set, it will load it from the
 	 * extension's `package.json` or the filename.
+	 * @param {String} [params.path] - The path to an executable, a JavaScript file, or Node.js
+	 * package.
 	 * @access public
 	 */
-	constructor(params = {}) {
-		if (!params || typeof params !== 'object' || Array.isArray(params)) {
-			throw E.INVALID_ARGUMENT('Expected parameters to be an object or Context', { name: 'params', scope: 'Extension.constructor', value: params });
-		}
+	constructor(pathOrParams, params) {
+		let path = null;
 
-		let { extensionPath, name, parent } = params;
-		let executable = null;
-		let executableArgs = null;
-		let pkg = null;
-		let isCLIKitExtension = false;
-		let startTime = Date.now();
-
-		if (!extensionPath || typeof extensionPath !== 'string') {
-			throw E.INVALID_ARGUMENT('Expected extension path to be a non-empty string', { extensionPath, name: 'extensionPath', scope: 'Extension.constructor', value: extensionPath });
-		}
-
-		name = String(name || '').trim();
-
-		// first see if this is an executable
-		try {
-			let bin = extensionPath;
-			try {
-				executableArgs = split(bin);
-				bin = executableArgs.shift();
-			} catch (err) {
-				// this shouldn't happen, but if it does, just fallback to the original value
+		if (typeof pathOrParams === 'string') {
+			path = pathOrParams;
+			if (!params) {
+				params = {};
 			}
+		} else if (pathOrParams && typeof pathOrParams === 'object') {
+			({ path } = params = pathOrParams);
+		}
 
-			executable = which.sync(bin);
-			params.action = () => this.exec();
+		if (!path || typeof path !== 'string') {
+			throw E.INVALID_ARGUMENT('Expected an extension path or params object', { name: 'pathOrParams', scope: 'Extension.constructor', value: pathOrParams });
+		}
+
+		if (typeof params !== 'object') {
+			throw E.INVALID_ARGUMENT('Expected extension params to be an object or Context', { name: 'params', scope: 'Extension.constructor', value: params });
+		}
+
+		let { name } = params;
+		let err;
+		let exe;
+		let pkg;
+
+		// we always implement our own action
+		delete params.action;
+
+		// we need to determine if this extension is a binary or if it's a Node package
+		try {
+			exe = isExecutable(path);
+			if (!name) {
+				name = filename(exe[0]);
+			}
 		} catch (e) {
-			// not an executable
-			if (fs.existsSync(extensionPath)) {
-				// check if we have a JavaScript file or Node.js module
-				pkg = findPackage(extensionPath);
+			// maybe a Node package?
+			try {
+				try {
+					pkg = findPackage(path);
+					if (!pkg.root) {
+						throw new Error();
+					}
+				} catch (e) {
+					throw E.INVALID_EXTENSION(`Invalid extension: Unable to find executable, script, or package: ${JSON.stringify(path)}`);
+				}
+
 				if (!pkg.main) {
-					throw E.INVALID_EXTENSION(`Unable to find extension's main file: ${extensionPath}`);
+					throw E.INVALID_EXTENSION(`Invalid extension: Unable to find extension's main file: ${JSON.stringify(path)}`);
 				}
 
-				// if there's not an explicit name, then fall back to the name in the package
+				if (!params.desc) {
+					params.desc = pkg.json.description;
+				}
+
 				if (!name) {
-					name = String(pkg.json.name || '').trim();
-				}
-
-				if (pkg.clikit) {
-					log(`Requiring ${highlight(pkg.main)}`);
-					let ctx;
-					let err;
-
-					try {
-						ctx = require(pkg.main);
-					} catch (e) {
-						err = e;
-					}
-
-					if (ctx && ctx.__esModule) {
-						ctx = ctx.default;
-					}
-
-					isCLIKitExtension = true;
-
-					if (ctx && typeof ctx === 'object') {
-						if (ctx.clikit instanceof Set && (ctx.clikit.has('CLI') || ctx.clikit.has('Command'))) {
-							params = ctx;
-							params.parent = parent;
-						} else {
-							isCLIKitExtension = false;
-						}
-
-					} else if (params.ignoreInvalidExtensions || (params.parent && params.parent.get('ignoreInvalidExtensions', false))) {
-						params.action = () => {
-							const { stderr } = this.get('terminal');
-							if (err) {
-								stderr.write(`Bad extension: ${pkg.json.name}\n`);
-								stderr.write(`  ${err.toString()}\n`);
-								let { stack } = err;
-								const p = stack.indexOf('\n\n');
-								if (p !== -1) {
-									stack = stack.substring(0, p).trim();
-								}
-								for (const line of stack.split('\n')) {
-									stderr.write(`  ${line}\n`);
-								}
-							} else {
-								stderr.write(`Invalid extension: ${pkg.json.name}\n`);
-							}
-						};
-
-					} else if (err) {
-						// prefix the error with this extension's info
-						const error = E.INVALID_EXTENSION(`Bad extension "${pkg.json.name}": ${err.message}`, { extensionPath, name: err.name, scope: 'Extension.constructor', value: err });
-						error.stack = err.stack;
-						throw error;
-
-					} else {
-						throw E.INVALID_EXTENSION(`Extension does not export an object: ${extensionPath}`, { extensionPath, name: 'ctx', scope: 'Extension.constructor', value: ctx });
-					}
+					name = pkg.json.name;
 				}
 
 				// init the aliases with any aliases from the package.json
 				params.aliases = Array.isArray(pkg.json.aliases) ? pkg.json.aliases : [];
 
 				// if the name is different than the one in the package.json, add it to the aliases
-				if (params.name && params.name !== name && !params.aliases.includes(params.name)) {
+				if (params.name && params.name !== pkg.json.name && !params.aliases.includes(params.name)) {
 					params.aliases.push(params.name);
 				}
 
@@ -159,91 +111,157 @@ export default class Extension extends Command {
 						}
 					}
 				}
+			} catch (e) {
+				err = e;
+				warn(err.message);
+				warn('Found bad extension, creating error action');
 
-				if (pkg.json.description) {
-					params.desc = pkg.json.description;
-				}
+				params.action = () => {
+					const { stderr } = this.get('terminal');
+					if (err) {
+						let { stack } = err;
+						const p = stack.indexOf('\n\n');
+						if (p !== -1) {
+							stack = stack.substring(0, p).trim();
+						}
+						for (const line of stack.split('\n')) {
+							stderr.write(`  ${line}\n`);
+						}
+					} else {
+						stderr.write(`Invalid extension: ${pkg.json.name}\n`);
+					}
+				};
 			}
 		}
 
-		super(name || path.basename(extensionPath), params);
+		super(name || filename(path), params);
 		declareCLIKitClass(this, 'Extension');
 
-		this.banner            = params.banner;
-		this.executable        = executable;
-		this.executableArgs    = executableArgs;
-		this.isCLIKitExtension = isCLIKitExtension;
-		this.pkg               = pkg;
-		this.time              = Date.now() - startTime;
-
-		if (!isCLIKitExtension) {
-			// if this is a not a cli-kit-enabled extension, add a --version option to override
-			// the CLI's --version and disable it
-			this.option('-v, --version', {
-				callback() {
-					throw E.NOT_AN_OPTION('Non-cli-kit extensions do not support --version flag');
-				},
-				hidden: true
-			});
-		}
-
-		if (isCLIKitExtension) {
-			log(`Loaded cli-kit enable extension: ${highlight(pkg.json.name)} ${note(`(${this.time} ms)`)}`);
-
-		} else if (pkg) {
-			this.executable = process.execPath;
-			this.execArgs.unshift(this.extensionPath);
-			this.action = () => this.exec();
-			log(`Loaded extension as Node package: ${highlight(extensionPath)} ${note(`(${this.time} ms)`)}`);
-
-		} else if (executable) {
-			log(`Loaded extension as executable: ${highlight(extensionPath)} ${note(`(${this.time} ms)`)}`);
-
-		} else if (this.get('ignoreMissingExtensions', false)) {
-			this.action = () => {
-				const { stderr } = this.get('terminal');
-				stderr.write(`Extension not found: ${highlight(extensionPath)}\n`);
-			};
-
-			log(`Loaded invalid extension: ${highlight(extensionPath)} ${note(`(${this.time} ms)`)}`);
-
-		} else {
-			throw E.INVALID_EXTENSION(`Extension not found: ${extensionPath}`, { extensionPath, name: 'extension', scope: 'Extension.constructor', value: extensionPath });
-		}
+		this.err    = err;
+		this.exe    = exe;
+		this.path   = path;
+		this.pkg    = pkg;
 	}
 
 	/**
-	 * Runs this extension's executable.
+	 * Loads the extension.
 	 *
+	 * @param {Array.<String>} [args] - A list of args to append to the executable args.
 	 * @returns {Promise}
-	 * @access private
+	 * @access public
 	 */
-	exec() {
-		return new Promise((resolve, reject) => {
-			if (!this.executable) {
-				return reject(E.NO_EXECUTABLE('No executable to run', { name: 'executable', scope: 'Extension.run', value: this.executable }));
+	async load(args) {
+		if (this.loaded) {
+			return;
+		}
+		this.loaded = true;
+
+		let { exe, pkg } = this;
+
+		// if we have a JavaScript file or Node package, but not a cli-kit enabled one, then wire
+		// it up to spawn Node
+		if (pkg && pkg.root && !pkg.clikit) {
+			exe = this.exe = [ process.execPath, pkg.main ];
+		}
+
+		if (exe) {
+			if (Array.isArray(args)) {
+				// append any parsed args to the existing executable and args
+				exe.push.apply(exe, args);
 			}
 
-			const { stderr, stdin, stdout } = this.get('terminal');
-			const stdio = [
-				!this.isCLIKitExtension || stdin === process.stdin   ? 'inherit' : 'pipe',
-				!this.isCLIKitExtension || stdout === process.stdout ? 'inherit' : 'pipe',
-				!this.isCLIKitExtension || stderr === process.stderr ? 'inherit' : 'pipe'
-			];
+			this.action = async () => {
+				if (Array.isArray(this.exe)) {
+					const { stderr, stdin, stdout } = this.get('terminal');
+					const stdio = [
+						!this.isCLIKitExtension || stdin === process.stdin   ? 'inherit' : 'pipe',
+						!this.isCLIKitExtension || stdout === process.stdout ? 'inherit' : 'pipe',
+						!this.isCLIKitExtension || stderr === process.stderr ? 'inherit' : 'pipe'
+					];
 
-			const args = (this.executableArgs || []).concat(this.execArgs);
+					log(`Running: ${highlight(this.exe.join(' '))} ${note(JSON.stringify(stdio))}`);
+					const child = spawn(this.exe[0], this.exe.slice(1), { stdio });
 
-			log(`Running: ${highlight(this.executable + args.map(s => ' ' + s))} ${note(JSON.stringify(stdio))}`);
-			const child = spawn(this.executable, args, { stdio });
+					if (stdio[1] === 'pipe') {
+						child.stdout.pipe(stdout);
+					}
+					if (stdio[2] === 'pipe') {
+						child.stderr.pipe(stderr);
+					}
 
-			if (stdio[1] === 'pipe') {
-				child.stdout.pipe(stdout);
+					await new Promise(resolve => child.on('close', (code = 0) => resolve({ code })));
+
+				} else {
+					throw E.NO_EXECUTABLE(`Extension "${this.name}" has no executable!`);
+				}
+			};
+
+		} else if (pkg && pkg.clikit) {
+			// we have a Node package, so require it and see what we have
+			log(`Requiring ${highlight(pkg.main)}`);
+
+			let ctx;
+			try {
+				ctx = require(pkg.main);
+				if (!ctx || (typeof ctx !== 'object' && typeof ctx !== 'function')) {
+					throw new Error('Extension must export an object or function');
+				}
+			} catch (err) {
+				throw E.INVALID_EXTENSION(`Bad extension "${this.name}": ${err.message}`, { name: this.name, path: this, scope: 'Extension.load', value: err });
 			}
-			if (stdio[2] === 'pipe') {
-				child.stderr.pipe(stderr);
+
+			// if this is an ES6 module, grab the default export
+			if (ctx.__esModule) {
+				ctx = ctx.default;
 			}
 
-			child.on('close', (code = 0) => resolve({ code }));
-		});
+			// if the export was a function, call it now to get its CLI definition
+			try {
+				if (typeof ctx === 'function') {
+					ctx = await ctx();
+				}
+
+				if (!ctx || typeof ctx !== 'object') {
+					throw new Error('Extension does not resolve an object');
+				}
+			} catch (err) {
+				throw E.INVALID_EXTENSION(`Bad extension "${this.name}": ${err.message}`, { name: this.name, path: this, scope: 'Extension.load', value: err });
+			}
+
+			this.isCLIKitExtension = ctx.clikit instanceof Set && ctx.clikit.has('Context');
+
+			if (this.isCLIKitExtension) {
+				this.aliases        = ctx.aliases;
+				this.banner         = ctx.banner;
+				this.camelCase      = ctx.camelCase;
+				this.defaultCommand = ctx.defaultCommand;
+				this.treatUnknownOptionsAsArguments = ctx.treatUnknownOptionsAsArguments;
+
+				this.init({
+					args:       ctx.args,
+					commands:   ctx.commands,
+					desc:       this.desc || ctx.desc,
+					extensions: ctx.extensions,
+					name:       this.name || ctx.name,
+					options:    ctx.options,
+					parent:     this.parent,
+					title:      ctx.title !== 'Global' && ctx.title || this.name
+				});
+
+				if (ctx.clikit.has('Command') && ctx.action) {
+					this.action = ctx.action;
+				} else {
+					this.action = parser => {
+						if (this.defaultCommand !== 'help' || !this.get('help')) {
+							const cmd = this.defaultCommand && this.commands[this.defaultCommand];
+							if (cmd) {
+								return cmd.action(parser);
+							}
+						}
+						return helpCommand.action(parser);
+					};
+				}
+			}
+		}
 	}
 }

@@ -11,7 +11,7 @@ describe('Context', () => {
 
 			expect(() => {
 				new Context(opt);
-			}).to.throw(TypeError, 'Expected parameters to be an object, CLI, Command, or Context');
+			}).to.throw(TypeError, 'Expected parameters to be an object or Context');
 		});
 
 		it('should error if args is invalid', () => {
@@ -19,13 +19,7 @@ describe('Context', () => {
 				new Context({
 					args: 123
 				});
-			}).to.throw(TypeError, 'Expected args to be an array');
-
-			expect(() => {
-				new Context({
-					args: 'foo'
-				});
-			}).to.throw(TypeError, 'Expected args to be an array');
+			}).to.throw(TypeError, 'Expected argument params to be a non-empty string or an object');
 		});
 
 		it('should error if commands is invalid', () => {
@@ -33,7 +27,7 @@ describe('Context', () => {
 				new Context({
 					commands: 123
 				});
-			}).to.throw(TypeError, 'Expected commands to be an object');
+			}).to.throw(TypeError, 'Invalid command "123", expected an object');
 		});
 
 		it('should error if commands path is invalid', () => {
@@ -49,13 +43,13 @@ describe('Context', () => {
 				new Context({
 					options: 123
 				});
-			}).to.throw(TypeError, 'Expected options to be an object or an array');
+			}).to.throw(TypeError, 'Expected option format to be a non-empty string');
 
 			expect(() => {
 				new Context({
 					options: 'foo'
 				});
-			}).to.throw(TypeError, 'Expected options to be an object or an array');
+			}).to.throw(TypeError, 'Invalid option format "foo"');
 		});
 
 		it('should error if extensions is invalid', () => {
@@ -63,13 +57,13 @@ describe('Context', () => {
 				new Context({
 					extensions: 123
 				});
-			}).to.throw(TypeError, 'Expected extensions to be an object or an array');
+			}).to.throw(TypeError, 'Invalid extension "123", expected a valid path or an object');
 
 			expect(() => {
 				new Context({
-					extensions: 'foo'
+					extensions: { path: '' }
 				});
-			}).to.throw(TypeError, 'Expected extensions to be an object or an array');
+			}).to.throw(Error, 'Expected an extension path or params object');
 		});
 	});
 
@@ -226,115 +220,115 @@ describe('Context', () => {
 
 /*
 it('should place bare options in the _ array', function () {
-  var parse = parser('foo bar baz')
-  parse.should.have.property('_').and.deep.equal(['foo', 'bar', 'baz'])
+	var parse = parser('foo bar baz')
+	parse.should.have.property('_').and.deep.equal(['foo', 'bar', 'baz'])
 })
 
 it('should set the value of the final option in a group to the next supplied value', function () {
-  var parse = parser(['-cats', 'meow'])
-  parse.should.have.property('c', true)
-  parse.should.have.property('a', true)
-  parse.should.have.property('t', true)
-  parse.should.have.property('s', 'meow')
-  parse.should.have.property('_').with.length(0)
+	var parse = parser(['-cats', 'meow'])
+	parse.should.have.property('c', true)
+	parse.should.have.property('a', true)
+	parse.should.have.property('t', true)
+	parse.should.have.property('s', 'meow')
+	parse.should.have.property('_').with.length(0)
 })
 
 it('should set the value of a single long option to the next supplied value', function () {
-  var parse = parser(['--pow', 'xixxle'])
-  parse.should.have.property('pow', 'xixxle')
-  parse.should.have.property('_').with.length(0)
+	var parse = parser(['--pow', 'xixxle'])
+	parse.should.have.property('pow', 'xixxle')
+	parse.should.have.property('_').with.length(0)
 })
 
 it('should set the value of a single long option to the next supplied value, even if the value is empty', function () {
-  var parse = parser(['--pow', ''])
-  parse.should.have.property('pow', '')
-  parse.should.have.property('_').with.length(0)
+	var parse = parser(['--pow', ''])
+	parse.should.have.property('pow', '')
+	parse.should.have.property('_').with.length(0)
 })
 
 it('should set the value of a single long option if an = was used', function () {
-  var parse = parser(['--pow=xixxle'])
-  parse.should.have.property('pow', 'xixxle')
-  parse.should.have.property('_').with.length(0)
+	var parse = parser(['--pow=xixxle'])
+	parse.should.have.property('pow', 'xixxle')
+	parse.should.have.property('_').with.length(0)
 })
 
 it('should set the value of multiple long options to the next supplied values relative to each', function () {
-  var parse = parser(['--host', 'localhost', '--port', '555'])
-  parse.should.have.property('host', 'localhost')
-  parse.should.have.property('port', 555)
-  parse.should.have.property('_').with.length(0)
+	var parse = parser(['--host', 'localhost', '--port', '555'])
+	parse.should.have.property('host', 'localhost')
+	parse.should.have.property('port', 555)
+	parse.should.have.property('_').with.length(0)
 })
 
 it('should set the value of multiple long options if = signs were used', function () {
-  var parse = parser(['--host=localhost', '--port=555'])
-  parse.should.have.property('host', 'localhost')
-  parse.should.have.property('port', 555)
-  parse.should.have.property('_').with.length(0)
+	var parse = parser(['--host=localhost', '--port=555'])
+	parse.should.have.property('host', 'localhost')
+	parse.should.have.property('port', 555)
+	parse.should.have.property('_').with.length(0)
 })
 
 it('should still set values appropriately if a mix of short, long, and grouped short options are specified', function () {
-  var parse = parser(['-h', 'localhost', '-fp', '555', 'script.js'])
-  parse.should.have.property('f', true)
-  parse.should.have.property('p', 555)
-  parse.should.have.property('h', 'localhost')
-  parse.should.have.property('_').and.deep.equal(['script.js'])
+	var parse = parser(['-h', 'localhost', '-fp', '555', 'script.js'])
+	parse.should.have.property('f', true)
+	parse.should.have.property('p', 555)
+	parse.should.have.property('h', 'localhost')
+	parse.should.have.property('_').and.deep.equal(['script.js'])
 })
 
 it('should still set values appropriately if a mix of short and long options are specified', function () {
-  var parse = parser(['-h', 'localhost', '--port', '555'])
-  parse.should.have.property('h', 'localhost')
-  parse.should.have.property('port', 555)
-  parse.should.have.property('_').with.length(0)
+	var parse = parser(['-h', 'localhost', '--port', '555'])
+	parse.should.have.property('h', 'localhost')
+	parse.should.have.property('port', 555)
+	parse.should.have.property('_').with.length(0)
 })
 
 it('should explicitly set a boolean option to false if preceeded by "--no-"', function () {
-  var parse = parser(['--no-moo'])
-  parse.should.have.property('moo', false)
-  parse.should.have.property('_').with.length(0)
+	var parse = parser(['--no-moo'])
+	parse.should.have.property('moo', false)
+	parse.should.have.property('_').with.length(0)
 })
 
 it('should still set values appropriately if we supply a comprehensive list of various types of options', function () {
-  var parse = parser([
+	var parse = parser([
 	'--name=meowmers', 'bare', '-cats', 'woo',
 	'-h', 'awesome', '--multi=quux',
 	'--key', 'value',
 	'-b', '--bool', '--no-meep', '--multi=baz',
 	'--', '--not-a-flag', '-', '-h', '-multi', '--', 'eek'
-  ])
-  parse.should.have.property('c', true)
-  parse.should.have.property('a', true)
-  parse.should.have.property('t', true)
-  parse.should.have.property('s', 'woo')
-  parse.should.have.property('h', 'awesome')
-  parse.should.have.property('b', true)
-  parse.should.have.property('bool', true)
-  parse.should.have.property('key', 'value')
-  parse.should.have.property('multi').and.deep.equal(['quux', 'baz'])
-  parse.should.have.property('meep', false)
-  parse.should.have.property('name', 'meowmers')
-  parse.should.have.property('_').and.deep.equal(['bare', '--not-a-flag', '-', '-h', '-multi', '--', 'eek'])
+	])
+	parse.should.have.property('c', true)
+	parse.should.have.property('a', true)
+	parse.should.have.property('t', true)
+	parse.should.have.property('s', 'woo')
+	parse.should.have.property('h', 'awesome')
+	parse.should.have.property('b', true)
+	parse.should.have.property('bool', true)
+	parse.should.have.property('key', 'value')
+	parse.should.have.property('multi').and.deep.equal(['quux', 'baz'])
+	parse.should.have.property('meep', false)
+	parse.should.have.property('name', 'meowmers')
+	parse.should.have.property('_').and.deep.equal(['bare', '--not-a-flag', '-', '-h', '-multi', '--', 'eek'])
 })
 
 it('should parse numbers appropriately', function () {
-  var argv = parser([
+	var argv = parser([
 	'-x', '1234',
 	'-y', '5.67',
 	'-z', '1e7',
 	'-w', '10f',
 	'--hex', '0xdeadbeef',
 	'789'
-  ])
-  argv.should.have.property('x', 1234).and.be.a('number')
-  argv.should.have.property('y', 5.67).and.be.a('number')
-  argv.should.have.property('z', 1e7).and.be.a('number')
-  argv.should.have.property('w', '10f').and.be.a('string')
-  argv.should.have.property('hex', 0xdeadbeef).and.be.a('number')
-  argv.should.have.property('_').and.deep.equal([789])
-  argv._[0].should.be.a('number')
+	])
+	argv.should.have.property('x', 1234).and.be.a('number')
+	argv.should.have.property('y', 5.67).and.be.a('number')
+	argv.should.have.property('z', 1e7).and.be.a('number')
+	argv.should.have.property('w', '10f').and.be.a('string')
+	argv.should.have.property('hex', 0xdeadbeef).and.be.a('number')
+	argv.should.have.property('_').and.deep.equal([789])
+	argv._[0].should.be.a('number')
 })
 
 // addresses: https://github.com/yargs/yargs-parser/issues/33
 it('should handle parsing negative #s', function () {
-  var argv = parser([
+	var argv = parser([
 	'-33', '-177', '33',
 	'--n1', '-33',
 	'-n', '-44',
@@ -343,204 +337,204 @@ it('should handle parsing negative #s', function () {
 	'-o=-55',
 	'--bounds', '-180', '99', '-180', '90',
 	'--other', '-99', '-220'
-  ], {
+	], {
 	array: 'bounds',
 	narg: {'other': 2}
-  })
+	})
 
-  argv._.should.deep.equal([-33, -177, 33])
-  argv.n1.should.equal(-33)
-  argv.n.should.equal(-44)
-  argv.n2.should.equal(-55)
-  argv.foo.bar.should.equal(-33)
-  argv.o.should.equal(-55)
-  argv.bounds.should.deep.equal([-180, 99, -180, 90])
-  argv.other.should.deep.equal([-99, -220])
+	argv._.should.deep.equal([-33, -177, 33])
+	argv.n1.should.equal(-33)
+	argv.n.should.equal(-44)
+	argv.n2.should.equal(-55)
+	argv.foo.bar.should.equal(-33)
+	argv.o.should.equal(-55)
+	argv.bounds.should.deep.equal([-180, 99, -180, 90])
+	argv.other.should.deep.equal([-99, -220])
 })
 
 it('should set the value of a single short option to the next supplied value, even if the value is empty', function () {
-  var parse = parser(['-p', ''])
-  parse.should.have.property('p', '')
-  parse.should.have.property('_').with.length(0)
+	var parse = parser(['-p', ''])
+	parse.should.have.property('p', '')
+	parse.should.have.property('_').with.length(0)
 })
 
 it('should not set the next value as the value of a short option if that option is explicitly defined as a boolean', function () {
-  var parse = parser([ '-t', 'moo' ], {
+	var parse = parser([ '-t', 'moo' ], {
 	boolean: 't'
-  })
-  parse.should.have.property('t', true).and.be.a('boolean')
-  parse.should.have.property('_').and.deep.equal(['moo'])
+	})
+	parse.should.have.property('t', true).and.be.a('boolean')
+	parse.should.have.property('_').and.deep.equal(['moo'])
 })
 
 it('should set boolean options values if the next value is "true" or "false"', function () {
-  var parse = parser(['--verbose', 'false', 'moo', '-t', 'true'], {
+	var parse = parser(['--verbose', 'false', 'moo', '-t', 'true'], {
 	boolean: ['t', 'verbose'],
 	default: {
-	  verbose: true
+		verbose: true
 	}
-  })
-  parse.should.have.property('verbose', false).and.be.a('boolean')
-  parse.should.have.property('t', true).and.be.a('boolean')
-  parse.should.have.property('_').and.deep.equal(['moo'])
+	})
+	parse.should.have.property('verbose', false).and.be.a('boolean')
+	parse.should.have.property('t', true).and.be.a('boolean')
+	parse.should.have.property('_').and.deep.equal(['moo'])
 })
 
 it('should not set boolean options values if the next value only contains the words "true" or "false"', function () {
-  var parse = parser(['--verbose', 'aaatrueaaa', 'moo', '-t', 'aaafalseaaa'], {
+	var parse = parser(['--verbose', 'aaatrueaaa', 'moo', '-t', 'aaafalseaaa'], {
 	boolean: ['t', 'verbose']
-  })
-  parse.should.have.property('verbose', true).and.be.a('boolean')
-  parse.should.have.property('t', true).and.be.a('boolean')
-  parse.should.have.property('_').and.deep.equal(['aaatrueaaa', 'moo', 'aaafalseaaa'])
+	})
+	parse.should.have.property('verbose', true).and.be.a('boolean')
+	parse.should.have.property('t', true).and.be.a('boolean')
+	parse.should.have.property('_').and.deep.equal(['aaatrueaaa', 'moo', 'aaafalseaaa'])
 })
 
 it('should allow defining options as boolean in groups', function () {
-  var parse = parser([ '-x', '-z', 'one', 'two', 'three' ], {
+	var parse = parser([ '-x', '-z', 'one', 'two', 'three' ], {
 	boolean: ['x', 'y', 'z']
-  })
-  parse.should.have.property('x', true).and.be.a('boolean')
-  parse.should.have.property('y', false).and.be.a('boolean')
-  parse.should.have.property('z', true).and.be.a('boolean')
-  parse.should.have.property('_').and.deep.equal(['one', 'two', 'three'])
+	})
+	parse.should.have.property('x', true).and.be.a('boolean')
+	parse.should.have.property('y', false).and.be.a('boolean')
+	parse.should.have.property('z', true).and.be.a('boolean')
+	parse.should.have.property('_').and.deep.equal(['one', 'two', 'three'])
 })
 
 it('should preserve newlines in option values', function () {
-  var args = parser(['-s', 'X\nX'])
-  args.should.have.property('_').with.length(0)
-  args.should.have.property('s', 'X\nX')
-  // reproduce in bash:
-  // VALUE="new
-  // line"
-  // node program.js --s="$VALUE"
-  args = parser(['--s=X\nX'])
-  args.should.have.property('_').with.length(0)
-  args.should.have.property('s', 'X\nX')
+	var args = parser(['-s', 'X\nX'])
+	args.should.have.property('_').with.length(0)
+	args.should.have.property('s', 'X\nX')
+	// reproduce in bash:
+	// VALUE="new
+	// line"
+	// node program.js --s="$VALUE"
+	args = parser(['--s=X\nX'])
+	args.should.have.property('_').with.length(0)
+	args.should.have.property('s', 'X\nX')
 })
 
 it('should not convert numbers to type number if explicitly defined as strings', function () {
-  var s = parser([ '-s', '0001234' ], {
+	var s = parser([ '-s', '0001234' ], {
 	string: 's'
-  }).s
-  s.should.be.a('string').and.equal('0001234')
-  var x = parser([ '-x', '56' ], {
+	}).s
+	s.should.be.a('string').and.equal('0001234')
+	var x = parser([ '-x', '56' ], {
 	string: ['x']
-  }).x
-  x.should.be.a('string').and.equal('56')
+	}).x
+	x.should.be.a('string').and.equal('56')
 })
 
 it('should default numbers to undefined', function () {
-  var n = parser([ '-n' ], {
+	var n = parser([ '-n' ], {
 	number: ['n']
-  }).n
-  expect(n).to.equal(undefined)
+	}).n
+	expect(n).to.equal(undefined)
 })
 
 it('should default number to NaN if value is not a valid number', function () {
-  var n = parser([ '-n', 'string' ], {
+	var n = parser([ '-n', 'string' ], {
 	number: ['n']
-  }).n
-  expect(n).to.deep.equal(NaN)
+	}).n
+	expect(n).to.deep.equal(NaN)
 })
 
 // Fixes: https://github.com/bcoe/yargs/issues/68
 it('should parse flag arguments with no right-hand-value as strings, if defined as strings', function () {
-  var s = parser([ '-s' ], {
+	var s = parser([ '-s' ], {
 	string: ['s']
-  }).s
-  s.should.be.a('string').and.equal('')
+	}).s
+	s.should.be.a('string').and.equal('')
 
-  s = parser([ '-sf' ], {
+	s = parser([ '-sf' ], {
 	string: ['s']
-  }).s
-  s.should.be.a('string').and.equal('')
+	}).s
+	s.should.be.a('string').and.equal('')
 
-  s = parser([ '--string' ], {
+	s = parser([ '--string' ], {
 	string: ['string']
-  }).string
-  s.should.be.a('string').and.equal('')
+	}).string
+	s.should.be.a('string').and.equal('')
 })
 
 it('should leave all non-hyphenated values as strings if _ is defined as a string', function () {
-  var s = parser([ '  ', '  ' ], {
+	var s = parser([ '  ', '  ' ], {
 	string: ['_']
-  })._
-  s.should.have.length(2)
-  s[0].should.be.a('string').and.equal('  ')
-  s[1].should.be.a('string').and.equal('  ')
+	})._
+	s.should.have.length(2)
+	s[0].should.be.a('string').and.equal('  ')
+	s[1].should.be.a('string').and.equal('  ')
 })
 
 describe('normalize', function () {
-  it('should normalize redundant paths', function () {
+	it('should normalize redundant paths', function () {
 	var a = parser([ '-s', ['', 'tmp', '..', ''].join(path.sep) ], {
-	  alias: {
+		alias: {
 		s: ['save']
-	  },
-	  normalize: 's'
+		},
+		normalize: 's'
 	})
 	a.should.have.property('s', path.sep)
 	a.should.have.property('save', path.sep)
-  })
+	})
 
-  it('should normalize redundant paths when a value is later assigned', function () {
+	it('should normalize redundant paths when a value is later assigned', function () {
 	var a = parser(['-s'], {
-	  normalize: ['s']
+		normalize: ['s']
 	})
 	a.should.have.property('s', true)
 	a.s = ['', 'path', 'to', 'new', 'dir', '..', '..', ''].join(path.sep)
 	a.s.should.equal(['', 'path', 'to', ''].join(path.sep))
-  })
+	})
 
-  it('should normalize when key is also an array', function () {
+	it('should normalize when key is also an array', function () {
 	var a = parser([ '-s', ['', 'tmp', '..', ''].join(path.sep), ['', 'path', 'to', 'new', 'dir', '..', '..', ''].join(path.sep) ], {
-	  alias: {
+		alias: {
 		s: ['save']
-	  },
-	  normalize: 's',
-	  array: 's'
+		},
+		normalize: 's',
+		array: 's'
 	})
 	var expected = [path.sep, ['', 'path', 'to', ''].join(path.sep)]
 	a.should.have.property('s').and.deep.equal(expected)
 	a.should.have.property('save').and.deep.equal(expected)
-  })
+	})
 })
 
 describe('alias', function () {
-  it('should set alias value to the same value as the full option', function () {
+	it('should set alias value to the same value as the full option', function () {
 	var argv = parser([ '-f', '11', '--zoom', '55' ], {
-	  alias: {
+		alias: {
 		z: ['zoom']
-	  }
+		}
 	})
 	argv.should.have.property('zoom', 55)
 	argv.should.have.property('z', 55)
 	argv.should.have.property('f', 11)
-  })
+	})
 
-  it('should allow multiple aliases to be specified', function () {
+	it('should allow multiple aliases to be specified', function () {
 	var argv = parser([ '-f', '11', '--zoom', '55' ], {
-	  alias: {
+		alias: {
 		z: ['zm', 'zoom']
-	  }
+		}
 	})
 
 	argv.should.have.property('zoom', 55)
 	argv.should.have.property('z', 55)
 	argv.should.have.property('zm', 55)
 	argv.should.have.property('f', 11)
-  })
+	})
 
-  // regression, see https://github.com/chevex/yargs/issues/63
-  it('should not add the same key to argv multiple times, when creating camel-case aliases', function () {
+	// regression, see https://github.com/chevex/yargs/issues/63
+	it('should not add the same key to argv multiple times, when creating camel-case aliases', function () {
 	var argv = parser(['--health-check=banana', '--second-key', 'apple', '-t=blarg'], {
-	  alias: {
+		alias: {
 		h: ['health-check'],
 		'second-key': ['s'],
 		'third-key': ['t']
-	  },
-	  default: {
+		},
+		default: {
 		h: 'apple',
 		'second-key': 'banana',
 		'third-key': 'third'
-	  }
+		}
 	})
 
 	// before this fix, yargs failed parsing
@@ -556,29 +550,29 @@ describe('alias', function () {
 	argv.thirdKey.should.eql('blarg')
 	argv.t.should.eql('blarg')
 	argv['third-key'].should.eql('blarg')
-  })
+	})
 
-  it('should allow transitive aliases to be specified', function () {
+	it('should allow transitive aliases to be specified', function () {
 	var argv = parser([ '-f', '11', '--zoom', '55' ], {
-	  alias: {
+		alias: {
 		z: 'zm',
 		zm: 'zoom'
-	  }
+		}
 	})
 
 	argv.should.have.property('zoom', 55)
 	argv.should.have.property('z', 55)
 	argv.should.have.property('zm', 55)
 	argv.should.have.property('f', 11)
-  })
+	})
 
-  it('should merge two lists of aliases if they collide', function () {
+	it('should merge two lists of aliases if they collide', function () {
 	var argv = parser(['-f', '11', '--zoom', '55'], {
-	  alias: {
+		alias: {
 		z: 'zm',
 		zoom: 'zoop',
 		zm: 'zoom'
-	  }
+		}
 	})
 
 	argv.should.have.property('zoom', 55)
@@ -586,286 +580,286 @@ describe('alias', function () {
 	argv.should.have.property('z', 55)
 	argv.should.have.property('zm', 55)
 	argv.should.have.property('f', 11)
-  })
+	})
 })
 
 it('should assign data after forward slash to the option before the slash', function () {
-  var parse = parser(['-I/foo/bar/baz'])
-  parse.should.have.property('_').with.length(0)
-  parse.should.have.property('I', '/foo/bar/baz')
-  parse = parser(['-xyz/foo/bar/baz'])
-  parse.should.have.property('x', true)
-  parse.should.have.property('y', true)
-  parse.should.have.property('z', '/foo/bar/baz')
-  parse.should.have.property('_').with.length(0)
+	var parse = parser(['-I/foo/bar/baz'])
+	parse.should.have.property('_').with.length(0)
+	parse.should.have.property('I', '/foo/bar/baz')
+	parse = parser(['-xyz/foo/bar/baz'])
+	parse.should.have.property('x', true)
+	parse.should.have.property('y', true)
+	parse.should.have.property('z', '/foo/bar/baz')
+	parse.should.have.property('_').with.length(0)
 })
 
 describe('config', function () {
-  var jsonPath = path.resolve(__dirname, './fixtures/config.json')
+	var jsonPath = path.resolve(__dirname, './fixtures/config.json')
 
-  // See: https://github.com/chevex/yargs/issues/12
-  it('should load options and values from default config if specified', function () {
+	// See: https://github.com/chevex/yargs/issues/12
+	it('should load options and values from default config if specified', function () {
 	var argv = parser([ '--foo', 'bar' ], {
-	  alias: {
+		alias: {
 		z: 'zoom'
-	  },
-	  default: {
+		},
+		default: {
 		settings: jsonPath
-	  },
-	  config: 'settings'
+		},
+		config: 'settings'
 	})
 
 	argv.should.have.property('herp', 'derp')
 	argv.should.have.property('zoom', 55)
 	argv.should.have.property('foo').and.deep.equal('bar')
-  })
+	})
 
-  it('should use value from config file, if argv value is using default value', function () {
+	it('should use value from config file, if argv value is using default value', function () {
 	var argv = parser([], {
-	  alias: {
+		alias: {
 		z: 'zoom'
-	  },
-	  config: ['settings'],
-	  default: {
+		},
+		config: ['settings'],
+		default: {
 		settings: jsonPath,
 		foo: 'banana'
-	  }
+		}
 	})
 
 	argv.should.have.property('herp', 'derp')
 	argv.should.have.property('zoom', 55)
 	argv.should.have.property('foo').and.deep.equal('baz')
-  })
+	})
 
-  it('should use value from config file, if argv key is a boolean', function () {
+	it('should use value from config file, if argv key is a boolean', function () {
 	var argv = parser([], {
-	  config: ['settings'],
-	  default: {
+		config: ['settings'],
+		default: {
 		settings: jsonPath
-	  },
-	  boolean: ['truthy']
+		},
+		boolean: ['truthy']
 	})
 
 	argv.should.have.property('truthy', true)
-  })
+	})
 
-  it('should use value from cli, if cli overrides boolean argv key', function () {
+	it('should use value from cli, if cli overrides boolean argv key', function () {
 	var argv = parser(['--no-truthy'], {
-	  config: ['settings'],
-	  default: {
+		config: ['settings'],
+		default: {
 		settings: jsonPath
-	  },
-	  boolean: ['truthy']
+		},
+		boolean: ['truthy']
 	})
 
 	argv.should.have.property('truthy', false)
-  })
+	})
 
-  it('should use cli value, if cli value is set and both cli and default value match', function () {
+	it('should use cli value, if cli value is set and both cli and default value match', function () {
 	var argv = parser(['--foo', 'banana'], {
-	  alias: {
+		alias: {
 		z: 'zoom'
-	  },
-	  config: ['settings'],
-	  default: {
+		},
+		config: ['settings'],
+		default: {
 		settings: jsonPath,
 		foo: 'banana'
-	  }
+		}
 	})
 
 	argv.should.have.property('herp', 'derp')
 	argv.should.have.property('zoom', 55)
 	argv.should.have.property('foo').and.deep.equal('banana')
-  })
+	})
 
-  it("should allow config to be set as flag in 'option'", function () {
+	it("should allow config to be set as flag in 'option'", function () {
 	var argv = parser([ '--settings', jsonPath, '--foo', 'bar' ], {
-	  alias: {
+		alias: {
 		z: 'zoom'
-	  },
-	  config: ['settings']
+		},
+		config: ['settings']
 	})
 
 	argv.should.have.property('herp', 'derp')
 	argv.should.have.property('zoom', 55)
 	argv.should.have.property('foo').and.deep.equal('bar')
-  })
+	})
 
-  it('should load options and values from a JS file when config has .js extention', function () {
+	it('should load options and values from a JS file when config has .js extention', function () {
 	var jsPath = path.resolve(__dirname, './fixtures/settings.js')
 	var argv = parser([ '--settings', jsPath, '--foo', 'bar' ], {
-	  config: ['settings']
+		config: ['settings']
 	})
 
 	argv.should.have.property('herp', 'derp')
 	argv.should.have.property('foo', 'bar')
 	argv.should.have.property('calculate').and.be.a('function')
-  })
+	})
 
-  it('should raise an appropriate error if JSON file is not found', function () {
+	it('should raise an appropriate error if JSON file is not found', function () {
 	var argv = parser.detailed(['--settings', 'fake.json', '--foo', 'bar'], {
-	  alias: {
+		alias: {
 		z: 'zoom'
-	  },
-	  config: ['settings']
+		},
+		config: ['settings']
 	})
 
 	argv.error.message.should.equal('Invalid JSON config file: fake.json')
-  })
+	})
 
-  // see: https://github.com/bcoe/yargs/issues/172
-  it('should not raise an exception if config file is set as default argument value', function () {
+	// see: https://github.com/bcoe/yargs/issues/172
+	it('should not raise an exception if config file is set as default argument value', function () {
 	var argv = parser.detailed([], {
-	  default: {
+		default: {
 		config: 'foo.json'
-	  },
-	  config: ['config']
+		},
+		config: ['config']
 	})
 
 	expect(argv.error).to.equal(null)
-  })
+	})
 
-  it('should load nested options from config file', function () {
+	it('should load nested options from config file', function () {
 	var jsonPath = path.resolve(__dirname, './fixtures/nested_config.json')
 	var argv = parser(['--settings', jsonPath, '--nested.foo', 'bar'], {
-	  config: ['settings']
+		config: ['settings']
 	})
 
 	argv.should.have.property('a', 'a')
 	argv.should.have.property('b', 'b')
 	argv.should.have.property('nested').and.deep.equal({
-	  foo: 'bar',
-	  bar: 'bar'
+		foo: 'bar',
+		bar: 'bar'
 	})
-  })
+	})
 
-  it('should use nested value from config file, if argv value is using default value', function () {
+	it('should use nested value from config file, if argv value is using default value', function () {
 	var jsonPath = path.resolve(__dirname, './fixtures/nested_config.json')
 	var argv = parser(['--settings', jsonPath], {
-	  config: ['settings'],
-	  default: {
+		config: ['settings'],
+		default: {
 		'nested.foo': 'banana'
-	  }
+		}
 	})
 
 	argv.should.have.property('a', 'a')
 	argv.should.have.property('b', 'b')
 	argv.should.have.property('nested').and.deep.equal({
-	  foo: 'baz',
-	  bar: 'bar'
+		foo: 'baz',
+		bar: 'bar'
 	})
-  })
+	})
 
-  it('allows a custom parsing function to be provided', function () {
+	it('allows a custom parsing function to be provided', function () {
 	var jsPath = path.resolve(__dirname, './fixtures/config.txt')
 	var argv = parser([ '--settings', jsPath, '--foo', 'bar' ], {
-	  config: {
+		config: {
 		settings: function (configPath) {
-		  // as an example, parse an environment
-		  // variable style config:
-		  // FOO=99
-		  // BATMAN=grumpy
-		  var config = {}
-		  var txt = fs.readFileSync(configPath, 'utf-8')
-		  txt.split(/\r?\n/).forEach(function (l) {
+			// as an example, parse an environment
+			// variable style config:
+			// FOO=99
+			// BATMAN=grumpy
+			var config = {}
+			var txt = fs.readFileSync(configPath, 'utf-8')
+			txt.split(/\r?\n/).forEach(function (l) {
 			var kv = l.split('=')
 			config[kv[0].toLowerCase()] = kv[1]
-		  })
-		  return config
+			})
+			return config
 		}
-	  }
+		}
 	})
 
 	argv.batman.should.equal('grumpy')
 	argv.awesome.should.equal('banana')
 	argv.foo.should.equal('bar')
-  })
+	})
 
-  it('allows a custom parsing function to be provided as an alias', function () {
+	it('allows a custom parsing function to be provided as an alias', function () {
 	var jsPath = path.resolve(__dirname, './fixtures/config.json')
 	var argv = parser([ '--settings', jsPath, '--foo', 'bar' ], {
-	  config: {
+		config: {
 		s: function (configPath) {
-		  return JSON.parse(fs.readFileSync(configPath, 'utf-8'))
+			return JSON.parse(fs.readFileSync(configPath, 'utf-8'))
 		}
-	  },
-	  alias: {
+		},
+		alias: {
 		s: ['settings']
-	  }
+		}
 	})
 
 	argv.should.have.property('herp', 'derp')
 	argv.should.have.property('foo', 'bar')
-  })
+	})
 
-  it('outputs an error returned by the parsing function', function () {
+	it('outputs an error returned by the parsing function', function () {
 	var argv = parser.detailed(['--settings=./package.json'], {
-	  config: {
+		config: {
 		settings: function (configPath) {
-		  return Error('someone set us up the bomb')
+			return Error('someone set us up the bomb')
 		}
-	  }
+		}
 	})
 
 	argv.error.message.should.equal('someone set us up the bomb')
-  })
+	})
 
-  it('outputs an error if thrown by the parsing function', function () {
+	it('outputs an error if thrown by the parsing function', function () {
 	var argv = parser.detailed(['--settings=./package.json'], {
-	  config: {
+		config: {
 		settings: function (configPath) {
-		  throw Error('someone set us up the bomb')
+			throw Error('someone set us up the bomb')
 		}
-	  }
+		}
 	})
 
 	argv.error.message.should.equal('someone set us up the bomb')
-  })
+	})
 })
 
 describe('config objects', function () {
-  it('should load options from config object', function () {
+	it('should load options from config object', function () {
 	var argv = parser([ '--foo', 'bar' ], {
-	  configObjects: [{
+		configObjects: [{
 		apple: 'apple',
 		banana: 42,
 		foo: 'baz'
-	  }]
+		}]
 	})
 
 	argv.should.have.property('apple', 'apple')
 	argv.should.have.property('banana', 42)
 	argv.should.have.property('foo', 'bar')
-  })
+	})
 
-  it('should use value from config object, if argv value is using default value', function () {
+	it('should use value from config object, if argv value is using default value', function () {
 	var argv = parser([], {
-	  configObjects: [{
+		configObjects: [{
 		apple: 'apple',
 		banana: 42,
 		foo: 'baz'
-	  }],
-	  default: {
+		}],
+		default: {
 		foo: 'banana'
-	  }
+		}
 	})
 
 	argv.should.have.property('apple', 'apple')
 	argv.should.have.property('banana', 42)
 	argv.should.have.property('foo', 'baz')
-  })
+	})
 
-  it('should use value from config object to all aliases', function () {
+	it('should use value from config object to all aliases', function () {
 	var argv = parser([], {
-	  configObjects: [{
+		configObjects: [{
 		apple: 'apple',
 		banana: 42,
 		foo: 'baz'
-	  }],
-	  alias: {
+		}],
+		alias: {
 		a: ['apple'],
 		banana: ['b']
-	  }
+		}
 	})
 
 	argv.should.have.property('apple', 'apple')
@@ -873,143 +867,143 @@ describe('config objects', function () {
 	argv.should.have.property('banana', 42)
 	argv.should.have.property('b', 42)
 	argv.should.have.property('foo', 'baz')
-  })
+	})
 
-  it('should load nested options from config object', function () {
+	it('should load nested options from config object', function () {
 	var argv = parser(['--nested.foo', 'bar'], {
-	  configObjects: [{
+		configObjects: [{
 		a: 'a',
 		nested: {
-		  foo: 'baz',
-		  bar: 'bar'
+			foo: 'baz',
+			bar: 'bar'
 		},
 		b: 'b'
-	  }]
+		}]
 	})
 
 	argv.should.have.property('a', 'a')
 	argv.should.have.property('b', 'b')
 	argv.should.have.property('nested').and.deep.equal({
-	  foo: 'bar',
-	  bar: 'bar'
+		foo: 'bar',
+		bar: 'bar'
 	})
-  })
+	})
 
-  it('should use nested value from config object, if argv value is using default value', function () {
+	it('should use nested value from config object, if argv value is using default value', function () {
 	var argv = parser([], {
-	  configObjects: [{
+		configObjects: [{
 		a: 'a',
 		nested: {
-		  foo: 'baz',
-		  bar: 'bar'
+			foo: 'baz',
+			bar: 'bar'
 		},
 		b: 'b'
-	  }],
-	  default: {
+		}],
+		default: {
 		'nested.foo': 'banana'
-	  }
+		}
 	})
 
 	argv.should.have.property('a', 'a')
 	argv.should.have.property('b', 'b')
 	argv.should.have.property('nested').and.deep.equal({
-	  foo: 'baz',
-	  bar: 'bar'
+		foo: 'baz',
+		bar: 'bar'
 	})
-  })
+	})
 })
 
 describe('dot notation', function () {
-  it('should allow object graph traversal via dot notation', function () {
+	it('should allow object graph traversal via dot notation', function () {
 	var argv = parser([
-	  '--foo.bar', '3', '--foo.baz', '4',
-	  '--foo.quux.quibble', '5', '--foo.quux.o_O',
-	  '--beep.boop'
+		'--foo.bar', '3', '--foo.baz', '4',
+		'--foo.quux.quibble', '5', '--foo.quux.o_O',
+		'--beep.boop'
 	])
 	argv.should.have.property('foo').and.deep.equal({
-	  bar: 3,
-	  baz: 4,
-	  quux: {
+		bar: 3,
+		baz: 4,
+		quux: {
 		quibble: 5,
 		o_O: true
-	  }
+		}
 	})
 	argv.should.have.property('beep').and.deep.equal({ boop: true })
-  })
+	})
 
-  it('should apply defaults to dot notation arguments', function () {
+	it('should apply defaults to dot notation arguments', function () {
 	var argv = parser([], {
-	  default: {
+		default: {
 		'foo.bar': 99
-	  }
+		}
 	})
 
 	argv.foo.bar.should.eql(99)
-  })
+	})
 
-  // see #279
-  it('should allow default to be overridden when an alias is provided', function () {
+	// see #279
+	it('should allow default to be overridden when an alias is provided', function () {
 	var argv = parser(['--foo.bar', '200'], {
-	  default: {
+		default: {
 		'foo.bar': 99
-	  }
+		}
 	})
 
 	argv.foo.bar.should.eql(200)
-  })
+	})
 
-  // see #279
-  it('should also override alias', function () {
+	// see #279
+	it('should also override alias', function () {
 	var argv = parser(['--foo.bar', '200'], {
-	  alias: {
+		alias: {
 		'foo.bar': ['f']
-	  },
-	  default: {
+		},
+		default: {
 		'foo.bar': 99
-	  }
+		}
 	})
 
 	argv.f.should.eql(200)
-  })
+	})
 
-  // see #279
-  it('should not set an undefined dot notation key', function () {
+	// see #279
+	it('should not set an undefined dot notation key', function () {
 	var argv = parser(['--foo.bar', '200'], {
-	  default: {
+		default: {
 		'foo.bar': 99
-	  },
-	  alias: {
+		},
+		alias: {
 		'foo.bar': ['f']
-	  }
+		}
 	})
 
 	;('foo.bar' in argv).should.equal(false)
-  })
+	})
 
-  it('should respect .string() for dot notation arguments', function () {
+	it('should respect .string() for dot notation arguments', function () {
 	var argv = parser(['--foo.bar', '99', '--bar.foo=99'], {
-	  string: ['foo.bar']
+		string: ['foo.bar']
 	})
 
 	argv.foo.bar.should.eql('99')
 	argv.bar.foo.should.eql(99)
-  })
+	})
 
-  it('should populate aliases when dot notation is used', function () {
+	it('should populate aliases when dot notation is used', function () {
 	var argv = parser(['--foo.bar', '99'], {
-	  alias: {
+		alias: {
 		foo: ['f']
-	  }
+		}
 	})
 
 	argv.f.bar.should.eql(99)
-  })
+	})
 
-  it('should populate aliases when nested dot notation is used', function () {
+	it('should populate aliases when nested dot notation is used', function () {
 	var argv = parser(['--foo.bar.snuh', '99', '--foo.apple', '33', '--foo.bar.cool', '11'], {
-	  alias: {
+		alias: {
 		foo: ['f']
-	  }
+		}
 	})
 
 	argv.f.bar.snuh.should.eql(99)
@@ -1020,635 +1014,635 @@ describe('dot notation', function () {
 
 	argv.f.bar.cool.should.eql(11)
 	argv.foo.bar.cool.should.eql(11)
-  })
+	})
 
-  it("should allow flags to use dot notation, when seperated by '='", function () {
+	it("should allow flags to use dot notation, when seperated by '='", function () {
 	var argv = parser(['-f.foo=99'])
 	argv.f.foo.should.eql(99)
-  })
+	})
 
-  it("should allow flags to use dot notation, when seperated by ' '", function () {
+	it("should allow flags to use dot notation, when seperated by ' '", function () {
 	var argv = parser(['-f.foo', '99'])
 	argv.f.foo.should.eql(99)
-  })
+	})
 
-  it('should allow flags to use dot notation when no right-hand-side is given', function () {
+	it('should allow flags to use dot notation when no right-hand-side is given', function () {
 	var argv = parser(['-f.foo', '99', '-f.bar'])
 	argv.f.foo.should.eql(99)
 	argv.f.bar.should.eql(true)
-  })
+	})
 })
 
 it('should set boolean and alias using explicit true', function () {
-  var aliased = [ '-h', 'true' ]
-  var aliasedArgv = parser(aliased, {
+	var aliased = [ '-h', 'true' ]
+	var aliasedArgv = parser(aliased, {
 	boolean: ['h'],
 	alias: {
-	  h: ['herp']
+		h: ['herp']
 	}
-  })
+	})
 
-  aliasedArgv.should.have.property('herp', true)
-  aliasedArgv.should.have.property('h', true)
-  aliasedArgv.should.have.property('_').with.length(0)
+	aliasedArgv.should.have.property('herp', true)
+	aliasedArgv.should.have.property('h', true)
+	aliasedArgv.should.have.property('_').with.length(0)
 })
 
 // regression, see https://github.com/substack/node-optimist/issues/71
 it('should set boolean and --x=true', function () {
-  var parsed = parser(['--boool', '--other=true'], {
+	var parsed = parser(['--boool', '--other=true'], {
 	boolean: ['boool']
-  })
-  parsed.should.have.property('boool', true)
-  parsed.should.have.property('other', 'true')
-  parsed = parser(['--boool', '--other=false'], {
+	})
+	parsed.should.have.property('boool', true)
+	parsed.should.have.property('other', 'true')
+	parsed = parser(['--boool', '--other=false'], {
 	boolean: ['boool']
-  })
-  parsed.should.have.property('boool', true)
-  parsed.should.have.property('other', 'false')
+	})
+	parsed.should.have.property('boool', true)
+	parsed.should.have.property('other', 'false')
 })
 
 // regression, see https://github.com/chevex/yargs/issues/66
 it('should set boolean options values if next value is "true" or "false" with = as separator', function () {
-  var argv = parser(['--bool=false'], {
+	var argv = parser(['--bool=false'], {
 	boolean: ['b'],
 	alias: {
-	  b: ['bool']
+		b: ['bool']
 	},
 	default: {
-	  b: true
+		b: true
 	}
-  })
+	})
 
-  argv.bool.should.eql(false)
+	argv.bool.should.eql(false)
 })
 
 describe('short options', function () {
-  it('should set the value of multiple single short options to the next supplied values relative to each', function () {
+	it('should set the value of multiple single short options to the next supplied values relative to each', function () {
 	var parse = parser(['-h', 'localhost', '-p', '555'])
 	parse.should.have.property('h', 'localhost')
 	parse.should.have.property('p', 555)
 	parse.should.have.property('_').with.length(0)
-  })
+	})
 
-  it('should set the value of a single short option to the next supplied value', function () {
+	it('should set the value of a single short option to the next supplied value', function () {
 	var parse = parser(['-h', 'localhost'])
 	parse.should.have.property('h', 'localhost')
 	parse.should.have.property('_').with.length(0)
-  })
+	})
 
-  it('should expand grouped short options to a hash with a key for each', function () {
+	it('should expand grouped short options to a hash with a key for each', function () {
 	var parse = parser(['-cats'])
 	parse.should.have.property('c', true)
 	parse.should.have.property('a', true)
 	parse.should.have.property('t', true)
 	parse.should.have.property('s', true)
 	parse.should.have.property('_').with.length(0)
-  })
+	})
 
-  it('should set n to the numeric value 123', function () {
+	it('should set n to the numeric value 123', function () {
 	var argv = parser([ '-n123' ])
 	argv.should.have.property('n', 123)
-  })
+	})
 
-  it('should set n to the numeric value 123, with n at the end of a group', function () {
+	it('should set n to the numeric value 123, with n at the end of a group', function () {
 	var argv = parser([ '-ab5n123' ])
 	argv.should.have.property('a', true)
 	argv.should.have.property('b', true)
 	argv.should.have.property('5', true)
 	argv.should.have.property('n', 123)
 	argv.should.have.property('_').with.length(0)
-  })
+	})
 
-  it('should set n to the numeric value 123, with = as separator', function () {
+	it('should set n to the numeric value 123, with = as separator', function () {
 	var argv = parser([ '-n=123' ])
 	argv.should.have.property('n', 123)
-  })
+	})
 
-  it('should set n to the numeric value 123, with n at the end of a group and = as separator', function () {
+	it('should set n to the numeric value 123, with n at the end of a group and = as separator', function () {
 	var argv = parser([ '-ab5n=123' ])
 	argv.should.have.property('a', true)
 	argv.should.have.property('b', true)
 	argv.should.have.property('5', true)
 	argv.should.have.property('n', 123)
 	argv.should.have.property('_').with.length(0)
-  })
+	})
 })
 
 describe('whitespace', function () {
-  it('should be whitespace', function () {
+	it('should be whitespace', function () {
 	var argv = parser([ '-x', '\t' ])
 	argv.should.have.property('x', '\t')
-  })
+	})
 })
 
 describe('boolean modifier function', function () {
-  it('should prevent yargs from sucking in the next option as the value of the first option', function () {
+	it('should prevent yargs from sucking in the next option as the value of the first option', function () {
 	// Arrange & Act
 	var result = parser(['-b', '123'], {
-	  boolean: ['b']
+		boolean: ['b']
 	})
 	// Assert
 	result.should.have.property('b').that.is.a('boolean').and.is.true
 	result.should.have.property('_').and.deep.equal([123])
-  })
+	})
 })
 
 describe('defaults', function () {
-  function checkNoArgs (opts, hasAlias) {
+	function checkNoArgs (opts, hasAlias) {
 	it('should set defaults if no args', function () {
-	  var result = parser([], opts)
-	  result.should.have.property('flag', true)
-	  if (hasAlias) {
+		var result = parser([], opts)
+		result.should.have.property('flag', true)
+		if (hasAlias) {
 		result.should.have.property('f', true)
-	  }
+		}
 	})
-  }
+	}
 
-  function checkExtraArg (opts, hasAlias) {
+	function checkExtraArg (opts, hasAlias) {
 	it('should set defaults if one extra arg', function () {
-	  var result = parser(['extra'], opts)
-	  result.should.have.property('flag', true)
-	  result.should.have.property('_').and.deep.equal(['extra'])
-	  if (hasAlias) {
+		var result = parser(['extra'], opts)
+		result.should.have.property('flag', true)
+		result.should.have.property('_').and.deep.equal(['extra'])
+		if (hasAlias) {
 		result.should.have.property('f', true)
-	  }
+		}
 	})
-  }
+	}
 
-  function checkStringArg (opts, hasAlias) {
+	function checkStringArg (opts, hasAlias) {
 	it('should set defaults even if arg looks like a string', function () {
-	  var result = parser([ '--flag', 'extra' ], opts)
-	  result.should.have.property('flag', true)
-	  result.should.have.property('_').and.deep.equal(['extra'])
-	  if (hasAlias) {
+		var result = parser([ '--flag', 'extra' ], opts)
+		result.should.have.property('flag', true)
+		result.should.have.property('_').and.deep.equal(['extra'])
+		if (hasAlias) {
 		result.should.have.property('f', true)
-	  }
+		}
 	})
-  }
+	}
 
-  describe('for options with aliases', function () {
+	describe('for options with aliases', function () {
 	var opts = {
-	  alias: {
+		alias: {
 		flag: ['f']
-	  },
-	  default: {
+		},
+		default: {
 		flag: true
-	  }
+		}
 	}
 
 	checkNoArgs(opts, true)
 	checkExtraArg(opts, true)
-  })
+	})
 
-  describe('for typed options without aliases', function () {
+	describe('for typed options without aliases', function () {
 	var opts = {
-	  boolean: ['flag'],
-	  default: {
+		boolean: ['flag'],
+		default: {
 		flag: true
-	  }
+		}
 	}
 
 	checkNoArgs(opts)
 	checkExtraArg(opts)
 	checkStringArg(opts)
-  })
+	})
 
-  describe('for typed options with aliases', function () {
+	describe('for typed options with aliases', function () {
 	var opts = {
-	  alias: {
+		alias: {
 		flag: ['f']
-	  },
-	  boolean: ['flag'],
-	  default: {
+		},
+		boolean: ['flag'],
+		default: {
 		flag: true
-	  }
+		}
 	}
 
 	checkNoArgs(opts, true)
 	checkExtraArg(opts, true)
 	checkStringArg(opts, true)
-  })
+	})
 
-  describe('for boolean options', function () {
+	describe('for boolean options', function () {
 	[true, false, undefined, null].forEach(function (def) {
-	  describe('with explicit ' + def + ' default', function () {
+		describe('with explicit ' + def + ' default', function () {
 		var opts = {
-		  default: {
+			default: {
 			flag: def
-		  },
-		  boolean: ['flag']
+			},
+			boolean: ['flag']
 		}
 
 		it('should set true if --flag in arg', function () {
-		  parser(['--flag'], opts).flag.should.be.true
+			parser(['--flag'], opts).flag.should.be.true
 		})
 
 		it('should set false if --no-flag in arg', function () {
-		  parser(['--no-flag'], opts).flag.should.be.false
+			parser(['--no-flag'], opts).flag.should.be.false
 		})
 
 		it('should set ' + def + ' if no flag in arg', function () {
-		  expect(parser([], opts).flag).to.equal(def)
+			expect(parser([], opts).flag).to.equal(def)
 		})
-	  })
+		})
 	})
 
 	describe('with implied false default', function () {
-	  var opts = null
+		var opts = null
 
-	  beforeEach(function () {
+		beforeEach(function () {
 		opts = {
-		  boolean: ['flag']
+			boolean: ['flag']
 		}
-	  })
+		})
 
-	  it('should set true if --flag in arg', function () {
+		it('should set true if --flag in arg', function () {
 		parser(['--flag'], opts).flag.should.be.true
-	  })
+		})
 
-	  it('should set false if --no-flag in arg', function () {
+		it('should set false if --no-flag in arg', function () {
 		parser(['--no-flag'], opts).flag.should.be.false
-	  })
+		})
 
-	  it('should set false if no flag in arg', function () {
+		it('should set false if no flag in arg', function () {
 		parser([], opts).flag.should.be.false
-	  })
+		})
 	})
 
 	// Fixes: https://github.com/bcoe/yargs/issues/341
 	it('should apply defaults to camel-case form of argument', function () {
-	  var argv = parser([], {
+		var argv = parser([], {
 		default: {
-		  'foo-bar': 99
+			'foo-bar': 99
 		}
-	  })
+		})
 
-	  argv.fooBar.should.equal(99)
+		argv.fooBar.should.equal(99)
 	})
-  })
+	})
 
-  it('should define option as boolean and set default to true', function () {
+	it('should define option as boolean and set default to true', function () {
 	var argv = parser([], {
-	  boolean: ['sometrue'],
-	  default: {
+		boolean: ['sometrue'],
+		default: {
 		sometrue: true
-	  }
+		}
 	})
 	argv.should.have.property('sometrue', true)
-  })
+	})
 
-  it('should define option as boolean and set default to false', function () {
+	it('should define option as boolean and set default to false', function () {
 	var argv = parser([], {
-	  default: {
+		default: {
 		somefalse: false
-	  },
-	  boolean: ['somefalse']
+		},
+		boolean: ['somefalse']
 	})
 	argv.should.have.property('somefalse', false)
-  })
+	})
 
-  it('should set boolean options to false by default', function () {
+	it('should set boolean options to false by default', function () {
 	var parse = parser(['moo'], {
-	  boolean: ['t', 'verbose'],
-	  default: {
+		boolean: ['t', 'verbose'],
+		default: {
 		verbose: false,
 		t: false
-	  }
+		}
 	})
 	parse.should.have.property('verbose', false).and.be.a('boolean')
 	parse.should.have.property('t', false).and.be.a('boolean')
 	parse.should.have.property('_').and.deep.equal(['moo'])
-  })
+	})
 })
 
 describe('camelCase', function () {
-  function runTests (strict) {
+	function runTests (strict) {
 	if (!strict) {
-	  // Skip this test in strict mode because this option is not specified
-	  it('should provide options with dashes as camelCase properties', function () {
+		// Skip this test in strict mode because this option is not specified
+		it('should provide options with dashes as camelCase properties', function () {
 		var result = parser(['--some-option'])
 
 		result.should.have.property('some-option').that.is.a('boolean').and.is.true
 		result.should.have.property('someOption').that.is.a('boolean').and.is.true
-	  })
+		})
 	}
 
 	it('should provide count options with dashes as camelCase properties', function () {
-	  var result = parser([ '--some-option', '--some-option', '--some-option' ], {
+		var result = parser([ '--some-option', '--some-option', '--some-option' ], {
 		count: ['some-option']
-	  })
+		})
 
-	  result.should.have.property('some-option', 3)
-	  result.should.have.property('someOption', 3)
+		result.should.have.property('some-option', 3)
+		result.should.have.property('someOption', 3)
 	})
 
 	it('should provide options with dashes and aliases as camelCase properties', function () {
-	  var result = parser(['--some-option'], {
+		var result = parser(['--some-option'], {
 		alias: {
-		  'some-horse': 'o'
+			'some-horse': 'o'
 		}
-	  })
+		})
 
-	  result.should.have.property('some-option').that.is.a('boolean').and.is.true
-	  result.should.have.property('someOption').that.is.a('boolean').and.is.true
+		result.should.have.property('some-option').that.is.a('boolean').and.is.true
+		result.should.have.property('someOption').that.is.a('boolean').and.is.true
 	})
 
 	it('should provide defaults of options with dashes as camelCase properties', function () {
-	  var result = parser([], {
+		var result = parser([], {
 		default: {
-		  'some-option': 'asdf'
+			'some-option': 'asdf'
 		}
-	  })
+		})
 
-	  result.should.have.property('some-option', 'asdf')
-	  result.should.have.property('someOption', 'asdf')
+		result.should.have.property('some-option', 'asdf')
+		result.should.have.property('someOption', 'asdf')
 	})
 
 	it('should provide aliases of options with dashes as camelCase properties', function () {
-	  var result = parser([], {
+		var result = parser([], {
 		default: {
-		  'some-option': 'asdf'
+			'some-option': 'asdf'
 		},
 		alias: {
-		  'some-option': ['o']
+			'some-option': ['o']
 		}
-	  })
+		})
 
-	  result.should.have.property('o', 'asdf')
-	  result.should.have.property('some-option', 'asdf')
-	  result.should.have.property('someOption', 'asdf')
+		result.should.have.property('o', 'asdf')
+		result.should.have.property('some-option', 'asdf')
+		result.should.have.property('someOption', 'asdf')
 	})
 
 	it('should provide aliases of options with dashes as camelCase properties', function () {
-	  var result = parser([], {
+		var result = parser([], {
 		alias: {
-		  o: ['some-option']
+			o: ['some-option']
 		},
 		default: {
-		  o: 'asdf'
+			o: 'asdf'
 		}
-	  })
+		})
 
-	  result.should.have.property('o', 'asdf')
-	  result.should.have.property('some-option', 'asdf')
-	  result.should.have.property('someOption', 'asdf')
+		result.should.have.property('o', 'asdf')
+		result.should.have.property('some-option', 'asdf')
+		result.should.have.property('someOption', 'asdf')
 	})
 
 	it('should provide aliases with dashes as camelCase properties', function () {
-	  var result = parser(['--some-option', 'val'], {
+		var result = parser(['--some-option', 'val'], {
 		alias: {
-		  o: 'some-option'
+			o: 'some-option'
 		}
-	  })
+		})
 
-	  result.should.have.property('o').that.is.a('string').and.equals('val')
-	  result.should.have.property('some-option').that.is.a('string').and.equals('val')
-	  result.should.have.property('someOption').that.is.a('string').and.equals('val')
+		result.should.have.property('o').that.is.a('string').and.equals('val')
+		result.should.have.property('some-option').that.is.a('string').and.equals('val')
+		result.should.have.property('someOption').that.is.a('string').and.equals('val')
 	})
-  }
+	}
 
-  describe('dashes and camelCase', function () {
+	describe('dashes and camelCase', function () {
 	runTests()
-  })
+	})
 
-  describe('dashes and camelCase (strict)', function () {
+	describe('dashes and camelCase (strict)', function () {
 	runTests(true)
-  })
+	})
 })
 
 describe('-', function () {
-  it('should set - as value of n', function () {
+	it('should set - as value of n', function () {
 	var argv = parser(['-n', '-'])
 	argv.should.have.property('n', '-')
 	argv.should.have.property('_').with.length(0)
-  })
+	})
 
-  it('should set - as a non-hyphenated value', function () {
+	it('should set - as a non-hyphenated value', function () {
 	var argv = parser(['-'])
 	argv.should.have.property('_').and.deep.equal(['-'])
-  })
+	})
 
-  it('should set - as a value of f', function () {
+	it('should set - as a value of f', function () {
 	var argv = parser(['-f-'])
 	argv.should.have.property('f', '-')
 	argv.should.have.property('_').with.length(0)
-  })
+	})
 
-  it('should set b to true and set - as a non-hyphenated value when b is set as a boolean', function () {
+	it('should set b to true and set - as a non-hyphenated value when b is set as a boolean', function () {
 	var argv = parser(['-b', '-'], {
-	  boolean: ['b']
+		boolean: ['b']
 	})
 
 	argv.should.have.property('b', true)
 	argv.should.have.property('_').and.deep.equal(['-'])
-  })
+	})
 
-  it('should set - as the value of s when s is set as a string', function () {
+	it('should set - as the value of s when s is set as a string', function () {
 	var argv = parser([ '-s', '-' ], {
-	  string: ['s']
+		string: ['s']
 	})
 
 	argv.should.have.property('s', '-')
 	argv.should.have.property('_').with.length(0)
-  })
+	})
 })
 
 describe('count', function () {
-  it('should count the number of times a boolean is present', function () {
+	it('should count the number of times a boolean is present', function () {
 	var parsed
 
 	parsed = parser(['-x'], {
-	  count: ['verbose']
+		count: ['verbose']
 	})
 	parsed.verbose.should.equal(0)
 
 	parsed = parser(['--verbose'], {
-	  count: ['verbose']
+		count: ['verbose']
 	})
 	parsed.verbose.should.equal(1)
 
 	parsed = parser(['--verbose', '--verbose'], {
-	  count: ['verbose']
+		count: ['verbose']
 	})
 	parsed.verbose.should.equal(2)
 
 	parsed = parser(['-vvv'], {
-	  alias: {
+		alias: {
 		v: ['verbose']
-	  },
-	  count: ['verbose']
+		},
+		count: ['verbose']
 	})
 	parsed.verbose.should.equal(3)
 
 	parsed = parser(['--verbose', '--verbose', '-v', '--verbose'], {
-	  count: ['verbose'],
-	  alias: {
+		count: ['verbose'],
+		alias: {
 		v: ['verbose']
-	  }
+		}
 	})
 	parsed.verbose.should.equal(4)
 
 	parsed = parser(['--verbose', '--verbose', '-v', '-vv'], {
-	  count: ['verbose'],
-	  alias: {
+		count: ['verbose'],
+		alias: {
 		v: ['verbose']
-	  }
+		}
 	})
 	parsed.verbose.should.equal(5)
-  })
+	})
 
-  it('should not consume the next argument', function () {
+	it('should not consume the next argument', function () {
 	var parsed = parser([ '-v', 'moo' ], {
-	  count: 'v'
+		count: 'v'
 	})
 	parsed.v.should.equal(1)
 	parsed.should.have.property('_').and.deep.equal(['moo'])
 
 	parsed = parser([ '--verbose', 'moomoo', '--verbose' ], {
-	  count: 'verbose'
+		count: 'verbose'
 	})
 	parsed.verbose.should.equal(2)
 	parsed.should.have.property('_').and.deep.equal(['moomoo'])
-  })
+	})
 
-  it('should use a default value as is when no arg given', function () {
+	it('should use a default value as is when no arg given', function () {
 	var parsed = parser([], {
-	  count: 'v',
-	  default: { v: 3 }
+		count: 'v',
+		default: { v: 3 }
 	})
 	parsed.v.should.equal(3)
 
 	parsed = parser([], {
-	  count: 'v',
-	  default: { v: undefined }
+		count: 'v',
+		default: { v: undefined }
 	})
 	expect(parsed.v).to.be.undefined
 
 	parsed = parser([], {
-	  count: 'v',
-	  default: { v: null }
+		count: 'v',
+		default: { v: null }
 	})
 	expect(parsed.v).to.be.null
 
 	parsed = parser([], {
-	  count: 'v',
-	  default: { v: false }
+		count: 'v',
+		default: { v: false }
 	})
 	parsed.v.should.equal(false)
 
 	parsed = parser([], {
-	  count: 'v',
-	  default: { v: 'hello' }
+		count: 'v',
+		default: { v: 'hello' }
 	})
 	parsed.v.should.equal('hello')
-  })
+	})
 
-  it('should ignore a default value when arg given', function () {
+	it('should ignore a default value when arg given', function () {
 	var parsed = parser(['-vv', '-v', '-v'], {
-	  count: 'v',
-	  default: { v: 1 }
+		count: 'v',
+		default: { v: 1 }
 	})
 	parsed.v.should.equal(4)
-  })
+	})
 
-  it('should increment regardless of arg value', function () {
+	it('should increment regardless of arg value', function () {
 	var parsed = parser([
-	  '-v',
-	  '-v=true',
-	  '-v', 'true',
-	  '-v=false',
-	  '-v', 'false',
-	  '--no-v',
-	  '-v=999',
-	  '-v=foobar'
+		'-v',
+		'-v=true',
+		'-v', 'true',
+		'-v=false',
+		'-v', 'false',
+		'--no-v',
+		'-v=999',
+		'-v=foobar'
 	], { count: 'v' })
 	parsed.v.should.equal(8)
-  })
+	})
 })
 
 describe('array', function () {
-  it('should group values into an array if the same option is specified multiple times', function () {
+	it('should group values into an array if the same option is specified multiple times', function () {
 	var parse = parser(['-v', 'a', '-v', 'b', '-v', 'c'])
 	parse.should.have.property('v').and.deep.equal(['a', 'b', 'c'])
 	parse.should.have.property('_').with.length(0)
-  })
+	})
 
-  it('should default an array to an empty array if passed as first option followed by another', function () {
+	it('should default an array to an empty array if passed as first option followed by another', function () {
 	var result = parser(['-a', '-b'], {
-	  array: 'a'
+		array: 'a'
 	})
 	result.should.have.property('a').and.deep.equal([])
-  })
+	})
 
-  it('should not attempt to default array if an element has already been populated', function () {
+	it('should not attempt to default array if an element has already been populated', function () {
 	var result = parser(['-a', 'foo', 'bar', '-b'], {
-	  array: 'a'
+		array: 'a'
 	})
 	result.should.have.property('a').and.deep.equal(['foo', 'bar'])
-  })
+	})
 
-  it('should default argument to empty array if no value given', function () {
+	it('should default argument to empty array if no value given', function () {
 	var result = parser(['-b'], {
-	  array: 'b'
+		array: 'b'
 	})
 	result.should.have.property('b').and.deep.equal([])
-  })
+	})
 
-  it('should place value of argument in array, when one argument provided', function () {
+	it('should place value of argument in array, when one argument provided', function () {
 	var result = parser(['-b', '33'], {
-	  array: ['b']
+		array: ['b']
 	})
 	Array.isArray(result.b).should.equal(true)
 	result.b[0].should.equal(33)
-  })
+	})
 
-  it('should add multiple argument values to the array', function () {
+	it('should add multiple argument values to the array', function () {
 	var result = parser(['-b', '33', '-b', 'hello'], {
-	  array: 'b'
+		array: 'b'
 	})
 	Array.isArray(result.b).should.equal(true)
 	result.b.should.include(33)
 	result.b.should.include('hello')
-  })
+	})
 
-  it('should allow array: true, to be set inside an option block', function () {
+	it('should allow array: true, to be set inside an option block', function () {
 	var result = parser(['-b', '33'], {
-	  array: 'b'
+		array: 'b'
 	})
 	Array.isArray(result.b).should.equal(true)
 	result.b.should.include(33)
-  })
+	})
 
-  // issue #103
-  it('should default camel-case alias to array type', function () {
+	// issue #103
+	it('should default camel-case alias to array type', function () {
 	var result = parser(['--ca-path', 'http://www.example.com'], {
-	  array: ['ca-path']
+		array: ['ca-path']
 	})
 
 	Array.isArray(result['ca-path']).should.equal(true)
 	Array.isArray(result.caPath).should.equal(true)
-  })
+	})
 
-  it('should default alias to array type', function () {
+	it('should default alias to array type', function () {
 	var result = parser(['--ca-path', 'http://www.example.com'], {
-	  array: 'ca-path',
-	  alias: {
+		array: 'ca-path',
+		alias: {
 		'ca-path': 'c'
-	  }
+		}
 	})
 
 	Array.isArray(result['ca-path']).should.equal(true)
 	Array.isArray(result.caPath).should.equal(true)
 	Array.isArray(result.c).should.equal(true)
-  })
+	})
 
-  // see: https://github.com/bcoe/yargs/issues/162
-  it('should eat non-hyphenated arguments until hyphenated option is hit', function () {
+	// see: https://github.com/bcoe/yargs/issues/162
+	it('should eat non-hyphenated arguments until hyphenated option is hit', function () {
 	var result = parser(['-a=hello', 'world', '-b',
-	  '33', '22', '--foo', 'red', 'green',
-	  '--bar=cat', 'dog'], {
+		'33', '22', '--foo', 'red', 'green',
+		'--bar=cat', 'dog'], {
 		array: ['a', 'b', 'foo', 'bar']
-	  })
+		})
 
 	Array.isArray(result.a).should.equal(true)
 	result.a.should.include('hello')
@@ -1665,74 +1659,74 @@ describe('array', function () {
 	Array.isArray(result.bar).should.equal(true)
 	result.bar.should.include('cat')
 	result.bar.should.include('dog')
-  })
+	})
 
-  // see: https://github.com/yargs/yargs-parser/pull/13
-  it('should support array for --foo= format when the key is a number', function () {
+	// see: https://github.com/yargs/yargs-parser/pull/13
+	it('should support array for --foo= format when the key is a number', function () {
 	var result = parser(['--1=a', 'b'], {
-	  array: ['1']
+		array: ['1']
 	})
 
 	Array.isArray(result['1']).should.equal(true)
 	result['1'][0].should.equal('a')
 	result['1'][1].should.equal('b')
-  })
+	})
 })
 
 describe('nargs', function () {
-  it('should allow the number of arguments following a key to be specified', function () {
+	it('should allow the number of arguments following a key to be specified', function () {
 	var result = parser([ '--foo', 'apple', 'bar' ], {
-	  narg: {
+		narg: {
 		foo: 2
-	  }
+		}
 	})
 
 	Array.isArray(result.foo).should.equal(true)
 	result.foo[0].should.equal('apple')
 	result.foo[1].should.equal('bar')
-  })
+	})
 
-  it('should raise an exception if there are not enough arguments following key', function () {
+	it('should raise an exception if there are not enough arguments following key', function () {
 	var argv = parser.detailed('--foo apple', {
-	  narg: {
+		narg: {
 		foo: 2
-	  }
+		}
 	})
 	argv.error.message.should.equal('Not enough arguments following: foo')
-  })
+	})
 
-  it('nargs is applied to aliases', function () {
+	it('nargs is applied to aliases', function () {
 	var result = parser(['--bar', 'apple', 'bar'], {
-	  narg: {
+		narg: {
 		foo: 2
-	  },
-	  alias: {
+		},
+		alias: {
 		foo: 'bar'
-	  }
+		}
 	})
 	Array.isArray(result.foo).should.equal(true)
 	result.foo[0].should.equal('apple')
 	result.foo[1].should.equal('bar')
-  })
+	})
 
-  it('should apply nargs to flag arguments', function () {
+	it('should apply nargs to flag arguments', function () {
 	var result = parser([ '-f', 'apple', 'bar', 'blerg' ], {
-	  narg: {
+		narg: {
 		f: 2
-	  }
+		}
 	})
 
 	result.f[0].should.equal('apple')
 	result.f[1].should.equal('bar')
 	result._[0].should.equal('blerg')
-  })
+	})
 
-  it('should support nargs for -f= and --bar= format arguments', function () {
+	it('should support nargs for -f= and --bar= format arguments', function () {
 	var result = parser(['-f=apple', 'bar', 'blerg', '--bar=monkey', 'washing', 'cat'], {
-	  narg: {
+		narg: {
 		f: 2,
 		bar: 2
-	  }
+		}
 	})
 
 	result.f[0].should.equal('apple')
@@ -1742,34 +1736,34 @@ describe('nargs', function () {
 	result.bar[0].should.equal('monkey')
 	result.bar[1].should.equal('washing')
 	result._[1].should.equal('cat')
-  })
+	})
 
-  it('should not modify the input args if an = was used', function () {
+	it('should not modify the input args if an = was used', function () {
 	var expected = ['-f=apple', 'bar', 'blerg', '--bar=monkey', 'washing', 'cat']
 	var args = expected.slice()
 	parser(args, {
-	  narg: {
+		narg: {
 		f: 2,
 		bar: 2
-	  }
+		}
 	})
 	args.should.deep.equal(expected)
 
 	parser.detailed(args, {
-	  narg: {
+		narg: {
 		f: 2,
 		bar: 2
-	  }
+		}
 	})
 	args.should.deep.equal(expected)
-  })
+	})
 
-  it('allows multiple nargs to be set at the same time', function () {
+	it('allows multiple nargs to be set at the same time', function () {
 	var result = parser([ '--foo', 'apple', 'bar', '--bar', 'banana', '-f' ], {
-	  narg: {
+		narg: {
 		foo: 2,
 		bar: 1
-	  }
+		}
 	})
 
 	Array.isArray(result.foo).should.equal(true)
@@ -1777,136 +1771,136 @@ describe('nargs', function () {
 	result.foo[1].should.equal('bar')
 	result.bar.should.equal('banana')
 	result.f.should.equal(true)
-  })
+	})
 
-  // see: https://github.com/yargs/yargs-parser/pull/13
-  it('should support nargs for --foo= format when the key is a number', function () {
+	// see: https://github.com/yargs/yargs-parser/pull/13
+	it('should support nargs for --foo= format when the key is a number', function () {
 	var result = parser(['--1=a', 'b'], {
-	  narg: {
+		narg: {
 		1: 2
-	  }
+		}
 	})
 
 	Array.isArray(result['1']).should.equal(true)
 	result['1'][0].should.equal('a')
 	result['1'][1].should.equal('b')
-  })
+	})
 })
 
 describe('env vars', function () {
-  it('should apply all env vars if prefix is empty', function () {
+	it('should apply all env vars if prefix is empty', function () {
 	process.env.ONE_FISH = 'twofish'
 	process.env.RED_FISH = 'bluefish'
 	var result = parser([], {
-	  envPrefix: ''
+		envPrefix: ''
 	})
 
 	result.oneFish.should.equal('twofish')
 	result.redFish.should.equal('bluefish')
-  })
+	})
 
-  it('should apply only env vars matching prefix if prefix is valid string', function () {
+	it('should apply only env vars matching prefix if prefix is valid string', function () {
 	process.env.ONE_FISH = 'twofish'
 	process.env.RED_FISH = 'bluefish'
 	process.env.GREEN_EGGS = 'sam'
 	process.env.GREEN_HAM = 'iam'
 	var result = parser([], {
-	  envPrefix: 'GREEN'
+		envPrefix: 'GREEN'
 	})
 
 	result.eggs.should.equal('sam')
 	result.ham.should.equal('iam')
 	expect(result.oneFish).to.be.undefined
 	expect(result.redFish).to.be.undefined
-  })
+	})
 
-  it('should set aliases for options defined by env var', function () {
+	it('should set aliases for options defined by env var', function () {
 	process.env.AIRFORCE_ONE = 'two'
 	var result = parser([], {
-	  envPrefix: 'AIRFORCE',
-	  alias: {
+		envPrefix: 'AIRFORCE',
+		alias: {
 		'1': ['one', 'uno']
-	  }
+		}
 	})
 
 	result['1'].should.equal('two')
 	result.one.should.equal('two')
 	result.uno.should.equal('two')
-  })
+	})
 
-  it('should prefer command line value over env var', function () {
+	it('should prefer command line value over env var', function () {
 	process.env.FOO_BAR = 'ignore'
 	var result = parser(['--foo-bar', 'baz'], {
-	  envPrefix: ''
+		envPrefix: ''
 	})
 
 	result.fooBar.should.equal('baz')
-  })
+	})
 
-  it('should respect type for args defined by env var', function () {
+	it('should respect type for args defined by env var', function () {
 	process.env.MY_TEST_STRING = '1'
 	process.env.MY_TEST_NUMBER = '2'
 	var result = parser([], {
-	  string: 'string',
-	  envPrefix: 'MY_TEST_'
+		string: 'string',
+		envPrefix: 'MY_TEST_'
 	})
 
 	result.string.should.equal('1')
 	result.number.should.equal(2)
-  })
+	})
 
-  it('should set option from aliased env var', function () {
+	it('should set option from aliased env var', function () {
 	process.env.SPACE_X = 'awesome'
 	var result = parser([], {
-	  alias: {
+		alias: {
 		xactly: 'x'
-	  },
-	  envPrefix: 'SPACE'
+		},
+		envPrefix: 'SPACE'
 	})
 
 	result.xactly.should.equal('awesome')
-  })
+	})
 
-  it('should prefer env var value over configured default', function () {
+	it('should prefer env var value over configured default', function () {
 	process.env.FOO_BALL = 'wut'
 	process.env.FOO_BOOL = 'true'
 	var result = parser([], {
-	  envPrefix: 'FOO',
-	  default: {
+		envPrefix: 'FOO',
+		default: {
 		ball: 'baz',
 		bool: false
-	  },
-	  boolean: 'bool',
-	  string: 'ball'
+		},
+		boolean: 'bool',
+		string: 'ball'
 	})
 
 	result.ball.should.equal('wut')
 	result.bool.should.equal(true)
-  })
+	})
 
-  var jsonPath = path.resolve(__dirname, './fixtures/config.json')
-  it('should prefer config file value over env var', function () {
+	var jsonPath = path.resolve(__dirname, './fixtures/config.json')
+	it('should prefer config file value over env var', function () {
 	process.env.CFG_HERP = 'zerp'
 	var result = parser(['--cfg', jsonPath], {
-	  envPrefix: 'CFG',
-	  config: 'cfg',
-	  string: 'herp',
-	  default: {
+		envPrefix: 'CFG',
+		config: 'cfg',
+		string: 'herp',
+		default: {
 		herp: 'nerp'
-	  }
+		}
 	})
 
 	result.herp.should.equal('derp')
-  })
+	})
 
-  it('should support an env var value as config file option', function () {
+	it('should support an env var value as config file option', function () {
 	process.env.TUX_CFG = jsonPath
 	var result = parser([], {
-	  envPrefix: 'TUX',
-	  config: ['cfg'],
-	  default: {
+		envPrefix: 'TUX',
+		config: ['cfg'],
+		default: {
 		z: 44
-	  }
+		}
 	})
 
 	result.should.have.property('herp')
@@ -1914,13 +1908,13 @@ describe('env vars', function () {
 	result.should.have.property('version')
 	result.should.have.property('truthy')
 	result.z.should.equal(55)
-  })
+	})
 
-  it('should prefer cli config file option over env var config file option', function () {
+	it('should prefer cli config file option over env var config file option', function () {
 	process.env.MUX_CFG = path.resolve(__dirname, '../package.json')
 	var result = parser(['--cfg', jsonPath], {
-	  envPrefix: 'MUX',
-	  config: 'cfg'
+		envPrefix: 'MUX',
+		config: 'cfg'
 	})
 
 	result.should.have.property('herp')
@@ -1928,372 +1922,372 @@ describe('env vars', function () {
 	result.should.have.property('version')
 	result.should.have.property('truthy')
 	result.z.should.equal(55)
-  })
+	})
 
-  it('should apply all nested env vars', function () {
+	it('should apply all nested env vars', function () {
 	process.env.TEST_A = 'a'
 	process.env.TEST_NESTED_OPTION__FOO = 'baz'
 	process.env.TEST_NESTED_OPTION__BAR = 'bar'
 	var result = parser(['--nestedOption.foo', 'bar'], {
-	  envPrefix: 'TEST'
+		envPrefix: 'TEST'
 	})
 
 	result.should.have.property('a', 'a')
 	result.should.have.property('nestedOption').and.deep.equal({
-	  foo: 'bar',
-	  bar: 'bar'
+		foo: 'bar',
+		bar: 'bar'
 	})
-  })
+	})
 
-  it('should apply nested env var if argv value is using default value', function () {
+	it('should apply nested env var if argv value is using default value', function () {
 	process.env.TEST_A = 'a'
 	process.env.TEST_NESTED_OPTION__FOO = 'baz'
 	process.env.TEST_NESTED_OPTION__BAR = 'bar'
 	var result = parser([], {
-	  envPrefix: 'TEST',
-	  default: {
+		envPrefix: 'TEST',
+		default: {
 		'nestedOption.foo': 'banana'
-	  }
+		}
 	})
 
 	result.should.have.property('a', 'a')
 	result.should.have.property('nestedOption').and.deep.equal({
-	  foo: 'baz',
-	  bar: 'bar'
+		foo: 'baz',
+		bar: 'bar'
 	})
-  })
+	})
 })
 
 describe('configuration', function () {
-  describe('short option groups', function () {
+	describe('short option groups', function () {
 	it('allows short-option-groups to be disabled', function () {
-	  var parse = parser(['-cats=meow'], {
+		var parse = parser(['-cats=meow'], {
 		configuration: {
-		  'short-option-groups': false
+			'short-option-groups': false
 		}
-	  })
-	  parse.cats.should.equal('meow')
-	  parse = parser(['-cats', 'meow'], {
+		})
+		parse.cats.should.equal('meow')
+		parse = parser(['-cats', 'meow'], {
 		configuration: {
-		  'short-option-groups': false
+			'short-option-groups': false
 		}
-	  })
-	  parse.cats.should.equal('meow')
+		})
+		parse.cats.should.equal('meow')
 	})
-  })
+	})
 
-  describe('camel-case expansion', function () {
+	describe('camel-case expansion', function () {
 	it('does not expand camel-case aliases', function () {
-	  var parsed = parser.detailed([], {
+		var parsed = parser.detailed([], {
 		alias: {
-		  'foo-bar': ['x']
+			'foo-bar': ['x']
 		},
 		configuration: {
-		  'camel-case-expansion': false
+			'camel-case-expansion': false
 		}
-	  })
+		})
 
-	  expect(parsed.newAliases.fooBar).to.equal(undefined)
-	  expect(parsed.aliases.fooBar).to.equal(undefined)
+		expect(parsed.newAliases.fooBar).to.equal(undefined)
+		expect(parsed.aliases.fooBar).to.equal(undefined)
 	})
 
 	it('does not expand camel-case keys', function () {
-	  var parsed = parser.detailed(['--foo-bar=apple'], {
+		var parsed = parser.detailed(['--foo-bar=apple'], {
 		configuration: {
-		  'camel-case-expansion': false
+			'camel-case-expansion': false
 		}
-	  })
+		})
 
-	  expect(parsed.argv.fooBar).to.equal(undefined)
-	  expect(parsed.argv['foo-bar']).to.equal('apple')
+		expect(parsed.argv.fooBar).to.equal(undefined)
+		expect(parsed.argv['foo-bar']).to.equal('apple')
 	})
-  })
+	})
 
-  describe('dot notation', function () {
+	describe('dot notation', function () {
 	it('does not expand dot notation defaults', function () {
-	  var parsed = parser([], {
+		var parsed = parser([], {
 		default: {
-		  'foo.bar': 'x'
+			'foo.bar': 'x'
 		},
 		configuration: {
-		  'dot-notation': false
+			'dot-notation': false
 		}
-	  })
+		})
 
-	  expect(parsed['foo.bar']).to.equal('x')
+		expect(parsed['foo.bar']).to.equal('x')
 	})
 
 	it('does not expand dot notation arguments', function () {
-	  var parsed = parser(['--foo.bar', 'banana'], {
+		var parsed = parser(['--foo.bar', 'banana'], {
 		configuration: {
-		  'dot-notation': false
+			'dot-notation': false
 		}
-	  })
-	  expect(parsed['foo.bar']).to.equal('banana')
-	  parsed = parser(['--foo.bar=banana'], {
+		})
+		expect(parsed['foo.bar']).to.equal('banana')
+		parsed = parser(['--foo.bar=banana'], {
 		configuration: {
-		  'dot-notation': false
+			'dot-notation': false
 		}
-	  })
-	  expect(parsed['foo.bar']).to.equal('banana')
+		})
+		expect(parsed['foo.bar']).to.equal('banana')
 	})
 
 	it('should use value from cli, if cli overrides dot notation default', function () {
-	  var parsed = parser(['--foo.bar', 'abc'], {
+		var parsed = parser(['--foo.bar', 'abc'], {
 		default: {
-		  'foo.bar': 'default'
+			'foo.bar': 'default'
 		},
 		configuration: {
-		  'dot-notation': false
+			'dot-notation': false
 		}
-	  })
+		})
 
-	  expect(parsed['foo.bar']).to.equal('abc')
+		expect(parsed['foo.bar']).to.equal('abc')
 	})
 
 	it('should also override dot notation alias', function () {
-	  var parsed = parser(['--foo.bar', 'abc'], {
+		var parsed = parser(['--foo.bar', 'abc'], {
 		alias: {
-		  'foo.bar': ['alias.bar']
+			'foo.bar': ['alias.bar']
 		},
 		default: {
-		  'foo.bar': 'default'
+			'foo.bar': 'default'
 		},
 		configuration: {
-		  'dot-notation': false
+			'dot-notation': false
 		}
-	  })
+		})
 
-	  expect(parsed['alias.bar']).to.equal('abc')
+		expect(parsed['alias.bar']).to.equal('abc')
 	})
 
 	it('does not expand alias of first element of dot notation arguments', function () {
-	  var parsed = parser(['--foo.bar', 'banana'], {
+		var parsed = parser(['--foo.bar', 'banana'], {
 		alias: {
-		  'foo': ['f']
+			'foo': ['f']
 		},
 		configuration: {
-		  'dot-notation': false
+			'dot-notation': false
 		}
-	  })
-	  expect(parsed['foo.bar']).to.equal('banana')
-	  expect(parsed).not.to.include.keys('f.bar')
+		})
+		expect(parsed['foo.bar']).to.equal('banana')
+		expect(parsed).not.to.include.keys('f.bar')
 	})
-  })
+	})
 
-  describe('parse numbers', function () {
+	describe('parse numbers', function () {
 	it('does not coerce defaults into numbers', function () {
-	  var parsed = parser([], {
+		var parsed = parser([], {
 		default: {
-		  'foo': '5'
+			'foo': '5'
 		},
 		configuration: {
-		  'parse-numbers': false
+			'parse-numbers': false
 		}
-	  })
+		})
 
-	  expect(parsed['foo']).to.equal('5')
+		expect(parsed['foo']).to.equal('5')
 	})
 
 	it('does not coerce arguments into numbers', function () {
-	  var parsed = parser(['--foo', '5'], {
+		var parsed = parser(['--foo', '5'], {
 		configuration: {
-		  'parse-numbers': false
+			'parse-numbers': false
 		}
-	  })
-	  expect(parsed['foo']).to.equal('5')
+		})
+		expect(parsed['foo']).to.equal('5')
 	})
 
 	it('does not coerce positional arguments into numbers', function () {
-	  var parsed = parser(['5'], {
+		var parsed = parser(['5'], {
 		configuration: {
-		  'parse-numbers': false
+			'parse-numbers': false
 		}
-	  })
-	  expect(parsed._[0]).to.equal('5')
+		})
+		expect(parsed._[0]).to.equal('5')
 	})
-  })
+	})
 
-  describe('boolean negation', function () {
+	describe('boolean negation', function () {
 	it('does not negate arguments prefixed with --no-', function () {
-	  var parsed = parser(['--no-dice'], {
+		var parsed = parser(['--no-dice'], {
 		configuration: {
-		  'boolean-negation': false
+			'boolean-negation': false
 		}
-	  })
+		})
 
-	  parsed['no-dice'].should.equal(true)
-	  expect(parsed.dice).to.equal(undefined)
+		parsed['no-dice'].should.equal(true)
+		expect(parsed.dice).to.equal(undefined)
 	})
-  })
+	})
 })
 
 // addresses: https://github.com/yargs/yargs-parser/issues/41
 it('defaults to empty array if array option is provided no values', function () {
-  var parsed = parser(['-f'], {
+	var parsed = parser(['-f'], {
 	'alias': {
-	  'f': 'files'
+		'f': 'files'
 	},
 	'array': ['files']
-  })
-  parsed.f.should.deep.equal([])
-  parsed.files.should.deep.equal([])
+	})
+	parsed.f.should.deep.equal([])
+	parsed.files.should.deep.equal([])
 
-  parsed = parser(['--files'], {
+	parsed = parser(['--files'], {
 	'alias': {
-	  'f': 'files'
+		'f': 'files'
 	},
 	'array': ['files']
-  })
-  parsed.f.should.deep.equal([])
-  parsed.files.should.deep.equal([])
+	})
+	parsed.f.should.deep.equal([])
+	parsed.files.should.deep.equal([])
 
-  parsed = parser(['-f', '-y'], {
+	parsed = parser(['-f', '-y'], {
 	'alias': {
-	  'f': 'files'
+		'f': 'files'
 	},
 	'array': ['files']
-  })
-  parsed.f.should.deep.equal([])
-  parsed.files.should.deep.equal([])
+	})
+	parsed.f.should.deep.equal([])
+	parsed.files.should.deep.equal([])
 })
 
 describe('coerce', function () {
-  it('applies coercion function to simple arguments', function () {
+	it('applies coercion function to simple arguments', function () {
 	var parsed = parser(['--foo', '99'], {
-	  coerce: {
+		coerce: {
 		foo: function (arg) {
-		  return arg * -1
+			return arg * -1
 		}
-	  }
+		}
 	})
 	parsed.foo.should.equal(-99)
-  })
+	})
 
-  it('applies coercion function to aliases', function () {
+	it('applies coercion function to aliases', function () {
 	var parsed = parser(['--foo', '99'], {
-	  coerce: {
+		coerce: {
 		f: function (arg) {
-		  return arg * -1
+			return arg * -1
 		}
-	  },
-	  alias: {
+		},
+		alias: {
 		f: ['foo']
-	  }
+		}
 	})
 	parsed.foo.should.equal(-99)
 	parsed.f.should.equal(-99)
-  })
+	})
 
-  it('applies coercion function to all dot options', function () {
+	it('applies coercion function to all dot options', function () {
 	var parsed = parser(['--foo.bar', 'nananana'], {
-	  coerce: {
+		coerce: {
 		foo: function (val) {
-		  val.bar += ', batman!'
-		  return val
+			val.bar += ', batman!'
+			return val
 		}
-	  }
+		}
 	})
 	parsed.foo.bar.should.equal('nananana, batman!')
-  })
+	})
 
-  it('applies coercion function to an implicit array', function () {
+	it('applies coercion function to an implicit array', function () {
 	var parsed = parser(['--foo', '99', '-f', '33'], {
-	  coerce: {
+		coerce: {
 		f: function (arg) {
-		  return arg.map(function (a) {
+			return arg.map(function (a) {
 			return a * -1
-		  })
+			})
 		}
-	  },
-	  alias: {
+		},
+		alias: {
 		f: ['foo']
-	  }
+		}
 	})
 	parsed.f.should.deep.equal([-99, -33])
 	parsed.foo.should.deep.equal([-99, -33])
-  })
+	})
 
-  it('applies coercion function to an explicit array', function () {
+	it('applies coercion function to an explicit array', function () {
 	var parsed = parser(['--foo', '99', '-f', '33'], {
-	  coerce: {
+		coerce: {
 		f: function (arg) {
-		  return arg.map(function (a) {
+			return arg.map(function (a) {
 			return a * -1
-		  })
+			})
 		}
-	  },
-	  array: ['foo'],
-	  alias: {
+		},
+		array: ['foo'],
+		alias: {
 		f: ['foo']
-	  }
+		}
 	})
 	parsed.f.should.deep.equal([-99, -33])
 	parsed.foo.should.deep.equal([-99, -33])
-  })
+	})
 
-  it('applies coercion function to _', function () {
+	it('applies coercion function to _', function () {
 	var parsed = parser(['99', '33'], {
-	  coerce: {
+		coerce: {
 		_: function (arg) {
-		  return arg.map(function (a) {
+			return arg.map(function (a) {
 			return a * -1
-		  })
+			})
 		}
-	  }
+		}
 	})
 	parsed._.should.deep.equal([-99, -33])
-  })
+	})
 
-  // see: https://github.com/yargs/yargs/issues/550
-  it('coercion function can be used to parse large #s', function () {
+	// see: https://github.com/yargs/yargs/issues/550
+	it('coercion function can be used to parse large #s', function () {
 	var fancyNumberParser = function (arg) {
-	  if (arg.length > 10) return arg
-	  else return parseInt(arg)
+		if (arg.length > 10) return arg
+		else return parseInt(arg)
 	}
 	var parsed = parser(['--foo', '88888889999990000998989898989898', '--bar', '998'], {
-	  coerce: {
+		coerce: {
 		foo: fancyNumberParser,
 		bar: fancyNumberParser
-	  }
+		}
 	})
 	;(typeof parsed.foo).should.equal('string')
 	parsed.foo.should.equal('88888889999990000998989898989898')
 	;(typeof parsed.bar).should.equal('number')
 	parsed.bar.should.equal(998)
-  })
+	})
 
-  it('populates argv.error, if an error is thrown', function () {
+	it('populates argv.error, if an error is thrown', function () {
 	var parsed = parser.detailed(['--foo', '99'], {
-	  coerce: {
+		coerce: {
 		foo: function (arg) {
-		  throw Error('banana')
+			throw Error('banana')
 		}
-	  }
+		}
 	})
 	parsed.error.message.should.equal('banana')
-  })
+	})
 
-  it('populates argv.error, if an error is thrown for an explicit array', function () {
+	it('populates argv.error, if an error is thrown for an explicit array', function () {
 	var parsed = parser.detailed(['--foo', '99'], {
-	  array: ['foo'],
-	  coerce: {
+		array: ['foo'],
+		coerce: {
 		foo: function (arg) {
-		  throw Error('foo is array: ' + Array.isArray(arg))
+			throw Error('foo is array: ' + Array.isArray(arg))
 		}
-	  }
+		}
 	})
 	parsed.error.message.should.equal('foo is array: true')
-  })
+	})
 })
 
 // see: https://github.com/yargs/yargs-parser/issues/37
 it('normalizes all paths in array when provided via config object', function () {
-  var argv = parser([ '--foo', 'bar' ], {
+	var argv = parser([ '--foo', 'bar' ], {
 	array: ['a'],
 	normalize: ['a'],
 	configObjects: [{'a': ['bin/../a.txt', 'bin/../b.txt']}]
-  })
-  argv.a.should.deep.equal(['a.txt', 'b.txt'])
+	})
+	argv.a.should.deep.equal(['a.txt', 'b.txt'])
 })
 */

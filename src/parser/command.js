@@ -1,15 +1,8 @@
 import Context from './context';
 import E from '../lib/errors';
 import helpCommand from '../commands/help';
-import Option from './option';
 
 import { declareCLIKitClass } from '../lib/util';
-
-/**
- * Matches all non alphabet, numeric, dash, and underscore characters.
- * @type {RegExp}
- */
-const scrubNameRegExp = /[^A-Za-z0-9_-]+/g;
 
 /**
  * Defines a command and its options and arguments.
@@ -18,20 +11,37 @@ const scrubNameRegExp = /[^A-Za-z0-9_-]+/g;
  */
 export default class Command extends Context {
 	/**
+	 * Internal object for tracking aliases.
+	 *
+	 * @type {Object}
+	 * @private
+	 */
+	_aliases = {};
+
+	/**
 	 * Constructs a command instance.
 	 *
 	 * @param {String} name - The command name.
-	 * @param {Object} [params] - Various command options.
+	 * @param {Object|CLI|Command|Context|Function} [params] - Command parameters or an action function.
 	 * @param {Function} [params.action] - A function to call when the command is found.
 	 * @param {Array.<String>|String} [params.aliases] - An array of command aliases.
 	 * @access public
+	 *
+	 * @example
+	 *   new Command('foo')
+	 *   new Command('foo', {})
+	 *   new Command(new Command('foo'))
 	 */
 	constructor(name, params = {}) {
 		if (!name || typeof name !== 'string') {
 			throw E.INVALID_ARGUMENT('Expected name to be a non-empty string', { name: 'name', scope: 'Command.constructor', value: name });
 		}
 
-		if (!params || typeof params !== 'object' || Array.isArray(params)) {
+		if (typeof params === 'function') {
+			params = { action: params };
+		}
+
+		if (!params || (typeof params !== 'object' || Array.isArray(params))) {
 			throw E.INVALID_ARGUMENT('Expected command parameters to be an object', { name: 'params', scope: 'Command.constructor', value: params });
 		}
 
@@ -63,18 +73,47 @@ export default class Command extends Context {
 				// must be a command or extension
 				throw E.INVALID_CLIKIT_OBJECT('Expected command options to be a CLI or Command object', { name: 'clikit', scope: 'Command.constructor', value: params.clikit });
 			}
+		}
 
-		} else {
-			// not a cli-kit object
+		if (params.action && typeof params.action !== 'function') {
+			throw E.INVALID_ARGUMENT('Expected command action to be a function', { name: 'action', scope: 'Command.constructor', value: params.action });
+		}
 
-			// process the aliases
-			const aliases = {};
-			if (params.aliases) {
-				if (!Array.isArray(params.aliases)) {
-					params.aliases = [ params.aliases ];
+		params.name = name;
+
+		super(params);
+		declareCLIKitClass(this, 'Command');
+
+		if (params.action) {
+			this.action = params.action;
+		}
+		this.aliases = params.aliases;
+		if (params.clikitHelp !== undefined) {
+			this.clikitHelp = params.clikitHelp;
+		}
+	}
+
+	/**
+	 * A map of aliases an whether they are visible.
+	 *
+	 * @type {Object}
+	 * @access public
+	 */
+	get aliases() {
+		return this._aliases;
+	}
+
+	set aliases(value) {
+		const result = {};
+		if (value) {
+			if (typeof value === 'object' && !Array.isArray(value)) {
+				Object.assign(result, value);
+			} else {
+				if (!Array.isArray(value)) {
+					value = [ value ];
 				}
 
-				for (const alias of params.aliases) {
+				for (const alias of value) {
 					if (!alias || typeof alias !== 'string') {
 						throw E.INVALID_ARGUMENT('Expected command aliases to be an array of strings', { name: 'aliases.alias', scope: 'Command.constructor', value: alias });
 					}
@@ -84,27 +123,14 @@ export default class Command extends Context {
 							throw E.INVALID_ALIAS(`Invalid command alias "${alias}"`, { name: 'aliases', scope: 'Command.constructor', value: alias });
 						}
 						if (a[0] === '!') {
-							aliases[a.substring(1)] = 'hidden';
+							result[a.substring(1)] = 'hidden';
 						} else {
-							aliases[a] = 'visible';
+							result[a] = 'visible';
 						}
 					}
 				}
 			}
-			params.aliases = aliases;
 		}
-
-		if (params.action && typeof params.action !== 'function') {
-			throw E.INVALID_ARGUMENT('Expected command action to be a function', { name: 'action', scope: 'Command.constructor', value: params.action });
-		}
-
-		// ensure we have a title
-		params.title || (params.title = name);
-
-		// scrub the name
-		params.name = name.replace(scrubNameRegExp, '_');
-
-		super(params);
-		declareCLIKitClass(this, 'Command');
+		this._aliases = result;
 	}
 }

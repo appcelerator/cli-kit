@@ -3,6 +3,7 @@ import fs from 'fs';
 import E from './errors';
 import path from 'path';
 import pkgDir from 'pkg-dir';
+import which from 'which';
 
 export { pkgDir };
 
@@ -21,6 +22,16 @@ export function declareCLIKitClass(obj, name) {
 }
 
 /**
+ * Strips off the file extension and returns the filename.
+ *
+ * @param {String} file - The file to extract the filename from.
+ * @returns {String}
+ */
+export function filename(file) {
+	return path.basename(file).replace(/\.[^.]+$/, '');
+}
+
+/**
  * Searches the specified path for the package root, then returns the directory and parsed
  * `package.json`.
  *
@@ -31,7 +42,7 @@ export function findPackage(searchPath) {
 	let clikit = false;
 	let json = {};
 	let main = null;
-	let root = pkgDir.sync(searchPath);
+	let root = pkgDir.sync(searchPath) || null;
 
 	// don't let the tests think they are cli-kit
 	if (root === path.resolve(__dirname, '..', '..')) {
@@ -91,6 +102,28 @@ export function findPackage(searchPath) {
 	}
 
 	return { clikit, json, main, root };
+}
+
+/**
+ * Attempts to determine if the specified string is an executable.
+ *
+ * @param {String} bin - An executable name, path, or entire command.
+ * @returns {Array.<String>}
+ */
+export function isExecutable(bin) {
+	let args;
+
+	try {
+		args = split(bin);
+		bin = args.shift();
+	} catch (err) {
+		// this shouldn't happen, but if it does, just fallback to the original value
+	}
+
+	return [
+		which.sync(bin),
+		...args
+	];
 }
 
 /**
