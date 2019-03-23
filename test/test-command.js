@@ -39,6 +39,14 @@ describe('Commands', () => {
 						'': 123
 					}
 				});
+			}).to.throw(TypeError, 'Expected name to be a non-empty string');
+
+			expect(() => {
+				new CLI({
+					commands: {
+						'foo': 123
+					}
+				});
 			}).to.throw(TypeError, 'Expected command parameters to be an object');
 		});
 

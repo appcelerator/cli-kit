@@ -42,23 +42,21 @@ export default class CLI extends Context {
 	 * @param {String|Function} [params.banner] - A banner or a function that returns the banner
 	 * to be displayed before each command.
 	 * @param {Boolean} [params.colors=true] - Enables colors, specifically on the help screen.
-	 * @param {String|Function} [params.defaultCommand] - The default command to execute. When a
-	 * string, it will lookup the command
+	 * @param {String|Function} [params.defaultCommand="help"] - The default command to execute.
+	 * When set to a string, it will lookup the command and use it.
 	 * @param {Boolean} [params.errorIfUnknownCommand=true] - When `true`, `help` is enabled, and
 	 * the parser didn't find a command, but it did find an unknown argument, it will show the help
 	 * screen with an unknown command error.
 	 * @param {Boolean} [params.help=false] - When `true`, enables the built-in help command.
 	 * @param {Number} [params.helpExitCode] - The exit code to return when the help command is
 	 * finished.
-	 * @param {Boolean} [params.hideNoBannerOption=false] - When `true` and a `banner` is specified,
-	 * it does not add the `--no-banner` option.
-	 * @param {Boolean} [params.hideNoColorOption=false] - When `true` and `colors` is enabled, it
-	 * does not add the `--no-color` option.
+	 * @param {Boolean} [params.hideNoBannerOption] - When `true` and a `banner` is specified, it
+	 * does not add the `--no-banner` option.
+	 * @param {Boolean} [params.hideNoColorOption] - When `true` and `colors` is enabled, it does
+	 * not add the `--no-color` option.
 	 * @param {String} [params.name] - The name of the program. If not set, defaults to `"program"`
 	 * in the help outut and `"This application"` in the Node version assertion.
 	 * @param {String} [params.nodeVersion] - The required Node.js version to run the app.
-	 * @param {Object} [params.renderOpts] - Various render options to control the output stream
-	 * such as the display width.
 	 * @param {Boolean} [params.showBannerForExternalCLIs=false] - If `true`, shows the `CLI`
 	 * banner, assuming banner is enabled, for non-cli-kit enabled CLIs.
 	 * @param {Boolean} [params.showHelpOnError=true] - If an error occurs and `help` is enabled,
@@ -89,45 +87,48 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected help exit code to be a number', { name: 'helpExitCode', scope: 'CLI.constructor', value: params.helpExitCode });
 		}
 
-		super({
-			args:                           params.args,
-			camelCase:                      params.camelCase,
-			commands:                       params.commands,
-			desc:                           params.desc,
-			name:                           params.name || 'program',
-			options:                        params.options,
-			showBannerForExternalCLIs:      params.showBannerForExternalCLIs,
-			title:                          params.title || 'Global',
-			treatUnknownOptionsAsArguments: params.treatUnknownOptionsAsArguments
-		});
-
-		declareCLIKitClass(this, 'CLI');
-
-		this.appName               = params.name;
-		this.autoHideBanner        = params.autoHideBanner !== false;
-		this.banner                = params.banner;
-		this.bannerEnabled         = true;
-		this.colors                = params.colors !== false;
-		this.errorIfUnknownCommand = params.errorIfUnknownCommand !== false;
-		this.helpExitCode          = params.helpExitCode;
-		this.showHelpOnError       = params.showHelpOnError;
-		this.nodeVersion           = params.nodeVersion;
-		this.warnings              = [];
-
 		if (params.terminal && !(params.terminal instanceof Terminal)) {
 			throw E.INVALID_ARGUMENT('Expected terminal to be a Terminal instance', { name: 'terminal', scope: 'CLI.constructor', value: params.terminal });
 		}
-		this.terminal = params.terminal || terminal;
 
-		// set the default command
-		const { defaultCommand } = params;
-		if (defaultCommand !== undefined && typeof defaultCommand !== 'string' && typeof defaultCommand !== 'function') {
-			throw E.INVALID_ARGUMENT('Expected default command to be a string or function', { name: 'defaultCommand', scope: 'CLI.constructor', value: defaultCommand });
+		if (params.defaultCommand !== undefined && typeof params.defaultCommand !== 'string' && typeof params.defaultCommand !== 'function') {
+			throw E.INVALID_ARGUMENT('Expected default command to be a string or function', { name: 'defaultCommand', scope: 'CLI.constructor', value: params.defaultCommand });
 		}
-		this.defaultCommand = defaultCommand;
+
+		// make sure we have a `name` and `title` for the context
+		if (!params.name) {
+			params.name = 'program';
+		}
+		if (!params.title) {
+			params.title = 'Global';
+		}
+
+		// extract the extensions... we initialize them ourselves
+		const { extensions } = params;
+		delete params.extensions;
+
+		super(params);
+		declareCLIKitClass(this, 'CLI');
+
+		this.appName                   = params.appName || params.name;
+		this.autoHideBanner            = params.autoHideBanner !== false;
+		this.banner                    = params.banner;
+		this.bannerEnabled             = true;
+		this.colors                    = params.colors !== false;
+		this.defaultCommand            = params.defaultCommand;
+		this.errorIfUnknownCommand     = params.errorIfUnknownCommand !== false;
+		this.help                      = !!params.help;
+		this.helpExitCode              = params.helpExitCode;
+		this.hideNoBannerOption        = params.hideNoBannerOption;
+		this.hideNoColorOption         = params.hideNoColorOption;
+		this.nodeVersion               = params.nodeVersion;
+		this.showBannerForExternalCLIs = params.showBannerForExternalCLIs;
+		this.showHelpOnError           = params.showHelpOnError;
+		this.terminal                  = params.terminal || terminal;
+		this.version                   = params.version;
+		this.warnings                  = [];
 
 		// add the built-in help
-		this.help = !!params.help;
 		if (this.help) {
 			if (this.defaultCommand === undefined) {
 				this.defaultCommand = 'help';
@@ -140,14 +141,12 @@ export default class CLI extends Context {
 		}
 
 		// add the --no-banner flag
-		if (params.banner && !params.hideNoBannerOption) {
-			this.option('--no-banner', {
-				desc: 'suppress the banner'
-			});
+		if (this.banner && !this.hideNoBannerOption) {
+			this.option('--no-banner', 'suppress the banner');
 		}
 
 		// add the --no-colors flag
-		if (this.colors && !params.hideNoColorOption) {
+		if (this.colors && !this.hideNoColorOption) {
 			this.option('--no-color', {
 				aliases: [ '--no-colors' ],
 				desc: 'disable colors'
@@ -155,11 +154,11 @@ export default class CLI extends Context {
 		}
 
 		// add the --version flag
-		if (params.version && !this.lookup.short.v && !this.lookup.long.version) {
+		if (this.version && !this.lookup.short.v && !this.lookup.long.version) {
 			this.option('-v, --version', {
-				callback: async ({ next, value }) => {
+				callback: async ({ next }) => {
 					if (await next()) {
-						this.terminal.stdout.write(`${params.version}\n`);
+						this.terminal.stdout.write(`${this.version}\n`);
 						process.exit(0);
 					}
 				},
@@ -168,24 +167,14 @@ export default class CLI extends Context {
 		}
 
 		// add the extensions now that the auto-generated options exist
-		if (params.extensions) {
-			if (Array.isArray(params.extensions)) {
-				for (const ext of params.extensions) {
-					try {
-						this.extension(ext);
-					} catch (e) {
-						this.warnings.push(e);
-						warn(e);
-					}
-				}
-			} else {
-				for (const [ name, ext ] of Object.entries(params.extensions)) {
-					try {
-						this.extension(ext, name);
-					} catch (e) {
-						this.warnings.push(e);
-						warn(e);
-					}
+		if (extensions) {
+			const exts = Array.isArray(extensions) ? extensions : Object.entries(extensions);
+			for (const ext of exts) {
+				try {
+					this.extension.apply(this, Array.isArray(ext) ? [ ext[1], ext[0] ] : [ ext ]);
+				} catch (e) {
+					this.warnings.push(e);
+					warn(e);
 				}
 			}
 		}

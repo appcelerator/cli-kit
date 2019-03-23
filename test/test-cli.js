@@ -92,26 +92,9 @@ describe('CLI', () => {
 			});
 		});
 
-		it('should error if when adding an existing command', () => {
-			expectThrow(() => {
-				const cli = new CLI({
-					commands: {
-						foo: {}
-					}
-				});
-
-				cli.command('foo');
-			}, {
-				type:  Error,
-				msg:   'Command "foo" already exists',
-				code:  'ERR_ALREADY_EXISTS',
-				name:  'cmd',
-				scope: 'Context.registerCommand'
-			});
-		});
-
-		it('should throw exception showHelpOnError is false', () => {
+		it('should throw exception showHelpOnError is false', async () => {
 			const out = new WritableStream();
+
 			const cli = new CLI({
 				showHelpOnError: false,
 				commands: {
@@ -123,11 +106,14 @@ describe('CLI', () => {
 			});
 			expect(cli.showHelpOnError).to.equal(false);
 
-			return cli.exec([ 'foo' ])
-				.then(() => expect.fail('unexpected'))
-				.catch(err => {
-					expect(err.message).to.equal('errors!');
-				});
+			try {
+				await cli.exec([ 'foo' ]);
+			} catch (err) {
+				expect(err.message).to.equal('errors!');
+				return;
+			}
+
+			expect.fail('Expected error');
 		});
 	});
 
@@ -165,6 +151,7 @@ describe('CLI', () => {
 				stdout: out,
 				stderr: out
 			});
+
 			const cli = new CLI({
 				banner,
 				colors: false,

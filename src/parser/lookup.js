@@ -14,6 +14,13 @@ export default class Lookup {
 	commands = {};
 
 	/**
+	 * A map of extension names and aliases to extension instances.
+	 *
+	 * @type {Object}
+	 */
+	extensions = {};
+
+	/**
 	 * A map of long option names and aliases to option instances.
 	 *
 	 * @type {Object}

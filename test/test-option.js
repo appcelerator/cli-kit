@@ -16,7 +16,7 @@ describe('Option', () => {
 
 		it('should throw exception if params is not an object', () => {
 			expect(() => {
-				new Option('-v', 'foo');
+				new Option('-v', 123);
 			}).to.throw(TypeError, 'Expected params to be an object');
 		});
 	});
