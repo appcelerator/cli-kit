@@ -169,7 +169,7 @@ describe('Extension', () => {
 			expect(extension.name).to.equal('foo');
 
 			const output = await runCLI(extension, [ 'foo' ]);
-			const re = new RegExp(`Error: Invalid extension: Unable to find executable, script, or package: "${extensionPath}"`);
+			const re = new RegExp(`Error: Invalid extension: Unable to find executable, script, or package: "${extensionPath.replace(/\\/g, '\\\\')}"`);
 			expect(output.replace(/\x1B\[\d+m/g, '')).to.match(re);
 		});
 

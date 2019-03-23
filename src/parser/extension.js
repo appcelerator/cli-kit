@@ -78,11 +78,11 @@ export default class Extension extends Command {
 						throw new Error();
 					}
 				} catch (e) {
-					throw E.INVALID_EXTENSION(`Invalid extension: Unable to find executable, script, or package: ${JSON.stringify(path)}`);
+					throw E.INVALID_EXTENSION(`Invalid extension: Unable to find executable, script, or package: ${typeof path === 'string' ? `"${path}"` : JSON.stringify(path)}`);
 				}
 
 				if (!pkg.main) {
-					throw E.INVALID_EXTENSION(`Invalid extension: Unable to find extension's main file: ${JSON.stringify(path)}`);
+					throw E.INVALID_EXTENSION(`Invalid extension: Unable to find extension's main file: ${typeof path === 'string' ? `"${path}"` : JSON.stringify(path)}`);
 				}
 
 				if (!params.desc) {
