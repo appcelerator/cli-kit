@@ -228,39 +228,37 @@ export default class Extension extends Command {
 				throw E.INVALID_EXTENSION(`Bad extension "${this.name}": ${err.message}`, { name: this.name, path: this, scope: 'Extension.load', value: err });
 			}
 
-			this.isCLIKitExtension = ctx.clikit instanceof Set && ctx.clikit.has('Context');
+			this.isCLIKitExtension = true;
 
-			if (this.isCLIKitExtension) {
-				this.aliases        = ctx.aliases;
-				this.banner         = ctx.banner;
-				this.camelCase      = ctx.camelCase;
-				this.defaultCommand = ctx.defaultCommand;
-				this.treatUnknownOptionsAsArguments = ctx.treatUnknownOptionsAsArguments;
+			this.aliases        = ctx.aliases;
+			this.banner         = ctx.banner;
+			this.camelCase      = ctx.camelCase;
+			this.defaultCommand = ctx.defaultCommand;
+			this.treatUnknownOptionsAsArguments = ctx.treatUnknownOptionsAsArguments;
 
-				this.init({
-					args:       ctx.args,
-					commands:   ctx.commands,
-					desc:       this.desc || ctx.desc,
-					extensions: ctx.extensions,
-					name:       this.name || ctx.name,
-					options:    ctx.options,
-					parent:     this.parent,
-					title:      ctx.title !== 'Global' && ctx.title || this.name
-				});
+			this.init({
+				args:       ctx.args,
+				commands:   ctx.commands,
+				desc:       this.desc || ctx.desc,
+				extensions: ctx.extensions,
+				name:       this.name || ctx.name,
+				options:    ctx.options,
+				parent:     this.parent,
+				title:      ctx.title !== 'Global' && ctx.title || this.name
+			});
 
-				if (ctx.clikit.has('Command') && ctx.action) {
-					this.action = ctx.action;
-				} else {
-					this.action = parser => {
-						if (this.defaultCommand !== 'help' || !this.get('help')) {
-							const cmd = this.defaultCommand && this.commands[this.defaultCommand];
-							if (cmd) {
-								return cmd.action(parser);
-							}
+			if (typeof ctx.action === 'function') {
+				this.action = ctx.action;
+			} else {
+				this.action = parser => {
+					if (this.defaultCommand !== 'help' || !this.get('help')) {
+						const cmd = this.defaultCommand && this.commands[this.defaultCommand];
+						if (cmd) {
+							return cmd.action(parser);
 						}
-						return helpCommand.action(parser);
-					};
-				}
+					}
+					return helpCommand.action(parser);
+				};
 			}
 		}
 	}
