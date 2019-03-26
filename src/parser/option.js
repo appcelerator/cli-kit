@@ -144,6 +144,21 @@ export default class Option {
 	}
 
 	/**
+	 * Returns this option's schema.
+	 *
+	 * @type {Object}
+	 */
+	get schema() {
+		return {
+			aliases: this.aliases,
+			desc:    this.desc,
+			format:  this.format,
+			hint:    this.hint,
+			type:    this.type
+		};
+	}
+
+	/**
 	 * Transforms the given option value based on its type.
 	 *
 	 * @param {*} value - The value to transform.

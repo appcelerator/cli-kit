@@ -133,4 +133,15 @@ export default class Command extends Context {
 		}
 		this._aliases = result;
 	}
+
+	/**
+	 * Returns the schema for this command and all child contexts.
+	 *
+	 * @type {Object}
+	 */
+	get schema() {
+		return {
+			desc: this.desc
+		};
+	}
 }

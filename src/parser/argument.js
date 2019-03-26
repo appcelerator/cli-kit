@@ -105,6 +105,21 @@ export default class Argument {
 	}
 
 	/**
+	 * Returns this argument's schema.
+	 *
+	 * @type {Object}
+	 */
+	get schema() {
+		return {
+			desc:     this.desc,
+			multiple: this.multiple,
+			name:     this.name,
+			required: this.required,
+			type:     this.type
+		};
+	}
+
+	/**
 	 * Transforms the given argument value based on its type.
 	 *
 	 * @param {*} value - The value to transform.

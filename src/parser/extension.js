@@ -264,4 +264,16 @@ export default class Extension extends Command {
 			}
 		}
 	}
+
+	/**
+	 * Returns the schema for this extension and all child contexts.
+	 *
+	 * @type {Object}
+	 */
+	get schema() {
+		return {
+			...super.schema,
+			path: this.path
+		};
+	}
 }

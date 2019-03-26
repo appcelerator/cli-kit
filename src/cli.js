@@ -11,6 +11,8 @@ import pluralize from 'pluralize';
 import semver from 'semver';
 import Terminal from './terminal';
 
+import 'core-js/features/array/flat';
+
 import { declareCLIKitClass } from './lib/util';
 import { terminal } from './index';
 
@@ -225,6 +227,7 @@ export default class CLI extends Context {
 		let { showHelpOnError } = this;
 
 		try {
+			const __argv = unparsedArgs ? unparsedArgs.flat(a => a.input || a) : process.argv.slice(2);
 			const { _, argv, contexts, unknown } = await parser.parse(unparsedArgs || process.argv.slice(2), this);
 
 			log('Parsing complete: ' +
@@ -238,6 +241,7 @@ export default class CLI extends Context {
 
 			const results = {
 				_,
+				__argv,
 				argv,
 				cli:      this,
 				clikit:   { ...require('./index') },
@@ -299,5 +303,47 @@ export default class CLI extends Context {
 
 			throw err;
 		}
+	}
+
+	/**
+	 * Returns the schema for the CLI and all child contexts.
+	 *
+	 * @type {Object}
+	 */
+	get schema() {
+		const obj = {
+			args:       [],
+			commands:   {},
+			desc:       this.desc,
+			extensions: {},
+			name:       this.name,
+			options:    {},
+			title:      this.title,
+			version:    this.version
+		};
+
+		for (const arg of this.args) {
+			if (!arg.hidden) {
+				obj.args.push(arg.schema);
+			}
+		}
+
+		for (const [ name, cmd ] of this.commands.entries()) {
+			obj.commands[name] = cmd.schema;
+		}
+
+		for (const [ name, ext ] of this.extensions.entries()) {
+			obj.extensions[name] = ext.schema;
+		}
+
+		for (const options of this.options.values()) {
+			for (const opt of options) {
+				if (!opt.hidden) {
+					obj.options[opt.format] = opt.schema;
+				}
+			}
+		}
+
+		return obj;
 	}
 }
