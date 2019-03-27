@@ -1,6 +1,6 @@
 {
   "name": "cli-kit",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Everything you need to create awesome command line interfaces",
   "main": "./dist/index.js",
   "author": "Chris Barber <chris@cb1inc.com> (https://github.com/cb1kenobi)",
@@ -46,7 +46,7 @@
     "lodash.camelcase": "^4.3.0",
     "pkg-dir": "^4.0.0",
     "pluralize": "^7.0.0",
-    "semver": "^5.6.0",
+    "semver": "^6.0.0",
     "snooplogg": "^2.0.1",
     "source-map-support": "^0.5.11",
     "which": "^1.3.1"
@@ -80,9 +80,9 @@
     "memory-streams": "^0.1.3",
     "mocha": "^6.0.2",
     "nyc": "^13.3.0",
-    "sinon": "^7.3.0",
+    "sinon": "^7.3.1",
     "sinon-chai": "^3.3.0",
-    "tmp": "^0.0.33"
+    "tmp": "^0.1.0"
   },
   "homepage": "https://github.com/cb1kenobi/cli-kit",
   "bugs": "https://github.com/cb1kenobi/cli-kit/issues",
