@@ -1,6 +1,6 @@
 {
   "name": "cli-kit",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "Everything you need to create awesome command line interfaces",
   "main": "./dist/index.js",
   "author": "Chris Barber <chris@cb1inc.com> (https://github.com/cb1kenobi)",
@@ -40,6 +40,7 @@
   },
   "dependencies": {
     "argv-split": "^2.0.1",
+    "core-js": "^3.0.0",
     "fast-levenshtein": "^2.0.6",
     "fs-extra": "^7.0.1",
     "hook-emitter": "^3.1.2",
@@ -60,7 +61,6 @@
     "babel-loader": "^8.0.5",
     "babel-plugin-istanbul": "^5.1.1",
     "chai": "^4.2.0",
-    "core-js": "^3.0.0",
     "coveralls": "^3.0.3",
     "esdoc": "^1.1.0",
     "esdoc-ecmascript-proposal-plugin": "^1.0.0",
