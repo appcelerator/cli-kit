@@ -11,8 +11,6 @@ import pluralize from 'pluralize';
 import semver from 'semver';
 import Terminal from './terminal';
 
-import 'core-js/features/array/flat';
-
 import { declareCLIKitClass } from './lib/util';
 import { terminal } from './index';
 
@@ -227,7 +225,7 @@ export default class CLI extends Context {
 		let { showHelpOnError } = this;
 
 		try {
-			const __argv = unparsedArgs ? unparsedArgs.flat(a => a.input || a) : process.argv.slice(2);
+			const __argv = unparsedArgs ? Array.prototype.concat.apply([], unparsedArgs.map(a => a.input || a)) : process.argv.slice(2);
 			const { _, argv, contexts, unknown } = await parser.parse(unparsedArgs || process.argv.slice(2), this);
 
 			log('Parsing complete: ' +
