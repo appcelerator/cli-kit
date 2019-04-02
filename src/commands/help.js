@@ -43,7 +43,7 @@ export default {
 	 * @param {Array.<Error>} [params.warnings] - A list of warnings (error objects).
 	 * @returns {Promise}
 	 */
-	async action({ _ = [], argv = {}, contexts, err, unknownCommand, warnings } = {}) {
+	async action({ _ = [], argv = {}, console, contexts, err, warnings } = {}) {
 		let exitCode = +!!err; // 0=success, 1=error
 
 		const formatError = err => {
@@ -85,11 +85,12 @@ export default {
 			help.warnings = Array.isArray(warnings) ? warnings.map(formatError) : null;
 
 			// determine the output stream
-			const out = ctx.get('terminal')[err ? 'stderr' : 'stdout'];
+			const out = err ? console._stderr : console._stdout;
 
 			// print the help output
 			if (argv.json) {
-				out.write(JSON.stringify(help, null, '  ') + '\n');
+				out.write(JSON.stringify(help, null, '  '));
+				out.write('\n');
 			} else {
 				const file = ctx.get('helpTemplate', path.resolve(__dirname, '..', '..', 'templates', 'help.tpl'));
 				log(`Rendering help template: ${highlight(file)}`);

@@ -185,10 +185,14 @@ export default class CLI extends Context {
 	 *
 	 * @param {Array.<String>} [unparsedArgs] - An array of arguments to parse. If not specified, it
 	 * defaults to the `process.argv` starting with the 3rd argument.
+	 * @param {Object} [opts] - Various options.
+	 * @param {Object} [opts.data] - User-defined data to pass into the selected command.
+	 * @param {Termianl} [opts.terminal] - A terminal instance to override the default CLI terminal
+	 * instance.
 	 * @returns {Promise.<Arguments>}
 	 * @access public
 	 */
-	async exec(unparsedArgs) {
+	async exec(unparsedArgs, opts = {}) {
 		const { version } = process;
 		let required = this.nodeVersion;
 		if ((required && !semver.satisfies(version, required)) || !semver.satisfies(version, required = clikitNodeVersion)) {
@@ -204,13 +208,25 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected arguments to be an array', { name: 'args', scope: 'CLI.exec', value: unparsedArgs });
 		}
 
+		if (!opts || typeof opts !== 'object') {
+			throw E.INVALID_ARGUMENT('Expectded opts to be an object', { name: 'opts', scope: 'CLI.exec', value: opts });
+		}
+
+		if (opts.terminal && !(opts.terminal instanceof Terminal)) {
+			throw E.INVALID_ARGUMENT('Expectded terminal to be a Terminal instance', { name: 'opts.terminal', scope: 'CLI.exec', value: opts.terminal });
+		}
+
+		if (opts.data && typeof opts.data !== 'object') {
+			throw E.INVALID_ARGUMENT('Expectded data to be an object', { name: 'opts.data', scope: 'CLI.exec', value: opts.data });
+		}
+
 		this.once('banner', ({ argv, ctx = this }) => {
 			if (this.get('autoHideBanner') !== false) {
-				this.get('terminal').once('output', () => {
+				(opts.terminal || this.get('terminal')).once('output', () => {
 					let banner = ctx.prop('banner');
 					if (banner && this.bannerEnabled) {
 						banner = String(typeof banner === 'function' ? banner() : banner).trim();
-						this.get('terminal').stdout.write(`${banner}\n\n`);
+						(opts.terminal || this.get('terminal')).stdout.write(`${banner}\n\n`);
 					}
 				});
 			}
@@ -244,8 +260,9 @@ export default class CLI extends Context {
 				cli:      this,
 				clikit:   { ...require('./index') },
 				cmd,
-				console:  this.terminal.console,
+				console:  (opts.terminal || this.terminal).console,
 				contexts,
+				data:     opts.data || {},
 				help:     () => renderHelp(results.cmd),
 				result:   undefined,
 				unknown,
@@ -293,6 +310,7 @@ export default class CLI extends Context {
 			const help = this.help && showHelpOnError !== false && this.commands.get('help');
 			if (help) {
 				return await help.action({
+					console:  (opts.terminal || this.terminal).console,
 					contexts: err.contexts || parser.contexts || [ this ],
 					err,
 					warnings: this.warnings
