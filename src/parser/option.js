@@ -138,7 +138,7 @@ export default class Option {
 			throw E.CONFLICT(`Option "${this.format}" is negated and must be type bool`, { name: 'negate', scope: 'Option.constructor', value: params.negate });
 		}
 
-		this.default = this.default !== undefined ? this.default : (this.datatype === 'bool' && this.negate ? true : undefined);
+		this.default = params.default !== undefined ? params.default : (this.datatype === 'bool' && this.negate ? true : undefined);
 
 		declareCLIKitClass(this, 'Option');
 	}
