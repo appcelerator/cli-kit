@@ -167,10 +167,15 @@ export default class Parser {
 	 *
 	 * @param {Array} args - An array of raw, unparsed arguments.
 	 * @param {Context} ctx - The context to reference for commands, options, and arguments.
+	 * @param {Object} opts - Various options.
+	 * @param {Object} opts.data - User-defined data to pass into the selected command.
+	 * @param {Function} opts.exit - A function that sets the exit code.
+	 * @param {Termianl} opts.terminal - A terminal instance to override the default CLI terminal
+	 * instance.
 	 * @returns {Promise<Parser>}
 	 * @access public
 	 */
-	parse(args, ctx) {
+	parse(args, ctx, opts = {}) {
 		return ctx.hook('parse', async args => {
 			if (!Array.isArray(args)) {
 				throw E.INVALID_ARGUMENT('Expected args to be an array', { name: 'args', scope: 'Parser.parse', value: args });
@@ -182,6 +187,8 @@ export default class Parser {
 
 			this.args = args;
 			log(`Processing ${pluralize('argument', args.length, true)}: ${highlight(this.args.join(', '))}`);
+
+			this.opts = opts || {};
 
 			// add the context to the stack
 			this.contexts.unshift(ctx);
@@ -207,7 +214,13 @@ export default class Parser {
 					value = arg.transform(value);
 
 					if (typeof arg.callback === 'function') {
-						const newValue = await arg.callback.call(arg, value);
+						const newValue = await arg.callback({
+							arg,
+							ctx,
+							exit: this.opts.exit,
+							opts: this.opts,
+							value
+						});
 						if (newValue !== undefined) {
 							value = newValue;
 						}
@@ -377,6 +390,8 @@ export default class Parser {
 						.then(() => option.callback({
 							input: arg.input,
 							ctx,
+							exit: this.opts.exit,
+							opts: this.opts,
 							next: async () => {
 								if (fired) {
 									log('next() already fired');

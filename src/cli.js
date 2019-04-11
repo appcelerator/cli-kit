@@ -64,7 +64,8 @@ export default class CLI extends Context {
 	 * @param {Terminal} [params.terminal] - A custom terminal instance, otherwise uses the default
 	 * global terminal instance.
 	 * @param {String} [params.title='Global'] - The title for the global context.
-	 * @param {String} [params.version] - The program version.
+	 * @param {String|Function} [params.version] - The program version or a function that resolves
+	 * a version.
 	 * @access public
 	 */
 	constructor(params = {}) {
@@ -156,10 +157,14 @@ export default class CLI extends Context {
 		// add the --version flag
 		if (this.version && !this.lookup.short.v && !this.lookup.long.version) {
 			this.option('-v, --version', {
-				callback: async ({ next }) => {
+				callback: async ({ exit, opts, next }) => {
 					if (await next()) {
-						this.terminal.stdout.write(`${this.version}\n`);
-						process.exit(0);
+						let version = this.version;
+						if (typeof version === 'function') {
+							version = await version(opts);
+						}
+						(opts.terminal || this.terminal).stdout.write(`${version}\n`);
+						exit();
 					}
 				},
 				desc: 'outputs the version'
@@ -216,6 +221,10 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expectded terminal to be a Terminal instance', { name: 'opts.terminal', scope: 'CLI.exec', value: opts.terminal });
 		}
 
+		if (!opts.data) {
+			opts.data = {};
+		}
+
 		if (opts.data && typeof opts.data !== 'object') {
 			throw E.INVALID_ARGUMENT('Expectded data to be an object', { name: 'opts.data', scope: 'CLI.exec', value: opts.data });
 		}
@@ -225,7 +234,7 @@ export default class CLI extends Context {
 				(opts.terminal || this.get('terminal')).once('output', () => {
 					let banner = ctx.prop('banner');
 					if (banner && this.bannerEnabled) {
-						banner = String(typeof banner === 'function' ? banner() : banner).trim();
+						banner = String(typeof banner === 'function' ? banner(opts) : banner).trim();
 						(opts.terminal || this.get('terminal')).stdout.write(`${banner}\n\n`);
 					}
 				});
@@ -237,70 +246,82 @@ export default class CLI extends Context {
 			}
 		});
 
-		const parser = new Parser();
 		let { showHelpOnError } = this;
+		const parser = new Parser();
+		const results = {
+			_:        undefined,
+			__argv:   undefined,
+			argv:     undefined,
+			cli:      this,
+			clikit:   { ...require('./index') },
+			cmd:      undefined,
+			console:  (opts.terminal || this.terminal).console,
+			contexts: undefined,
+			data:     opts.data,
+			exit:     opts.exit = code => results.exitCode = code || 0,
+			exitCode: undefined,
+			help:     () => renderHelp(results.cmd),
+			result:   undefined,
+			unknown:  undefined,
+			warnings: this.warnings
+		};
 
 		try {
 			const __argv = unparsedArgs ? Array.prototype.concat.apply([], unparsedArgs.map(a => a.input || a)) : process.argv.slice(2);
-			const { _, argv, contexts, unknown } = await parser.parse(unparsedArgs || process.argv.slice(2), this);
+			const { _, argv, contexts, unknown } = await parser.parse(unparsedArgs || process.argv.slice(2), this, opts);
 
 			log('Parsing complete: ' +
 				`${pluralize('option', Object.keys(argv).length, true)}, ` +
 				`${pluralize('unknown option', Object.keys(unknown).length, true)}, ` +
 				`${pluralize('arg', _.length, true)}, ` +
-				`${pluralize('context', contexts.length, true)}`
+				`${pluralize('context', contexts.length, true)} ` +
+				`(exit: ${results.exitCode})`
 			);
 
 			const cmd = contexts[0];
 
-			const results = {
-				_,
-				__argv,
-				argv,
-				cli:      this,
-				clikit:   { ...require('./index') },
-				cmd,
-				console:  (opts.terminal || this.terminal).console,
-				contexts,
-				data:     opts.data || {},
-				help:     () => renderHelp(results.cmd),
-				result:   undefined,
-				unknown,
-				warnings: this.warnings
-			};
+			results._        = _;
+			results.__argv   = __argv;
+			results.argv     = argv;
+			results.cmd      = cmd;
+			results.contexts = contexts;
+			results.unknown  = unknown;
 
-			// determine the command to run
-			if (this.help && argv.help && (!(cmd instanceof Extension) || cmd.isCLIKitExtension)) {
-				log('Selected help command');
-				results.cmd = this.commands.get('help');
-				contexts.unshift(results.cmd);
+			if (results.exitCode === undefined) {
+				// determine the command to run
+				if (this.help && argv.help && (!(cmd instanceof Extension) || cmd.isCLIKitExtension)) {
+					log('Selected help command');
+					results.cmd = this.commands.get('help');
+					contexts.unshift(results.cmd);
 
-			} else if (!(cmd instanceof Command) && typeof this.defaultCommand === 'string') {
-				log(`Selected default command: ${this.defaultCommand}`);
-				results.cmd = this.commands.get(this.defaultCommand);
-				if (!(results.cmd instanceof Command)) {
-					throw E.DEFAULT_COMMAND_NOT_FOUND(`The default command "${this.defaultCommand}" was not found!`);
+				} else if (!(cmd instanceof Command) && typeof this.defaultCommand === 'string') {
+					log(`Selected default command: ${this.defaultCommand}`);
+					results.cmd = this.commands.get(this.defaultCommand);
+					if (!(results.cmd instanceof Command)) {
+						throw E.DEFAULT_COMMAND_NOT_FOUND(`The default command "${this.defaultCommand}" was not found!`);
+					}
+					contexts.unshift(results.cmd);
 				}
-				contexts.unshift(results.cmd);
+
+				// handle the banner
+				await this.emit('banner', { argv, ctx: results.cmd });
+
+				// allow command to override showHelpOnError if not set already
+				showHelpOnError = results.cmd.prop('showHelpOnError');
+
+				// execute the command
+				if (results.cmd && typeof results.cmd.action === 'function') {
+					log(`Executing command: ${highlight(results.cmd.name)}`);
+					results.result = await results.cmd.action(results);
+				} else if (typeof this.defaultCommand  === 'function') {
+					log(`Executing default command: ${highlight(this.defaultCommand.name || 'anonymous')}`);
+					results.result = await this.defaultCommand(results);
+				} else {
+					log('No command to execute, returning parsed arguments');
+				}
 			}
 
-			// handle the banner
-			await this.emit('banner', { argv, ctx: results.cmd });
-
-			// allow command to override showHelpOnError if not set already
-			showHelpOnError = results.cmd.prop('showHelpOnError');
-
-			// execute the command
-			if (results.cmd && typeof results.cmd.action === 'function') {
-				log(`Executing command: ${highlight(results.cmd.name)}`);
-				results.result = await results.cmd.action(results);
-			} else if (typeof this.defaultCommand  === 'function') {
-				log(`Executing default command: ${highlight(this.defaultCommand.name || 'anonymous')}`);
-				results.result = await this.defaultCommand(results);
-			} else {
-				log('No command to execute, returning parsed arguments');
-			}
-
+			process.exitCode = results.exitCode;
 			return results;
 		} catch (err) {
 			error(err);
@@ -309,12 +330,11 @@ export default class CLI extends Context {
 
 			const help = this.help && showHelpOnError !== false && this.commands.get('help');
 			if (help) {
-				return await help.action({
-					console:  (opts.terminal || this.terminal).console,
-					contexts: err.contexts || parser.contexts || [ this ],
-					err,
-					warnings: this.warnings
-				});
+				results.contexts = err.contexts || parser.contexts || [ this ];
+				results.err = err;
+				results.result = await help.action(results);
+				process.exitCode = results.exitCode;
+				return results;
 			}
 
 			throw err;

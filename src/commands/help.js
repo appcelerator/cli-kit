@@ -39,11 +39,12 @@ export default {
 	 * @param {Object} [params.argv] - The parsed options.
 	 * @param {Array.<Context>} params.contexts - The stack of contexts found during parsing.
 	 * @param {Error} [params.err] - An error object in the event an error occurred.
+	 * @param {Function} params.exit - A function that sets the exit code.
 	 * @param {String} [params.unknownCommand] - The name of the unknown command.
 	 * @param {Array.<Error>} [params.warnings] - A list of warnings (error objects).
 	 * @returns {Promise}
 	 */
-	async action({ _ = [], argv = {}, console, contexts, err, warnings } = {}) {
+	async action({ _ = [], argv = {}, console, contexts, err, exit, warnings } = {}) {
 		let exitCode = +!!err; // 0=success, 1=error
 
 		const formatError = err => {
@@ -105,6 +106,6 @@ export default {
 			break;
 		}
 
-		process.exitCode = exitCode;
+		exit(exitCode);
 	}
 };

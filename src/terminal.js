@@ -1,3 +1,4 @@
+import debug from './lib/debug';
 import E from './lib/errors';
 import readline from 'readline';
 
@@ -6,6 +7,9 @@ import * as ansi from './lib/ansi';
 import { Console } from 'console';
 import { declareCLIKitClass } from './lib/util';
 import { EventEmitter } from 'events';
+
+const { log } = debug('cli-kit:terminal');
+const { highlight }  = debug.styles;
 
 /**
  * Cheap check to see if output may be XML or JSON object output.
@@ -141,6 +145,8 @@ export default class Terminal extends EventEmitter {
 		if (!stream || typeof stream !== 'object' || typeof stream.write !== 'function') {
 			throw E.INVALID_ARGUMENT(`Expected the ${name} stream to be a writable stream`, { name, scope: 'Terminal.patchStreamWrite', value: stream });
 		}
+
+		log(`Patching output stream: ${highlight(name)}`);
 
 		const origWrite = stream.write;
 
