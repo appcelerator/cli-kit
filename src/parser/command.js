@@ -137,9 +137,10 @@ export default class Command extends Context {
 	/**
 	 * Returns the schema for this command and all child contexts.
 	 *
-	 * @type {Object}
+	 * @returns {Object}
+	 * @access public
 	 */
-	get schema() {
+	schema() {
 		return {
 			desc: this.desc
 		};

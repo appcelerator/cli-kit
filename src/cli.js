@@ -157,14 +157,15 @@ export default class CLI extends Context {
 		// add the --version flag
 		if (this.version && !this.lookup.short.v && !this.lookup.long.version) {
 			this.option('-v, --version', {
-				callback: async ({ exit, opts, next }) => {
+				callback: async ({ exitCode, opts, next }) => {
 					if (await next()) {
 						let version = this.version;
 						if (typeof version === 'function') {
 							version = await version(opts);
 						}
 						(opts.terminal || this.terminal).stdout.write(`${version}\n`);
-						exit();
+						exitCode(0);
+						return false;
 					}
 				},
 				desc: 'outputs the version'
@@ -248,22 +249,22 @@ export default class CLI extends Context {
 
 		let { showHelpOnError } = this;
 		const parser = new Parser();
+		const state = {};
 		const results = {
-			_:        undefined,
-			__argv:   undefined,
-			argv:     undefined,
-			cli:      this,
-			clikit:   { ...require('./index') },
-			cmd:      undefined,
-			console:  (opts.terminal || this.terminal).console,
-			contexts: undefined,
-			data:     opts.data,
-			exit:     opts.exit = code => results.exitCode = code || 0,
-			exitCode: undefined,
-			help:     () => renderHelp(results.cmd),
-			result:   undefined,
-			unknown:  undefined,
-			warnings: this.warnings
+			_:           undefined,
+			__argv:      undefined,
+			argv:        undefined,
+			cli:         this,
+			clikit:      { ...require('./index') },
+			cmd:         undefined,
+			console:     (opts.terminal || this.terminal).console,
+			contexts:    undefined,
+			data:        opts.data,
+			exitCode:    opts.exitCode = code => code === undefined ? state.exitCode : (state.exitCode = code || 0),
+			help:        () => renderHelp(results.cmd),
+			result:      undefined,
+			unknown:     undefined,
+			warnings:    this.warnings
 		};
 
 		try {
@@ -275,7 +276,7 @@ export default class CLI extends Context {
 				`${pluralize('unknown option', Object.keys(unknown).length, true)}, ` +
 				`${pluralize('arg', _.length, true)}, ` +
 				`${pluralize('context', contexts.length, true)} ` +
-				`(exit: ${results.exitCode})`
+				`(exit: ${results.exitCode()})`
 			);
 
 			const cmd = contexts[0];
@@ -287,7 +288,7 @@ export default class CLI extends Context {
 			results.contexts = contexts;
 			results.unknown  = unknown;
 
-			if (results.exitCode === undefined) {
+			if (results.exitCode() === undefined) {
 				// determine the command to run
 				if (this.help && argv.help && (!(cmd instanceof Extension) || cmd.isCLIKitExtension)) {
 					log('Selected help command');
@@ -321,7 +322,7 @@ export default class CLI extends Context {
 				}
 			}
 
-			process.exitCode = results.exitCode;
+			process.exitCode = results.exitCode();
 			return results;
 		} catch (err) {
 			error(err);
@@ -333,7 +334,7 @@ export default class CLI extends Context {
 				results.contexts = err.contexts || parser.contexts || [ this ];
 				results.err = err;
 				results.result = await help.action(results);
-				process.exitCode = results.exitCode;
+				process.exitCode = results.exitCode();
 				return results;
 			}
 
@@ -344,9 +345,12 @@ export default class CLI extends Context {
 	/**
 	 * Returns the schema for the CLI and all child contexts.
 	 *
-	 * @type {Object}
+	 * @param {Object} [opts] - Various options.
+	 * @param {Object} [opts.data] - User-defined data to pass into the selected command.
+	 * @returns {Object}
+	 * @access public
 	 */
-	get schema() {
+	async schema(opts = {}) {
 		const obj = {
 			args:       [],
 			commands:   {},
@@ -355,7 +359,7 @@ export default class CLI extends Context {
 			name:       this.name,
 			options:    {},
 			title:      this.title,
-			version:    this.version
+			version:    typeof this.version === 'function' ? (await this.version(opts)) : this.version
 		};
 
 		for (const arg of this.args) {
@@ -365,17 +369,17 @@ export default class CLI extends Context {
 		}
 
 		for (const [ name, cmd ] of this.commands.entries()) {
-			obj.commands[name] = cmd.schema;
+			obj.commands[name] = await cmd.schema(opts);
 		}
 
 		for (const [ name, ext ] of this.extensions.entries()) {
-			obj.extensions[name] = ext.schema;
+			obj.extensions[name] = await ext.schema(opts);
 		}
 
 		for (const options of this.options.values()) {
 			for (const opt of options) {
 				if (!opt.hidden) {
-					obj.options[opt.format] = opt.schema;
+					obj.options[opt.format] = await opt.schema(opts);
 				}
 			}
 		}

@@ -235,6 +235,7 @@ export default class Extension extends Command {
 			this.camelCase      = ctx.camelCase;
 			this.defaultCommand = ctx.defaultCommand;
 			this.treatUnknownOptionsAsArguments = ctx.treatUnknownOptionsAsArguments;
+			this.version        = ctx.version;
 
 			this.init({
 				args:       ctx.args,
@@ -246,6 +247,21 @@ export default class Extension extends Command {
 				parent:     this.parent,
 				title:      ctx.title !== 'Global' && ctx.title || this.name
 			});
+
+			const versionOption = this.version && this.lookup.long.version;
+			if (versionOption && typeof versionOption.callback !== 'function') {
+				versionOption.callback = async ({ exitCode, opts, next }) => {
+					if (await next()) {
+						let version = this.version;
+						if (typeof version === 'function') {
+							version = await version(opts);
+						}
+						(opts.terminal || this.get('terminal')).stdout.write(`${version}\n`);
+						exitCode(0);
+						return false;
+					}
+				};
+			}
 
 			if (typeof ctx.action === 'function') {
 				this.action = ctx.action;
@@ -266,9 +282,10 @@ export default class Extension extends Command {
 	/**
 	 * Returns the schema for this extension and all child contexts.
 	 *
-	 * @type {Object}
+	 * @returns {Object}
+	 * @access public
 	 */
-	get schema() {
+	schema() {
 		return {
 			...super.schema,
 			path: this.path

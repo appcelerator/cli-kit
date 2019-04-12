@@ -44,8 +44,8 @@ export default {
 	 * @param {Array.<Error>} [params.warnings] - A list of warnings (error objects).
 	 * @returns {Promise}
 	 */
-	async action({ _ = [], argv = {}, console, contexts, err, exit, warnings } = {}) {
-		let exitCode = +!!err; // 0=success, 1=error
+	async action({ _ = [], argv = {}, console, contexts, err, exitCode, warnings } = {}) {
+		exitCode(+!!err); // 0=success, 1=error
 
 		const formatError = err => {
 			return err ? {
@@ -99,13 +99,11 @@ export default {
 			}
 
 			// set the exit code
-			exitCode = err ? 1 : ctx.get('helpExitCode');
+			exitCode(err ? 1 : ctx.get('helpExitCode'));
 
 			// we only loop until we hit the first valid context... generateHelp() will recurse
 			// parent contexts for us
 			break;
 		}
-
-		exit(exitCode);
 	}
 };

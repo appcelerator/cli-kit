@@ -146,9 +146,10 @@ export default class Option {
 	/**
 	 * Returns this option's schema.
 	 *
-	 * @type {Object}
+	 * @returns {Object}
+	 * @access public
 	 */
-	get schema() {
+	schema() {
 		return {
 			aliases: this.aliases,
 			desc:    this.desc,

@@ -169,7 +169,7 @@ export default class Parser {
 	 * @param {Context} ctx - The context to reference for commands, options, and arguments.
 	 * @param {Object} opts - Various options.
 	 * @param {Object} opts.data - User-defined data to pass into the selected command.
-	 * @param {Function} opts.exit - A function that sets the exit code.
+	 * @param {Function} opts.exitCode - A function that sets the exit code.
 	 * @param {Termianl} opts.terminal - A terminal instance to override the default CLI terminal
 	 * instance.
 	 * @returns {Promise<Parser>}
@@ -217,7 +217,7 @@ export default class Parser {
 						const newValue = await arg.callback({
 							arg,
 							ctx,
-							exit: this.opts.exit,
+							exitCode: this.opts.exitCode,
 							opts: this.opts,
 							value
 						});
@@ -390,7 +390,7 @@ export default class Parser {
 						.then(() => option.callback({
 							input: arg.input,
 							ctx,
-							exit: this.opts.exit,
+							exitCode: this.opts.exitCode,
 							opts: this.opts,
 							next: async () => {
 								if (fired) {
