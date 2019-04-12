@@ -131,6 +131,7 @@ export default class OptionMap extends Map {
 						max:      opt.max,
 						min:      opt.min,
 						name:     opt.name,
+						negate:   opt.negate,
 						required: opt.required,
 						short:    opt.short
 					});

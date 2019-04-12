@@ -202,7 +202,7 @@ export default class CLI extends Context {
 		const { version } = process;
 		let required = this.nodeVersion;
 		if ((required && !semver.satisfies(version, required)) || !semver.satisfies(version, required = clikitNodeVersion)) {
-			throw E.INVALID_NODE_JS(`${this.appName || 'This application'} requires Node.js version is ${required}, currently ${version}`, {
+			throw E.INVALID_NODE_JS(`${this.appName !== 'program' && this.appName || 'This program'} requires Node.js version ${required}, currently ${version}`, {
 				name: 'nodeVersion',
 				scope: 'CLI.exec',
 				current: version,
@@ -215,11 +215,11 @@ export default class CLI extends Context {
 		}
 
 		if (!opts || typeof opts !== 'object') {
-			throw E.INVALID_ARGUMENT('Expectded opts to be an object', { name: 'opts', scope: 'CLI.exec', value: opts });
+			throw E.INVALID_ARGUMENT('Expected opts to be an object', { name: 'opts', scope: 'CLI.exec', value: opts });
 		}
 
 		if (opts.terminal && !(opts.terminal instanceof Terminal)) {
-			throw E.INVALID_ARGUMENT('Expectded terminal to be a Terminal instance', { name: 'opts.terminal', scope: 'CLI.exec', value: opts.terminal });
+			throw E.INVALID_ARGUMENT('Expected terminal to be a Terminal instance', { name: 'opts.terminal', scope: 'CLI.exec', value: opts.terminal });
 		}
 
 		if (!opts.data) {
@@ -227,7 +227,7 @@ export default class CLI extends Context {
 		}
 
 		if (opts.data && typeof opts.data !== 'object') {
-			throw E.INVALID_ARGUMENT('Expectded data to be an object', { name: 'opts.data', scope: 'CLI.exec', value: opts.data });
+			throw E.INVALID_ARGUMENT('Expected data to be an object', { name: 'opts.data', scope: 'CLI.exec', value: opts.data });
 		}
 
 		this.once('banner', ({ argv, ctx = this }) => {
@@ -248,8 +248,8 @@ export default class CLI extends Context {
 		});
 
 		let { showHelpOnError } = this;
+		let exitCode = undefined;
 		const parser = new Parser();
-		const state = {};
 		const results = {
 			_:           undefined,
 			__argv:      undefined,
@@ -260,7 +260,7 @@ export default class CLI extends Context {
 			console:     (opts.terminal || this.terminal).console,
 			contexts:    undefined,
 			data:        opts.data,
-			exitCode:    opts.exitCode = code => code === undefined ? state.exitCode : (state.exitCode = code || 0),
+			exitCode:    opts.exitCode = code => code === undefined ? exitCode : (exitCode = code || 0),
 			help:        () => renderHelp(results.cmd),
 			result:      undefined,
 			unknown:     undefined,

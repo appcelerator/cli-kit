@@ -57,7 +57,7 @@ if (options.count) {
 					if (option.short) {
 						s += `-${option.short},`;
 					}
-					>>|  ${s}--${option.long}${option.isFlag ? '' : ('=<' + (option.hint || 'value') + '>')}  ${option.desc || ''}
+					>>|  ${s}--${option.negate ? 'no-' : ''}${option.long}${option.isFlag ? '' : ('=<' + (option.hint || 'value') + '>')}  ${option.desc || ''}
 				}
 			}
 			>>

@@ -104,10 +104,10 @@ export default class Option {
 			const negate  = m[2].match(negateRegExp);
 			this.negate = !!negate;
 			this.name   = negate ? negate[1] : m[2];
-			this.long   = m[2];
+			this.long   = negate ? negate[1] : m[2];
 		}
 
-		this.name = this.name || params.long || params.short || this.format;
+		this.name = this.name || this.long || this.short || this.format;
 		if (!this.name) {
 			throw E.INVALID_OPTION(`Option "${this.format}" has no name`, { name: 'name', scope: 'Option.constructor', value: params.name });
 		}

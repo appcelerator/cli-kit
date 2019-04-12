@@ -171,8 +171,8 @@ describe('CLI', () => {
 				'USAGE: test-cli [options]',
 				'',
 				'GLOBAL OPTIONS:',
-				'  -h,--help  displays the help screen',
 				'  --no-banner  suppress the banner',
+				'  -h,--help  displays the help screen',
 				'',
 				''
 			].join('\n'));
@@ -230,8 +230,6 @@ describe('CLI', () => {
 
 			await cli.exec([]);
 
-			// process.stdout.write(out.toString() + '\n');
-
 			expect(out.toString()).to.equal([
 				'My Amazing CLI, version 1.2.3',
 				'Copyright (c) 2018, Me',
@@ -244,8 +242,8 @@ describe('CLI', () => {
 				'  foo',
 				'',
 				'GLOBAL OPTIONS:',
-				'  -h,--help  displays the help screen',
 				'  --no-banner  suppress the banner',
+				'  -h,--help  displays the help screen',
 				'',
 				''
 			].join('\n'));
@@ -299,6 +297,79 @@ describe('CLI', () => {
 			await cli.exec([ 'foo' ]);
 
 			expect(out.toString()).to.equal(xml);
+		});
+	});
+
+	describe('exec()', () => {
+		it('should error if Node.js version is too old', async () => {
+			try {
+				const cli = new CLI({
+					nodeVersion: '>=999'
+				});
+
+				await cli.exec();
+			} catch (err) {
+				expect(err.message).to.equal(`This program requires Node.js version >=999, currently ${process.version}`);
+				return;
+			}
+
+			throw new Error('Expected error');
+		});
+
+		it('should error if arguments are not an array', async () => {
+			try {
+				const cli = new CLI();
+				await cli.exec('foo');
+			} catch (err) {
+				expect(err).to.be.instanceof(TypeError);
+				expect(err.message).to.equal('Expected arguments to be an array');
+				return;
+			}
+
+			throw new Error('Expected error');
+		});
+
+		it('should error if options are not an object', async () => {
+			try {
+				const cli = new CLI();
+				await cli.exec([], 'foo');
+			} catch (err) {
+				expect(err).to.be.instanceof(TypeError);
+				expect(err.message).to.equal('Expected opts to be an object');
+				return;
+			}
+
+			throw new Error('Expected error');
+		});
+
+		it('should error if terminal is not valid', async () => {
+			try {
+				const cli = new CLI();
+				await cli.exec([], {
+					terminal: 'foo'
+				});
+			} catch (err) {
+				expect(err).to.be.instanceof(TypeError);
+				expect(err.message).to.equal('Expected terminal to be a Terminal instance');
+				return;
+			}
+
+			throw new Error('Expected error');
+		});
+
+		it('should error if data payload is not valid', async () => {
+			try {
+				const cli = new CLI();
+				await cli.exec([], {
+					data: 'foo'
+				});
+			} catch (err) {
+				expect(err).to.be.instanceof(TypeError);
+				expect(err.message).to.equal('Expected data to be an object');
+				return;
+			}
+
+			throw new Error('Expected error');
 		});
 	});
 
