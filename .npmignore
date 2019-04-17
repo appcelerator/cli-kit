@@ -6,6 +6,7 @@
 .git*
 .nyc_output
 .travis.yml
+.vscode
 appveyor.yml
 coverage
 docs
