@@ -263,7 +263,7 @@ export default class Parser {
 						name = parsedArg.option.camelCase || ctx.get('camelCase') ? camelCase(parsedArg.option.name) : parsedArg.option.name;
 						if (parsedArg.option.type === 'count') {
 							this.argv[name] = (this.argv[name] || 0) + 1;
-						} else {
+						} else if (parsedArg.value !== undefined) {
 							this.argv[name] = parsedArg.value;
 						}
 						if (this.argv[name] !== undefined) {
@@ -457,7 +457,8 @@ export default class Parser {
 		}
 
 		const arg = args[i];
-		const type = arg instanceof ParsedArgument && arg.type;
+		const isParsed = arg instanceof ParsedArgument;
+		const type = isParsed && arg.type;
 		log(`Processing argument [${i}]: ${highlight(arg)}`);
 
 		// check if the argument is a the `--` extra arguments sequence
@@ -472,7 +473,7 @@ export default class Parser {
 		}
 
 		const { lookup } = ctx;
-		let subject = arg instanceof ParsedArgument ? (arg.input ? arg.input[0] : null) : arg;
+		let subject = isParsed ? (arg.input ? arg.input[0] : null) : arg;
 
 		// check if the argument is an option
 		if (!type || type === 'option' || type === 'unknown') {
@@ -541,14 +542,12 @@ export default class Parser {
 						args.splice(i + 1, 1);
 						value = option.transform(nextArg);
 					}
-				} else {
-					value = option.transform(value);
 				}
 
 				return new ParsedArgument('option', {
 					input,
 					option,
-					value
+					value: value === undefined && isParsed ? arg.value : value
 				});
 			}
 
@@ -560,7 +559,7 @@ export default class Parser {
 					input: [ subject ],
 					name: negated ? negated[1] : m[1],
 					negated,
-					value: m[2]
+					value: m[2] === undefined && isParsed ? arg.value : m[2]
 				});
 			}
 		}

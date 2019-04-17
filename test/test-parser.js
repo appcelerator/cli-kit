@@ -18,6 +18,23 @@ describe('Parser', () => {
 			result = await cli.exec([ '--foo-bar' ]);
 			expect(result.argv).to.have.property('fooBar', true);
 		});
+
+		it('should use default if no value specified', async () => {
+			const cli = new CLI({
+				commands: {
+					foo: {
+						options: {
+							'-b,--bar <value>': {
+								default: 'baz'
+							}
+						}
+					}
+				}
+			});
+
+			const result = await cli.exec([ 'foo', '-b' ]);
+			expect(result.argv).to.have.property('bar', 'baz');
+		});
 	});
 
 	describe('Validation', () => {
