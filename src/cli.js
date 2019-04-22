@@ -315,6 +315,9 @@ export default class CLI extends Context {
 				if (results.cmd && typeof results.cmd.action === 'function') {
 					log(`Executing command: ${highlight(results.cmd.name)}`);
 					results.result = await results.cmd.action(results);
+				} else if (results.cmd && results.cmd.action instanceof Command && typeof results.cmd.action.action === 'function') {
+					log(`Executing command: ${highlight(results.cmd.action.name)} (via ${highlight(results.cmd.name)})`);
+					results.result = await results.cmd.action.action(results);
 				} else if (typeof this.defaultCommand  === 'function') {
 					log(`Executing default command: ${highlight(this.defaultCommand.name || 'anonymous')}`);
 					results.result = await this.defaultCommand(results);

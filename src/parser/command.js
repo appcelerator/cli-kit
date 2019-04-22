@@ -27,7 +27,7 @@ export default class Command extends Context {
 	 * @param {String} name - The command name.
 	 * @param {Object|CLI|Command|Context|Function} [params] - Command parameters or an action
 	 * function.
-	 * @param {Function} [params.action] - A function to call when the command is found.
+	 * @param {Function|Command} [params.action] - A function to call when the command is found.
 	 * @param {Array.<String>|String} [params.aliases] - An array of command aliases.
 	 * @param {String|Function} [params.defaultCommand] - The default command to execute when this
 	 * command has no `action`. When value is a `String`, it looks up the subcommand and calls it.
@@ -88,8 +88,8 @@ export default class Command extends Context {
 			}
 		}
 
-		if (params.action && typeof params.action !== 'function') {
-			throw E.INVALID_ARGUMENT('Expected command action to be a function', { name: 'action', scope: 'Command.constructor', value: params.action });
+		if (params.action && typeof params.action !== 'function' && !(params.action instanceof Command)) {
+			throw E.INVALID_ARGUMENT('Expected command action to be a function or Command instance', { name: 'action', scope: 'Command.constructor', value: params.action });
 		}
 
 		params.name = name;
@@ -102,19 +102,13 @@ export default class Command extends Context {
 		} else if (typeof params.defaultCommand === 'function') {
 			this.action = params.defaultCommand;
 		} else if (typeof params.defaultCommand === 'string') {
-			const subcommand = this.lookup.commands[params.defaultCommand];
-			if (!subcommand) {
-				warn(`Command ${this.name}'s default command ${params.defaultCommand} does not exist`);
-			} else if (typeof subcommand.action !== 'function') {
-				warn(`Command ${this.name}'s default command ${params.defaultCommand} does not have an action`);
-			} else {
-				this.action = subcommand.action;
-			}
+			this.action = this.lookup.commands[params.defaultCommand];
 		}
 
-		this.aliases    = params.aliases;
-		this.clikitHelp = params.clikitHelp;
-		this.hidden     = !!params.hidden;
+		this.aliases        = params.aliases;
+		this.clikitHelp     = params.clikitHelp;
+		this.defaultCommand = params.defaultCommand;
+		this.hidden         = !!params.hidden;
 	}
 
 	/**

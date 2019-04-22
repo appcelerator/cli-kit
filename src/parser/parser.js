@@ -1,4 +1,5 @@
 import camelCase from 'lodash.camelcase';
+import Command from './command';
 import Context from './context';
 import debug from '../lib/debug';
 import E from '../lib/errors';
@@ -350,11 +351,21 @@ export default class Parser {
 	 */
 	async parseArg(ctx, i) {
 		if (i === this.args.length) {
-			const cmd = this.contexts[0];
+			let cmd = this.contexts[0];
+
+			// if there are no more contexts to descend, check if the top-most context is actually
+			// a default subcommand
+			if (cmd === ctx && cmd.action instanceof Command) {
+				cmd = cmd.action;
+				cmd.link(ctx);
+				this.contexts.unshift(cmd);
+			}
+
 			if (cmd !== ctx) {
 				log('Descending into next context\'s parser');
 				return this.parseWithContext(cmd);
 			}
+
 			log('End of the line');
 			return;
 		}
