@@ -1,8 +1,11 @@
 import Context from './context';
+import debug from '../lib/debug';
 import E from '../lib/errors';
 import helpCommand from '../commands/help';
 
 import { declareCLIKitClass } from '../lib/util';
+
+const { warn } = debug('cli-kit:command');
 
 /**
  * Defines a command and its options and arguments.
@@ -22,9 +25,15 @@ export default class Command extends Context {
 	 * Constructs a command instance.
 	 *
 	 * @param {String} name - The command name.
-	 * @param {Object|CLI|Command|Context|Function} [params] - Command parameters or an action function.
+	 * @param {Object|CLI|Command|Context|Function} [params] - Command parameters or an action
+	 * function.
 	 * @param {Function} [params.action] - A function to call when the command is found.
 	 * @param {Array.<String>|String} [params.aliases] - An array of command aliases.
+	 * @param {String|Function} [params.defaultCommand] - The default command to execute when this
+	 * command has no `action`. When value is a `String`, it looks up the subcommand and calls it.
+	 * If value is a `Function`, it simply invokes it.
+	 * @param {Boolean} [params.hidden=false] - When `true`, the option is not displayed on the
+	 * help screen or auto-suggest.
 	 * @access public
 	 *
 	 * @example
@@ -43,6 +52,10 @@ export default class Command extends Context {
 
 		if (!params || (typeof params !== 'object' || Array.isArray(params))) {
 			throw E.INVALID_ARGUMENT('Expected command parameters to be an object', { name: 'params', scope: 'Command.constructor', value: params });
+		}
+
+		if (params.defaultCommand !== undefined && (!params.defaultCommand || (typeof params.defaultCommand !== 'string' && typeof params.defaultCommand !== 'function'))) {
+			throw E.INVALID_ARGUMENT('Expected default command to be a string or function', { name: 'defaultCommand', scope: 'Command.constructor', value: params.defaultCommand });
 		}
 
 		if (params.clikit instanceof Set) {
@@ -86,11 +99,22 @@ export default class Command extends Context {
 
 		if (params.action) {
 			this.action = params.action;
+		} else if (typeof params.defaultCommand === 'function') {
+			this.action = params.defaultCommand;
+		} else if (typeof params.defaultCommand === 'string') {
+			const subcommand = this.lookup.commands[params.defaultCommand];
+			if (!subcommand) {
+				warn(`Command ${this.name}'s default command ${params.defaultCommand} does not exist`);
+			} else if (typeof subcommand.action !== 'function') {
+				warn(`Command ${this.name}'s default command ${params.defaultCommand} does not have an action`);
+			} else {
+				this.action = subcommand.action;
+			}
 		}
-		this.aliases = params.aliases;
-		if (params.clikitHelp !== undefined) {
-			this.clikitHelp = params.clikitHelp;
-		}
+
+		this.aliases    = params.aliases;
+		this.clikitHelp = params.clikitHelp;
+		this.hidden     = !!params.hidden;
 	}
 
 	/**

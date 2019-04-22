@@ -43,7 +43,8 @@ export default class CLI extends Context {
 	 * to be displayed before each command.
 	 * @param {Boolean} [params.colors=true] - Enables colors, specifically on the help screen.
 	 * @param {String|Function} [params.defaultCommand="help"] - The default command to execute.
-	 * When set to a string, it will lookup the command and use it.
+	 * When value is a `String`, it looks up the command and calls it. If value is a `Function`, it
+	 * simply invokes it.
 	 * @param {Boolean} [params.errorIfUnknownCommand=true] - When `true`, `help` is enabled, and
 	 * the parser didn't find a command, but it did find an unknown argument, it will show the help
 	 * screen with an unknown command error.
@@ -92,7 +93,7 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected terminal to be a Terminal instance', { name: 'terminal', scope: 'CLI.constructor', value: params.terminal });
 		}
 
-		if (params.defaultCommand !== undefined && typeof params.defaultCommand !== 'string' && typeof params.defaultCommand !== 'function') {
+		if (params.defaultCommand !== undefined && (!params.defaultCommand || (typeof params.defaultCommand !== 'string' && typeof params.defaultCommand !== 'function'))) {
 			throw E.INVALID_ARGUMENT('Expected default command to be a string or function', { name: 'defaultCommand', scope: 'CLI.constructor', value: params.defaultCommand });
 		}
 
