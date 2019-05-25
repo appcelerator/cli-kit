@@ -45,7 +45,7 @@
     "hook-emitter": "^3.1.2",
     "lodash.camelcase": "^4.3.0",
     "pkg-dir": "^4.1.0",
-    "pluralize": "^7.0.0",
+    "pluralize": "^8.0.0",
     "semver": "^6.0.0",
     "snooplogg": "^2.0.1",
     "source-map-support": "^0.5.12",
