@@ -61,7 +61,7 @@ describe('Parser', () => {
 			await cli.exec([]);
 
 			expect(out.toString()).to.equal([
-				'Missing required argument "foo"',
+				'Error: Missing required argument "foo"',
 				'',
 				'USAGE: test-cli [options] <foo>',
 				'',
@@ -69,7 +69,7 @@ describe('Parser', () => {
 				'  foo',
 				'',
 				'GLOBAL OPTIONS:',
-				'  -h,--help  displays the help screen',
+				'  -h,--help  Displays the help screen',
 				'',
 				''
 			].join('\n'));

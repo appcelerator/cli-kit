@@ -171,8 +171,8 @@ describe('CLI', () => {
 				'USAGE: test-cli [options]',
 				'',
 				'GLOBAL OPTIONS:',
-				'  --no-banner  suppress the banner',
-				'  -h,--help  displays the help screen',
+				'  --no-banner  Suppress the banner',
+				'  -h,--help  Displays the help screen',
 				'',
 				''
 			].join('\n'));
@@ -234,7 +234,7 @@ describe('CLI', () => {
 				'My Amazing CLI, version 1.2.3',
 				'Copyright (c) 2018, Me',
 				'',
-				'Missing required argument "foo"',
+				'Error: Missing required argument "foo"',
 				'',
 				'USAGE: test-cli [options] <foo>',
 				'',
@@ -242,8 +242,8 @@ describe('CLI', () => {
 				'  foo',
 				'',
 				'GLOBAL OPTIONS:',
-				'  --no-banner  suppress the banner',
-				'  -h,--help  displays the help screen',
+				'  --no-banner  Suppress the banner',
+				'  -h,--help  Displays the help screen',
 				'',
 				''
 			].join('\n'));

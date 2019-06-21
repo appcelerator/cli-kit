@@ -95,7 +95,7 @@ describe('Extension', () => {
 				'  cli-kit-extension',
 				'',
 				'GLOBAL OPTIONS:',
-				'  -h,--help  displays the help screen',
+				'  -h,--help  Displays the help screen',
 				'',
 				''
 			].join('\n'));
@@ -119,10 +119,10 @@ describe('Extension', () => {
 				'  --baz=<value>  set baz',
 				'Group 2',
 				'  -a,--append',
-				'  --no-color  disable colors',
+				'  --no-color  Disable colors',
 				'',
 				'GLOBAL OPTIONS:',
-				'  -h,--help  displays the help screen',
+				'  -h,--help  Displays the help screen',
 				'',
 				''
 			].join('\n'));
