@@ -139,19 +139,19 @@ export default class CLI extends Context {
 			// note: we must clone the help command params since the object gets modified
 			this.command('help', { ...helpCommand });
 
-			this.option('-h, --help', 'displays the help screen');
+			this.option('-h, --help', 'Displays the help screen');
 		}
 
 		// add the --no-banner flag
 		if (this.banner && !this.hideNoBannerOption) {
-			this.option('--no-banner', 'suppress the banner');
+			this.option('--no-banner', 'Suppress the banner');
 		}
 
 		// add the --no-colors flag
 		if (this.colors && !this.hideNoColorOption) {
 			this.option('--no-color', {
 				aliases: [ '--no-colors' ],
-				desc: 'disable colors'
+				desc: 'Disable colors'
 			});
 		}
 

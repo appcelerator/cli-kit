@@ -1,5 +1,9 @@
 if (error) {
-	>> ${error.message}
+	if (error.type) {
+		>> ${error.type}: ${error.message}
+	} else {
+		>> ${error.message}
+	}
 	if (error.code === 'ERR_MISSING_REQUIRED_OPTION') {
 		for (const option of error.meta.required) {
 			>>|  ${option.format}  ${option.desc}
