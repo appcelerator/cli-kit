@@ -42,7 +42,7 @@
     "argv-split": "^2.0.1",
     "fast-levenshtein": "^2.0.6",
     "fs-extra": "^8.0.1",
-    "hook-emitter": "^3.1.2",
+    "hook-emitter": "^4.0.0",
     "lodash.camelcase": "^4.3.0",
     "pkg-dir": "^4.2.0",
     "pluralize": "^8.0.0",
