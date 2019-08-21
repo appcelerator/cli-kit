@@ -113,13 +113,13 @@ exports.onCreateNode = ({ node, actions, getNode }) => {
 };
 
 exports.onCreateWebpackConfig = ({ actions, getConfig, loaders, stage }) => {
-	const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+	// const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 	actions.setWebpackConfig({
 		plugins: [
-			new MonacoWebpackPlugin({
-				languages: [ 'javascript' ]
-			})
+			// new MonacoWebpackPlugin({
+			// 	languages: [ 'javascript' ]
+			// })
 		],
 		module: {
 			rules: [
@@ -131,16 +131,16 @@ exports.onCreateWebpackConfig = ({ actions, getConfig, loaders, stage }) => {
 		}
 	});
 
-	if (stage === "build-html") {
-		actions.setWebpackConfig({
-			module: {
-				rules: [
-					{
-						test: /\/monaco-editor\/esm\/vs\/editor\//,
-						use: loaders.null()
-					}
-				]
-			}
-		});
-	}
+	// if (stage === "build-html") {
+	// 	actions.setWebpackConfig({
+	// 		module: {
+	// 			rules: [
+	// 				{
+	// 					test: /\/monaco-editor\/esm\/vs\/editor\//,
+	// 					use: loaders.null()
+	// 				}
+	// 			]
+	// 		}
+	// 	});
+	// }
 };

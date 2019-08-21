@@ -85,17 +85,17 @@ export default {
 			help.error = formatError(err);
 			help.warnings = Array.isArray(warnings) ? warnings.map(formatError) : null;
 
-			// determine the output stream
-			const out = err ? console._stderr : console._stdout;
+			const { _stdout, _stderr } = console;
 
 			// print the help output
 			if (argv.json) {
-				out.write(JSON.stringify(help, null, '  '));
-				out.write('\n');
+				_stdout.write(JSON.stringify(help, null, '  '));
+				_stdout.write('\n');
 			} else {
 				const file = ctx.get('helpTemplate', path.resolve(__dirname, '..', '..', 'templates', 'help.tpl'));
 				log(`Rendering help template: ${highlight(file)}`);
-				out.write(renderFile(file, help));
+				// determine the output stream
+				(err ? _stderr : _stdout).write(renderFile(file, help));
 			}
 
 			// set the exit code

@@ -25,7 +25,7 @@
 	}
 
 	> content {
-		background: #fff linear-gradient(to right, rgba(0,0,0,0.6) 0,rgba(0,0,0,0) .4em);
+		background: #fff;
 		display: flex;
 		flex-direction: column;
 		padding: 2em 3em;
@@ -48,6 +48,18 @@
 			> pre[class*="language-"] {
 				padding: 1em 3em;
 			}
+		}
+
+		pre.language-sh {
+			position: relative;
+		}
+
+		code.language-sh:before {
+			color: #666;
+			content: '$';
+			left: 1.8em;
+			position: absolute;
+			top: 1em;
 		}
 	}
 }

@@ -1,9 +1,19 @@
 import React, { PureComponent } from 'react'
-import MonacoEditor from 'react-monaco-editor/lib/index';
+// import MonacoEditor from 'react-monaco-editor/lib/index';
 import Term from '../components/term';
 import styles from '../css/demo.module.scss';
 import examples from '../../content/examples';
 import { Dropdown, Icon, Popup } from 'semantic-ui-react';
+
+/*
+<MonacoEditor
+						language="javascript"
+						editorDidMount={::this.editorDidMount}
+						onChange={::this.onCodeChange}
+						options={{ minimap: { enabled: false } }}
+						theme="vs-dark"
+						value={this.state.code} />
+						*/
 
 const listing = Object.keys(examples).map(value => ({
 	text: `${value} Example`,
@@ -64,13 +74,7 @@ export default class Demo extends PureComponent {
 					<Term width="100%" height="100%" />
 				</div>
 				<div className={styles.editor}>
-					<MonacoEditor
-						language="javascript"
-						editorDidMount={::this.editorDidMount}
-						onChange={::this.onCodeChange}
-						options={{ minimap: { enabled: false } }}
-						theme="vs-dark"
-						value={this.state.code} />
+					editor goes here
 				</div>
 			</div>
 		);
