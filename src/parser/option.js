@@ -3,7 +3,7 @@ import E from '../lib/errors';
 import { checkType, transformValue } from './types';
 import { declareCLIKitClass } from '../lib/util';
 
-const formatRegExp = /^(?:-([^\W]+)(?:[ ,|]+)?)?(?:--([^\s=]+))?(?:[\s=]+(.+))?$/;
+const formatRegExp = /^(?:-(\w)(?:[ ,|]+)?)?(?:--([^\s=]+))?(?:[\s=]+(.+))?$/;
 const valueRegExp = /^(\[(?=.+\]$)|<(?=.+>$))(.+)[\]>]$/;
 const negateRegExp = /^no-(.+)$/;
 const aliasRegExp = /^(!)?(?:-(.)|--(.+))$/;
@@ -117,6 +117,7 @@ export default class Option {
 			const value = hint.match(valueRegExp);
 			if (value) {
 				this.hint = hint = value[2].trim();
+				this.required = this.required || value[1] === '<';
 			} else {
 				this.hint = hint;
 			}

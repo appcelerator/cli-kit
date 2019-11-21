@@ -306,7 +306,7 @@ export default class Parser {
 
 				if (required.size) {
 					throw E.MISSING_REQUIRED_OPTION(
-						`Missing ${required.size} missing option${required.size === 1 ? '' : 's'}:`,
+						`Missing ${required.size} missing option value${required.size === 1 ? '' : 's'}:`,
 						{ name: 'options', scope: 'Parser.parse', required: required.values() }
 					);
 				}
