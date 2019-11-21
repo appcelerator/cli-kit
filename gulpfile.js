@@ -28,15 +28,14 @@ exports.clean = parallel(cleanCoverage, cleanDist, cleanDocs, cleanTest);
 /*
  * lint tasks
  */
-async function lint(pattern) {
+function lint(pattern) {
 	return gulp.src(pattern)
-		.pipe($.plumber())
 		.pipe($.eslint())
 		.pipe($.eslint.format())
 		.pipe($.eslint.failAfterError());
 }
-async function lintSrc() { return lint('src/**/*.js'); }
-async function lintTest() { return lint('test/**/test-*.js'); }
+function lintSrc() { return lint('src/**/*.js'); }
+function lintTest() { return lint('test/**/test-*.js'); }
 exports['lint-src'] = lintSrc;
 exports['lint-test'] = lintTest;
 exports.lint = parallel(lintSrc, lintTest);
@@ -188,7 +187,9 @@ function resolveModule(name) {
 	}
 }
 
-exports.test             = series(parallel(lintTest, build),                function test() { return runTests(); });
-exports['test-only']     = exports.test;
-exports.coverage         = series(parallel(cleanCoverage, lintTest), build, function test() { return runTests(true); });
-exports['coverage-only'] = exports.coverage;
+exports.test             = series(parallel(lintTest, build),                async function test() { return runTests(); });
+exports['test-only']     = series(lintTest,                                 async function test() { return runTests(); });
+exports.coverage         = series(parallel(cleanCoverage, lintTest, build), async function test() { return runTests(true); });
+exports['coverage-only'] = series(parallel(cleanCoverage, lintTest),        async function test() { return runTests(true); });
+
+process.on('uncaughtException', () => {});

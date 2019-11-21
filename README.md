@@ -22,7 +22,7 @@ A command line application toolkit for Node.js.
 
 ## Installation
 
-	npm i cli-kit --save
+	npm install cli-kit --save
 
 ## Usage
 
