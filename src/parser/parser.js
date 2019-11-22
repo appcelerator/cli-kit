@@ -244,6 +244,25 @@ export default class Parser {
 				this._.push(value);
 			};
 
+			// combine parsed args that are options with multiple flag set
+			for (let i = 0; i < this.args.length; i++) {
+				let current = this.args[i];
+				if (current instanceof ParsedArgument && current.type === 'option' && current.option.multiple) {
+					for (let j = i + 1; j < this.args.length; j++) {
+						let next = this.args[j];
+						if (next instanceof ParsedArgument && next.type === 'option' && next.option === current.option) {
+							if (!Array.isArray(current.value)) {
+								current.value = [ current.value ];
+							}
+							if (next.value !== undefined) {
+								current.value = [].concat(current.value, next.value);
+							}
+							this.args.splice(j--, 1);
+						}
+					}
+				}
+			}
+
 			for (const parsedArg of this.args) {
 				let name;
 				const isParsed = parsedArg instanceof ParsedArgument;
@@ -254,6 +273,7 @@ export default class Parser {
 
 				switch (parsedArg.type) {
 					case 'argument':
+						// already handled above
 						break;
 
 					case 'extra':
@@ -261,14 +281,36 @@ export default class Parser {
 						break;
 
 					case 'option':
-						name = parsedArg.option.camelCase || ctx.get('camelCase') ? camelCase(parsedArg.option.name) : parsedArg.option.name;
-						if (parsedArg.option.type === 'count') {
-							this.argv[name] = (this.argv[name] || 0) + 1;
-						} else if (parsedArg.value !== undefined) {
-							this.argv[name] = parsedArg.value;
-						}
-						if (this.argv[name] !== undefined) {
-							required.delete(parsedArg.option);
+						{
+							name = parsedArg.option.camelCase || ctx.get('camelCase') ? camelCase(parsedArg.option.name) : parsedArg.option.name;
+
+							let { value } = parsedArg;
+							if (parsedArg.option.type === 'count') {
+								value = (this.argv[name] || 0) + 1;
+							}
+
+							if (typeof parsedArg.option.callback === 'function') {
+								const newValue = await parsedArg.option.callback({
+									option: parsedArg.option,
+									ctx,
+									exitCode: this.opts.exitCode,
+									opts: this.opts,
+									value
+								});
+								if (newValue !== undefined) {
+									value = newValue;
+								}
+							}
+
+							// set the new value
+							if (value !== undefined) {
+								this.argv[name] = value;
+							}
+
+							// argv[name] either has the new value or the default value, but either way we must re-check it
+							if (this.argv[name] !== undefined && (!parsedArg.option.multiple || this.argv[name].length)) {
+								required.delete(parsedArg.option);
+							}
 						}
 						break;
 
@@ -306,7 +348,7 @@ export default class Parser {
 
 				if (required.size) {
 					throw E.MISSING_REQUIRED_OPTION(
-						`Missing ${required.size} missing option value${required.size === 1 ? '' : 's'}:`,
+						`Missing ${required.size} required option${required.size === 1 ? '' : 's'}:`,
 						{ name: 'options', scope: 'Parser.parse', required: required.values() }
 					);
 				}
@@ -391,7 +433,7 @@ export default class Parser {
 				// add the context to the stack
 				this.contexts.unshift(arg.extension);
 
-			} else if (arg.type === 'option' && typeof arg.option.callback === 'function') {
+			} else if (arg.type === 'option' && typeof arg.option.callback === 'function' && !arg.option.multiple) {
 				return new Promise((resolve, reject) => {
 					const { option } = arg;
 					log(`Firing option ${highlight(option.format)} callback ${note(`(${option.parent.name})`)}`);
@@ -478,6 +520,7 @@ export default class Parser {
 				args: args.splice(i + 1, args.length)
 			});
 		}
+
 		if (type === 'extra') {
 			log('Skipping extra arguments');
 			return;
@@ -524,14 +567,8 @@ export default class Parser {
 				let value;
 
 				if (option.isFlag) {
-					return new ParsedArgument('option', {
-						input,
-						option,
-						value: option.transform(type && arg.value !== undefined ? arg.value : true, negated)
-					});
-				}
-
-				if (type === 'option') {
+					value = option.transform(type && arg.value !== undefined ? arg.value : true, negated);
+				} else if (type === 'option') {
 					value = option.transform(args[i].value);
 				} else if (m[2]) {
 					value = option.transform(m[2], negated);
@@ -543,7 +580,7 @@ export default class Parser {
 							args.splice(i + 1, 1);
 							// maybe the unknown option is actually a value that just
 							// happens to match the pattern for an option?
-							value = option.transform(nextArg.input[0]);
+							value = option.transform(nextArg.input[0], negated);
 						} else {
 							// next arg has already been identified, so treat this option as a flag
 							value = true;
@@ -551,14 +588,22 @@ export default class Parser {
 					} else {
 						input.push(nextArg);
 						args.splice(i + 1, 1);
-						value = option.transform(nextArg);
+						value = option.transform(nextArg, negated);
+					}
+				}
+
+				if (value === undefined) {
+					if (type && arg.value !== undefined) {
+						value = option.transform(arg.value, negated);
+					} else if (option.type === 'bool') {
+						value = option.transform(true, negated);
 					}
 				}
 
 				return new ParsedArgument('option', {
 					input,
 					option,
-					value: value === undefined && isParsed ? arg.value : value
+					value: value !== undefined && !Array.isArray(value) && option.multiple ? [ value ] : value
 				});
 			}
 

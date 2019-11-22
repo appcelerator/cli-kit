@@ -35,6 +35,103 @@ describe('Parser', () => {
 			const result = await cli.exec([ 'foo', '-b' ]);
 			expect(result.argv).to.have.property('bar', 'baz');
 		});
+
+		it('should error if required option is missing value', async () => {
+			const cli = new CLI({
+				options: {
+					'-b,--bar <value>': {}
+				}
+			});
+
+			try {
+				await cli.exec([ '-b' ]);
+			} catch (e) {
+				expect(e.message).to.equal('Missing 1 required option:');
+				return;
+			}
+
+			throw new Error('Expected error');
+		});
+
+		it('should not error if optional option is missing value', async () => {
+			const cli = new CLI({
+				options: {
+					'-b,--bar [value]': {}
+				}
+			});
+
+			await cli.exec([ '-b' ]);
+		});
+
+		it('should default bool options without value', async () => {
+			const cli = new CLI({
+				options: {
+					'-b,--bar <value>': { type: 'bool' }
+				}
+			});
+
+			let result = await cli.exec([ '-b' ]);
+			expect(result.argv).to.have.property('bar', true);
+
+			result = await cli.exec([ '--bar' ]);
+			expect(result.argv).to.have.property('bar', true);
+
+			result = await cli.exec([ '--no-bar' ]);
+			expect(result.argv).to.have.property('bar', false);
+		});
+
+		it('should error if required multiple option is not specified', async () => {
+			const cli = new CLI({
+				options: {
+					'-b,--bar <value>': { multiple: true }
+				}
+			});
+
+			try {
+				await cli.exec([ '-b' ]);
+			} catch (e) {
+				expect(e.message).to.equal('Missing 1 required option:');
+				return;
+			}
+
+			throw new Error('Expected error');
+		});
+
+		it('should not error if optional multiple option is not specified', async () => {
+			const cli = new CLI({
+				options: {
+					'-b,--bar [value]': { multiple: true }
+				}
+			});
+
+			const result = await cli.exec([ '-b' ]);
+			expect(result.argv).to.have.property('bar');
+			expect(result.argv.bar).to.have.lengthOf(0);
+		});
+
+		it('should not error if required multiple option has default', async () => {
+			const cli = new CLI({
+				options: {
+					'-b,--bar <value>': { default: 'baz', multiple: true }
+				}
+			});
+
+			const result = await cli.exec([ '-b' ]);
+			expect(result.argv).to.have.property('bar');
+			expect(result.argv.bar).to.deep.equal([ 'baz' ]);
+		});
+
+		it('should capture multiple options', async () => {
+			const cli = new CLI({
+				options: {
+					'-b,--bar [value]': { multiple: true }
+				}
+			});
+
+			const result = await cli.exec([ '-b', 'a', '--bar', 'b' ]);
+			expect(result.argv).to.have.property('bar');
+			expect(result.argv.bar).to.deep.equal([ 'a', 'b' ]);
+		});
 	});
 
 	describe('Validation', () => {
