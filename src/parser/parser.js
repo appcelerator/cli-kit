@@ -263,6 +263,7 @@ export default class Parser {
 				}
 			}
 
+			// loop over the parsed args and assign the values to _ and argv
 			for (const parsedArg of this.args) {
 				let name;
 				const isParsed = parsedArg instanceof ParsedArgument;
@@ -282,19 +283,25 @@ export default class Parser {
 
 					case 'option':
 						{
-							name = parsedArg.option.camelCase || ctx.get('camelCase') ? camelCase(parsedArg.option.name) : parsedArg.option.name;
+							const { option } = parsedArg;
+							name = option.camelCase || ctx.get('camelCase') ? camelCase(option.name) : option.name;
 
 							let { value } = parsedArg;
-							if (parsedArg.option.type === 'count') {
+							if (option.type === 'count') {
 								value = (this.argv[name] || 0) + 1;
 							}
 
-							if (typeof parsedArg.option.callback === 'function') {
-								const newValue = await parsedArg.option.callback({
-									option: parsedArg.option,
+							// non-multiple option callbacks have already been fired, now we need
+							// to do it just for multiple value options
+							if (typeof option.callback === 'function' && option.multiple) {
+								log(`Firing option ${highlight(option.format)} callback ${note(`(${option.parent.name})`)}`);
+								const newValue = await option.callback({
 									ctx,
 									exitCode: this.opts.exitCode,
+									input: [ value ],
+									async next() {},
 									opts: this.opts,
+									option,
 									value
 								});
 								if (newValue !== undefined) {
@@ -308,8 +315,8 @@ export default class Parser {
 							}
 
 							// argv[name] either has the new value or the default value, but either way we must re-check it
-							if (this.argv[name] !== undefined && (!parsedArg.option.multiple || this.argv[name].length)) {
-								required.delete(parsedArg.option);
+							if (this.argv[name] !== undefined && (!option.multiple || this.argv[name].length)) {
+								required.delete(option);
 							}
 						}
 						break;
@@ -441,10 +448,9 @@ export default class Parser {
 
 					Promise.resolve()
 						.then(() => option.callback({
-							input: arg.input,
 							ctx,
 							exitCode: this.opts.exitCode,
-							opts: this.opts,
+							input: arg.input,
 							next: async () => {
 								if (fired) {
 									log('next() already fired');
@@ -458,6 +464,7 @@ export default class Parser {
 
 								return this.args[i].value;
 							},
+							opts: this.opts,
 							option,
 							value: arg.value
 						}))
