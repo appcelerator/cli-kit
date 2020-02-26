@@ -93,8 +93,6 @@ describe('CLI', () => {
 		});
 
 		it('should throw exception showHelpOnError is false', async () => {
-			const out = new WritableStream();
-
 			const cli = new CLI({
 				showHelpOnError: false,
 				commands: {
@@ -252,15 +250,19 @@ describe('CLI', () => {
 		it('should not display a banner when outputting JSON', async () => {
 			const banner = 'My Amazing CLI, version 1.2.3\nCopyright (c) 2018, Me\n\n';
 			const out = new WritableStream();
+			const terminal = new Terminal({
+				stdout: out,
+				stderr: out
+			});
 			const cli = new CLI({
 				banner,
 				commands: {
-					foo() {
-						out.write(' ' + JSON.stringify({ foo: 'bar', baz: 123 }, null, '  '));
+					foo({ console }) {
+						console.log(' ' + JSON.stringify({ foo: 'bar', baz: 123 }, null, '  '));
 					}
 				},
 				name: 'test-cli',
-				out
+				terminal
 			});
 
 			await cli.exec([ 'foo' ]);
@@ -269,13 +271,18 @@ describe('CLI', () => {
 				' {',
 				'  "foo": "bar",',
 				'  "baz": 123',
-				'}'
+				'}',
+				''
 			].join('\n'));
 		});
 
 		it('should not display a banner when outputting XML', async () => {
 			const banner = 'My Amazing CLI, version 1.2.3\nCopyright (c) 2018, Me\n\n';
 			const out = new WritableStream();
+			const terminal = new Terminal({
+				stdout: out,
+				stderr: out
+			});
 			const xml = [
 				'',
 				'<?xml version="1.0"?>',
@@ -286,17 +293,17 @@ describe('CLI', () => {
 			const cli = new CLI({
 				banner,
 				commands: {
-					foo() {
-						out.write(xml);
+					foo({ console }) {
+						console.log(xml);
 					}
 				},
 				name: 'test-cli',
-				out
+				terminal
 			});
 
 			await cli.exec([ 'foo' ]);
 
-			expect(out.toString()).to.equal(xml);
+			expect(out.toString()).to.equal(`${xml}\n`);
 		});
 	});
 
@@ -371,6 +378,34 @@ describe('CLI', () => {
 
 			throw new Error('Expected error');
 		});
+
+		it('should reparse unknown arguments if context changed', async () => {
+			const typeSpy = sinon.spy();
+			const platformSpy = sinon.spy();
+
+			const cli = new CLI({
+				options: {
+					'--type <type>': {
+						callback({ ctx }) {
+							typeSpy();
+							ctx.option('--platform <name>', {
+								callback: platformSpy
+							});
+						}
+					}
+				}
+			});
+
+			await cli.exec([
+				'--platform',
+				'bar',
+				'--type',
+				'foo'
+			], { clone: true });
+
+			expect(typeSpy).to.be.calledOnce;
+			expect(platformSpy).to.be.calledOnce;
+		});
 	});
 
 	describe('Parsing', () => {
@@ -431,7 +466,7 @@ describe('CLI', () => {
 				const env = Object.assign({}, process.env);
 				delete env.SNOOPLOGG;
 
-				const { status, stdout, stderr } = spawnSync(process.execPath, [ path.join(__dirname, 'examples', 'version-test', 'ver.js'), '--version' ], { env });
+				const { status, stdout } = spawnSync(process.execPath, [ path.join(__dirname, 'examples', 'version-test', 'ver.js'), '--version' ], { env });
 				expect(status).to.equal(0);
 				expect(stdout.toString()).to.equal('1.2.3\n');
 			});

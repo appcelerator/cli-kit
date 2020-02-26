@@ -5,8 +5,8 @@ export const clear = '\x1bc';
 export const cursor = {
 	show:    '\x1b[?25h',
 	hide:    '\x1b[?25l',
-	save:    '\x1b[7',
-	restore: '\x1b[8',
+	save:    '\x1b7',
+	restore: '\x1b8',
 	get:     '\x1b[6n',
 	home:    '\x1b[H',
 	left:    '\x1b[G',
@@ -28,6 +28,8 @@ export const cursor = {
 		return y ? `\x1b[${y + 1};${x + 1}H` : `\x1b[${x + 1}G`;
 	},
 
+	position: /^\x1b\[(\d+);(\d+)R$/,
+
 	next(n = 1) { return '\x1b[E'.repeat(n); },
 	prev(n = 1) { return '\x1b[F'.repeat(n); }
 };
@@ -47,6 +49,8 @@ export const erase = {
 	toStart: '\x1b[1K',
 	up:      '\x1b[1J'
 };
+
+export const esc = '\x1b[';
 
 export const scroll = {
 	down: '\x1b[T',

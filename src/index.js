@@ -20,8 +20,6 @@ import snooplogg from 'snooplogg';
 
 export default CLI;
 
-export const terminal = new Terminal();
-
 export {
 	Argument,
 	CLI,

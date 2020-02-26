@@ -4,7 +4,6 @@ import CLI, { Extension, Terminal } from '../dist/index';
 import path from 'path';
 
 import { spawnSync } from 'child_process';
-import { tmpdir } from 'tmp';
 import { WritableStream } from 'memory-streams';
 
 describe('Extension', () => {
@@ -74,6 +73,31 @@ describe('Extension', () => {
 			], { env });
 			expect(status).to.equal(0);
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.match(/It works/m);
+		});
+
+		it('should mixin user arguments each run', async () => {
+			const out = new WritableStream();
+
+			const cli = new CLI({
+				colors: false,
+				extensions: {
+					echo: 'echo "hi"'
+				},
+				help: true,
+				name: 'test-cli',
+				terminal: new Terminal({
+					stdout: out,
+					stderr: out
+				})
+			});
+
+			await cli.exec([ 'echo', 'foo' ]);
+			expect(out.toString().trim()).to.equal('hi foo');
+
+			out._writableState.buffer.length = 0;
+
+			await cli.exec([ 'echo', 'bar' ]);
+			expect(out.toString().trim()).to.equal('hi bar');
 		});
 	});
 
@@ -200,9 +224,6 @@ async function runCLI(extension, argv, params) {
 		extensions: [ extension ],
 		help: true,
 		name: 'test-cli',
-		renderOpts: {
-			markdown: false
-		},
 		terminal: new Terminal({
 			stdout: out,
 			stderr: out

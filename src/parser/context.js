@@ -72,6 +72,7 @@ export default class Context extends HookEmitter {
 	 */
 	argument(arg) {
 		this.args.add(arg);
+		this.rev++;
 		return this;
 	}
 
@@ -94,6 +95,7 @@ export default class Context extends HookEmitter {
 			log(`Adding command: ${highlight(cmd.name)}`);
 			this.register(cmd);
 		}
+		this.rev++;
 		return this;
 	}
 
@@ -116,6 +118,7 @@ export default class Context extends HookEmitter {
 			log(`Adding extension: ${highlight(ext.name)}`);
 			this.register(ext);
 		}
+		this.rev++;
 		return this;
 	}
 
@@ -268,6 +271,7 @@ export default class Context extends HookEmitter {
 		this.name       = params.name;
 		this.options    = new OptionMap();
 		this.parent     = params.parent;
+		this.rev        = 0;
 		this.title      = params.title || params.name;
 		this.treatUnknownOptionsAsArguments = !!params.treatUnknownOptionsAsArguments;
 
@@ -327,6 +331,8 @@ export default class Context extends HookEmitter {
 				}
 			}
 		}
+
+		this.rev++;
 
 		return this;
 	}

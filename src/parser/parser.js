@@ -44,9 +44,14 @@ export default class Parser {
 	/**
 	 * Initializes the internal properties and class name.
 	 *
+	 * @param {Object} [opts] - Various options.
+	 * @param {Object} [opts.data] - User-defined data to pass into the selected command.
+	 * @param {Function} [opts.exitCode] - A function that sets the exit code.
+	 * @param {Termianl} [opts.terminal] - A terminal instance to override the default CLI terminal
+	 * instance.
 	 * @access public
 	 */
-	constructor() {
+	constructor(opts = {}) {
 		Object.defineProperties(this, {
 			/**
 			 * The array of arguments. As arguments are identified, they are replaced with
@@ -68,6 +73,15 @@ export default class Parser {
 			 */
 			contexts: {
 				value: []
+			},
+
+			/**
+			 * Options possibly containing a `data` payload, `exitCode`, and `terminal` instance.
+			 *
+			 * @type {Object}
+			 */
+			opts: {
+				value: opts
 			}
 		});
 
@@ -168,15 +182,10 @@ export default class Parser {
 	 *
 	 * @param {Array} args - An array of raw, unparsed arguments.
 	 * @param {Context} ctx - The context to reference for commands, options, and arguments.
-	 * @param {Object} opts - Various options.
-	 * @param {Object} opts.data - User-defined data to pass into the selected command.
-	 * @param {Function} opts.exitCode - A function that sets the exit code.
-	 * @param {Termianl} opts.terminal - A terminal instance to override the default CLI terminal
-	 * instance.
 	 * @returns {Promise<Parser>}
 	 * @access public
 	 */
-	parse(args, ctx, opts = {}) {
+	parse(args, ctx) {
 		return ctx.hook('parse', async args => {
 			if (!Array.isArray(args)) {
 				throw E.INVALID_ARGUMENT('Expected args to be an array', { name: 'args', scope: 'Parser.parse', value: args });
@@ -188,8 +197,6 @@ export default class Parser {
 
 			this.args = args;
 			log(`Processing ${pluralize('argument', args.length, true)}: ${highlight(this.args.join(', '))}`);
-
-			this.opts = opts || {};
 
 			// add the context to the stack
 			this.contexts.unshift(ctx);
@@ -388,6 +395,20 @@ export default class Parser {
 		}
 
 		await this.parseArg(ctx, 0);
+
+		// if there are no more contexts to descend, check if the top-most context is actually
+		// a default subcommand
+		let cmd = this.contexts[0];
+		if (cmd === ctx && cmd.action instanceof Command) {
+			cmd = cmd.action;
+			cmd.link(ctx);
+			this.contexts.unshift(cmd);
+		}
+
+		if (cmd !== ctx) {
+			log('Descending into next context\'s parser');
+			await this.parseWithContext(cmd);
+		}
 	}
 
 	/**
@@ -395,31 +416,25 @@ export default class Parser {
 	 *
 	 * @param {CLI|Command} ctx - The context to apply when parsing the command line arguments.
 	 * @param {Number} i - The argument index number to parse.
+	 * @param {Number} [to] - The index to go until.
 	 * @returns {Promise}
 	 * @access private
 	 */
-	async parseArg(ctx, i) {
-		if (i === this.args.length) {
-			let cmd = this.contexts[0];
-
-			// if there are no more contexts to descend, check if the top-most context is actually
-			// a default subcommand
-			if (cmd === ctx && cmd.action instanceof Command) {
-				cmd = cmd.action;
-				cmd.link(ctx);
-				this.contexts.unshift(cmd);
-			}
-
-			if (cmd !== ctx) {
-				log('Descending into next context\'s parser');
-				return this.parseWithContext(cmd);
-			}
-
-			log('End of the line');
+	async parseArg(ctx, i, to) {
+		if (i >= (to !== undefined ? to : this.args.length)) {
 			return;
 		}
 
+		let { rev } = ctx;
+		let { length } = this.args;
+
+		// create a ParsedArgument object for the next argument
 		const arg = await this.createParsedArgument(ctx, i);
+
+		if (to !== undefined && this.args.length < length) {
+			to -= (length - this.args.length);
+		}
+
 		if (arg) {
 			if ((arg.type !== 'command' && arg.type !== 'extension') || this.contexts[0] === ctx) {
 				this.args[i] = arg;
@@ -441,64 +456,71 @@ export default class Parser {
 				this.contexts.unshift(arg.extension);
 
 			} else if (arg.type === 'option' && typeof arg.option.callback === 'function' && !arg.option.multiple) {
-				return new Promise((resolve, reject) => {
-					const { option } = arg;
-					log(`Firing option ${highlight(option.format)} callback ${note(`(${option.parent.name})`)}`);
-					let fired = false;
+				const { option } = arg;
+				log(`Firing option ${highlight(option.format)} callback ${note(`(${option.parent.name})`)}`);
+				let fired = false;
 
-					Promise.resolve()
-						.then(() => option.callback({
-							ctx,
-							exitCode: this.opts.exitCode,
-							input: arg.input,
-							next: async () => {
-								if (fired) {
-									log('next() already fired');
-									return;
-								}
-
-								fired = true;
-
-								log(`Option ${highlight(option.format)} called next(), processing next arg`);
-								await this.parseArg(ctx, i + 1);
-
-								return this.args[i].value;
-							},
-							opts: this.opts,
-							option,
-							value: arg.value
-						}))
-						.then(async value => {
-							if (value === undefined) {
-								log(`Option ${highlight(option.format)} callback did not change the value`);
-							} else {
-								log(`Option ${highlight(option.format)} callback changed value ${highlight(arg.value)} to ${highlight(value)}`);
-								arg.value = value;
-							}
-
-							if (!fired) {
-								log(`Option ${highlight(option.format)} did not call next(), processing next arg`);
-								await this.parseArg(ctx, i + 1);
-							}
-
-							return arg.value;
-						})
-						.catch(err => {
-							if (err.code === 'ERR_NOT_AN_OPTION') {
-								this.args[i] = new ParsedArgument('argument', {
-									input: arg.input
-								});
+				try {
+					const value = await option.callback({
+						ctx,
+						exitCode: this.opts.exitCode,
+						input: arg.input,
+						next: async () => {
+							if (fired) {
+								log('next() already fired');
 								return;
 							}
-							throw err;
-						})
-						.then(resolve)
-						.catch(reject);
-				});
+
+							fired = true;
+
+							log(`Option ${highlight(option.format)} called next(), processing next arg`);
+
+							const { value } = this.args[i];
+
+							if (ctx.rev > rev) {
+								log(`Rev changed from ${highlight(rev)} to ${highlight(ctx.rev)}, reparsing ${highlight(0)} through ${highlight(i - 1)}`);
+								await this.parseArg(ctx, 0, i);
+							}
+
+							await this.parseArg(ctx, i + 1, to);
+
+							return value;
+						},
+						opts: this.opts,
+						option,
+						value: arg.value
+					});
+
+					if (value === undefined) {
+						log(`Option ${highlight(option.format)} callback did not change the value`);
+					} else {
+						log(`Option ${highlight(option.format)} callback changed value ${highlight(arg.value)} to ${highlight(value)}`);
+						arg.value = value;
+					}
+
+					if (fired) {
+						return;
+					}
+
+					log(`Option ${highlight(option.format)} did not call next(), processing next arg`);
+				} catch (err) {
+					if (err.code !== 'ERR_NOT_AN_OPTION') {
+						throw err;
+					}
+
+					this.args[i] = new ParsedArgument('argument', {
+						input: arg.input
+					});
+				}
 			}
 		}
 
-		return this.parseArg(ctx, i + 1);
+		if (ctx.rev > rev) {
+			log(`Rev changed from ${highlight(rev)} to ${highlight(ctx.rev)}, reparsing ${highlight(0)} through ${highlight(i - 1)}`);
+			await this.parseArg(ctx, 0, i);
+		}
+
+		await this.parseArg(ctx, i + 1, to);
 	}
 
 	/**
@@ -644,7 +666,7 @@ export default class Parser {
 		} else {
 			const ext = lookup.extensions[subject];
 			if (ext) {
-				await ext.load(args.slice(i + 1));
+				await ext.load();
 				log(`Found extension: ${highlight(ext.name)}`);
 				return new ParsedArgument('extension', {
 					extension: ext,
