@@ -34,6 +34,14 @@ export const cursor = {
 	prev(n = 1) { return '\x1b[F'.repeat(n); }
 };
 
+export const custom = {
+	exit(code) {
+		return `\x1b]1337;Exit=${code}${beep}`;
+	}
+};
+
+custom.exit.re = /^\x1b\]1337;Exit=(\d+)\x07$/;
+
 export const erase = {
 	down:    '\x1b[J',
 	line:    '\x1b[2K',

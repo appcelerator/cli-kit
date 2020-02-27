@@ -264,6 +264,7 @@ export default class Context extends HookEmitter {
 		}
 
 		this.args       = new ArgumentList(),
+		this.banner     = params.banner;
 		this.commands   = new CommandMap(),
 		this.desc       = params.desc;
 		this.extensions = new ExtensionMap(),

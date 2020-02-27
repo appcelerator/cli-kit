@@ -133,7 +133,6 @@ export default class CLI extends Context {
 
 		this.appName                   = params.appName || params.name;
 		this.autoHideBanner            = params.autoHideBanner !== false;
-		this.banner                    = params.banner;
 		this.bannerEnabled             = true;
 		this.colors                    = params.colors !== false;
 		this.defaultCommand            = params.defaultCommand;
@@ -254,9 +253,15 @@ export default class CLI extends Context {
 			ws.on('message', msg => {
 				if (msg === ansi.cursor.get && ws.readyState === 1) {
 					ws.send(`${ansi.esc}${term.rows};${term.columns}R`);
-				} else {
-					term.stdout.write(msg);
+					return;
 				}
+
+				const exit = msg.match(ansi.custom.exit.re);
+				if (exit) {
+					process.exit(exit);
+				}
+
+				term.stdout.write(msg);
 			});
 
 			ws.on('close', () => process.exit());
@@ -271,12 +276,13 @@ export default class CLI extends Context {
 	 * @param {Array.<String>} [_argv] - An array of arguments to parse. If not specified, it
 	 * defaults to the `process.argv` starting with the 3rd argument.
 	 * @param {Object} [opts] - Various options.
-	 * @param {Boolean} [opts.clone=false] - When `true`, deep clones the entire context tree
-	 * before each time the arguments are parsed. Enabling this only makes sense if the `CLI`
-	 * instance is going to be reused to parse arguments multiple times and if the state of the
-	 * context tree is going to be modified during parsing (i.e. via a callback).
 	 * @param {Object} [opts.data] - User-defined data to pass into the selected command.
 	 * @param {Function} [opts.exitCode] - A function that sets the exit code.
+	 * @param {Boolean} [opts.serverMode=false] - When `true`, makes things such that `exec()`
+	 * doesn't change any global state by deep cloning the entire context tree every time the
+	 * arguments are parsed and changing the process state. Enabling this only makes sense if the
+	 * `CLI` instance is going to be reused to parse arguments multiple times and if the state of
+	 * thecontext tree is going to be modified during parsing (i.e. via a callback).
 	 * @param {Termianl} [opts.terminal] - A terminal instance to override the default CLI terminal
 	 * instance.
 	 * @returns {Promise.<Arguments>}
@@ -357,7 +363,7 @@ export default class CLI extends Context {
 		});
 
 		try {
-			const { _, argv, contexts, unknown } = await parser.parse(__argv, opts.clone ? new Context(this) : this);
+			const { _, argv, contexts, unknown } = await parser.parse(__argv, opts.serverMode ? new Context(this) : this);
 
 			log('Parsing complete: ' +
 				`${pluralize('option', Object.keys(argv).length, true)}, ` +
@@ -412,7 +418,10 @@ export default class CLI extends Context {
 				}
 			}
 
-			process.exitCode = results.exitCode();
+			if (!opts.serverMode) {
+				process.exitCode = results.exitCode();
+			}
+
 			return results;
 		} catch (err) {
 			error(err);
@@ -451,7 +460,7 @@ export default class CLI extends Context {
 				const { remoteAddress, remotePort } = req.socket;
 				const key = remoteAddress + ':' + remotePort;
 				const { headers } = req;
-				const echo = headers['x-clikit-echo'] !== 'off';
+				const echo = headers['clikit-echo'] !== 'off';
 				const stdout = new OutputSocket(ws);
 				const stderr = new OutputSocket(ws);
 				const terminal = new Terminal({ stdout, stderr });
@@ -459,18 +468,7 @@ export default class CLI extends Context {
 				log('%s upgraded to WebSocket', highlight(key));
 				log(headers);
 
-				const run = async argv => {
-					log('Running:', argv);
-					await this.exec(argv, {
-						clone: true,
-						data: {
-							userAgent: headers['user-agent'] || null
-						},
-						terminal
-					});
-				};
-
-				// TODO: get the cwd, env, argv from headers
+				// TODO: get the cwd, env
 
 				const conn = this.connections[key] = {
 					buffer: '',
@@ -515,9 +513,16 @@ export default class CLI extends Context {
 						const argv = split(conn.buffer.substring(0, p));
 						conn.buffer = conn.buffer.substring(p + 2);
 
-						if (argv.length) {
-							await run(argv);
-						}
+						log('Running:', argv);
+						const { exitCode } = await this.exec(argv, {
+							data: {
+								userAgent: headers['user-agent'] || null
+							},
+							serverMode: true,
+							terminal
+						});
+
+						ws.send(ansi.custom.exit(exitCode() || 0));
 
 						p = conn.buffer.indexOf('\r');
 					}
@@ -527,10 +532,6 @@ export default class CLI extends Context {
 				ws.send(ansi.cursor.move(999, 999));
 				ws.send(ansi.cursor.get);
 				ws.send(ansi.cursor.restore);
-
-				// if (headers.argv !== undefined) {
-				// 	run(headers.argv);
-				// }
 			});
 
 			this.server.on('error', error);
