@@ -214,6 +214,7 @@ export default class CLI extends Context {
 	 * @param {Object} [opts] - Various options.
 	 * @param {Termianl} [opts.terminal] - A terminal instance to override the default CLI terminal
 	 * instance.
+	 * @returns {Promise<Function>} Resolves a function to send data as if from stdin.
 	 * @access public
 	 */
 	static connect(url, opts = {}) {
@@ -223,6 +224,7 @@ export default class CLI extends Context {
 			}
 
 			let term = opts.terminal;
+			delete opts.terminal;
 
 			if (!term) {
 				term = new Terminal();
@@ -231,23 +233,22 @@ export default class CLI extends Context {
 			}
 
 			log(`Connecting to ${highlight(url)}`);
-			const ws = new WebSocket(url);
+			const ws = new WebSocket(url, opts);
 			ws.binaryType = 'arraybuffer';
 
 			ws.on('open', () => {
-				term.on('keypress', chunk => {
+				const send = chunk => {
 					if (ws.readyState === 1) {
 						ws.send(chunk);
 					}
-				});
+				};
 
+				term.on('keypress', send);
 				term.on('resize', ({ rows, columns }) => {
-					if (ws.readyState === 1) {
-						ws.send(`${ansi.esc}${rows};${columns}R`);
-					}
+					send(`${ansi.esc}${rows};${columns}R`);
 				});
 
-				resolve();
+				resolve(send);
 			});
 
 			ws.on('message', msg => {
@@ -434,13 +435,13 @@ export default class CLI extends Context {
 	/**
 	 * Starts a WebSocket server.
 	 *
-	 * @param {Object} opts - WebSocket server options. Visit
+	 * @param {Object} [opts] - WebSocket server options. Visit
 	 * https://github.com/websockets/ws/blob/HEAD/doc/ws.md#new-websocketserveroptions-callback for
 	 * more information.
-	 * @returns {Promise.<WebSocketServer>}
+	 * @returns {Promise<WebSocketServer>}
 	 * @access public
 	 */
-	listen(opts) {
+	listen(opts = {}) {
 		return new Promise(resolve => {
 			log('Starting WebSocketServer...');
 			this.connections = {};
@@ -449,18 +450,24 @@ export default class CLI extends Context {
 			this.server.on('connection', (ws, req) => {
 				const { remoteAddress, remotePort } = req.socket;
 				const key = remoteAddress + ':' + remotePort;
-				log('%s upgraded to WebSocket', highlight(key));
 				const { headers } = req;
-				log(headers);
-
+				const echo = headers['x-clikit-echo'] !== 'off';
 				const stdout = new OutputSocket(ws);
 				const stderr = new OutputSocket(ws);
-				let echo = true;
 				const terminal = new Terminal({ stdout, stderr });
+
+				log('%s upgraded to WebSocket', highlight(key));
+				log(headers);
 
 				const run = async argv => {
 					log('Running:', argv);
-					await this.exec(argv, { terminal });
+					await this.exec(argv, {
+						clone: true,
+						data: {
+							userAgent: headers['user-agent'] || null
+						},
+						terminal
+					});
 				};
 
 				// TODO: get the cwd, env, argv from headers
