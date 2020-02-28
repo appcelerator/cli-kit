@@ -4,7 +4,7 @@ import E from '../lib/errors';
 import helpCommand from '../commands/help';
 
 import { declareCLIKitClass, filename, findPackage, isExecutable } from '../lib/util';
-import { spawn } from 'child_process';
+import { spawn } from 'node-pty-prebuilt-multiarch';
 
 const { log, warn } = debug('cli-kit:extension');
 const { highlight, note } = debug.styles;
@@ -146,11 +146,10 @@ export default class Extension extends Command {
 	/**
 	 * Loads the extension.
 	 *
-	 * @param {Array.<String>} [args] - A list of args to append to the executable args.
 	 * @returns {Promise}
 	 * @access public
 	 */
-	async load(args) {
+	async load() {
 		if (this.loaded) {
 			return;
 		}
@@ -165,32 +164,23 @@ export default class Extension extends Command {
 		}
 
 		if (exe) {
-			if (Array.isArray(args)) {
-				// append any parsed args to the existing executable and args
-				exe.push.apply(exe, args);
-			}
-
-			this.action = async () => {
+			this.action = async ({ __argv, cmd, terminal }) => {
 				if (Array.isArray(this.exe)) {
-					const { stderr, stdin, stdout } = this.get('terminal');
-					const stdio = [
-						!this.isCLIKitExtension || stdin === process.stdin   ? 'inherit' : 'pipe',
-						!this.isCLIKitExtension || stdout === process.stdout ? 'inherit' : 'pipe',
-						!this.isCLIKitExtension || stderr === process.stderr ? 'inherit' : 'pipe'
-					];
+					const term = this.get('terminal');
+					const exe = this.exe[0];
+					const args = this.exe.slice(1);
+					const p = __argv.findIndex(arg => arg && arg.type === 'extension' && arg.extension === cmd);
 
-					log(`Running: ${highlight(this.exe.join(' '))} ${note(JSON.stringify(stdio))}`);
-					const child = spawn(this.exe[0], this.exe.slice(1), { stdio });
-
-					if (stdio[1] === 'pipe') {
-						child.stdout.pipe(stdout);
-					}
-					if (stdio[2] === 'pipe') {
-						child.stderr.pipe(stderr);
+					if (p !== -1) {
+						for (let i = p + 1, len = __argv.length; i < len; i++) {
+							args.push.apply(args, __argv[i].input);
+						}
 					}
 
+					log(`Running: ${highlight(`${this.exe} ${args.join(' ')}`)}`);
+					const child = spawn(exe, args);
+					child.on('data', terminal.stdout.write);
 					await new Promise(resolve => child.on('close', (code = 0) => resolve({ code })));
-
 				} else {
 					throw E.NO_EXECUTABLE(`Extension "${this.name}" has no executable!`);
 				}

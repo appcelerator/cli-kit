@@ -13,7 +13,7 @@ const { highlight } = debug.styles;
  * @returns {String}
  */
 export async function renderHelp(ctx) {
-	const file = ctx.get('helpTemplate', path.resolve(__dirname, '..', '..', 'templates', 'help.tpl'));
+	const file = ctx.get('helpTemplateFile', path.resolve(__dirname, '..', '..', 'templates', 'help.tpl'));
 	log(`Rendering help template: ${highlight(file)}`);
 	return renderFile(file, await ctx.generateHelp());
 }
@@ -92,7 +92,7 @@ export default {
 				_stdout.write(JSON.stringify(help, null, '  '));
 				_stdout.write('\n');
 			} else {
-				const file = ctx.get('helpTemplate', path.resolve(__dirname, '..', '..', 'templates', 'help.tpl'));
+				const file = ctx.get('helpTemplateFile', path.resolve(__dirname, '..', '..', 'templates', 'help.tpl'));
 				log(`Rendering help template: ${highlight(file)}`);
 				// determine the output stream
 				(err ? _stderr : _stdout).write(renderFile(file, help));

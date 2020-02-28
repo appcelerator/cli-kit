@@ -1,6 +1,6 @@
 import path from 'path';
 
-import { findPackage, wrap } from '../dist/lib/util';
+import { decodeHeader, encodeHeader, findPackage, wrap } from '../dist/lib/util';
 
 describe('util', () => {
 	describe('findPackage()', () => {
@@ -90,6 +90,29 @@ describe('util', () => {
 			const s = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do \u001b[Jeiusmod tempor incididunt ut labore et dolore magna aliqua.';
 			expect(wrap(s, 100)).to.equal('Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore\net dolore magna aliqua.');
 			expect(wrap(s, 0)).to.equal(s);
+		});
+	});
+
+	describe('encode()/decode()', () => {
+		it('should encode and decode undefined', () => {
+			expect(decodeHeader(encodeHeader())).to.equal('');
+		});
+
+		it('should encode and decode null', () => {
+			expect(decodeHeader(encodeHeader(null))).to.equal('');
+		});
+
+		it('should encode and decode a string', () => {
+			expect(decodeHeader(encodeHeader('foo bar'))).to.equal('foo bar');
+		});
+
+		it('should encode and decode an object', () => {
+			const obj = {
+				foo: 'bar',
+				wiz: 123,
+				arr: [ 'a', 'b', 1, 2 ]
+			};
+			expect(decodeHeader(encodeHeader(obj))).to.deep.equal(obj);
 		});
 	});
 });

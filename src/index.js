@@ -11,6 +11,7 @@ import Command from './parser/command';
 import Option from './parser/option';
 import Extension from './parser/extension';
 
+import * as ansi from './lib/ansi';
 import * as template from './render/template';
 import * as types from './parser/types';
 import * as util from './lib/util';
@@ -20,9 +21,8 @@ import snooplogg from 'snooplogg';
 
 export default CLI;
 
-export const terminal = new Terminal();
-
 export {
+	ansi,
 	Argument,
 	CLI,
 	Command,

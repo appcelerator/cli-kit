@@ -1,5 +1,4 @@
 import Argument from './argument';
-import E from '../lib/errors';
 
 import { declareCLIKitClass } from '../lib/util';
 

@@ -24,6 +24,12 @@ const dataRegExp = /^\s*[<{[]/;
 const encodings = new Set([ 'ascii', 'latin1', 'ucs2', 'utf8', 'utf16le' ]);
 
 /**
+ * Since `stdout` is global, each Terminal instance will listen to it and this causes a warning, so
+ * by setting the max listeners, we can suppress the message.
+ */
+process.stdout.setMaxListeners(Infinity);
+
+/**
  * A high-level interface around all terminal oprations.
  *
  * @emits Terminal#keypress
@@ -41,8 +47,8 @@ export default class Terminal extends EventEmitter {
 	 * @param {stream.Writable} [opts.stderr=process.stderr] - A writable output stream.
 	 * @param {stream.Readable} [opts.stdin=process.stdin] - A stream for which to read input.
 	 * @param {stream.Writable} [opts.stdout=process.stdout] - A writable output stream.
-	 * @param {Number} [opts.promptTimeout] - The number of milliseconds of inactivity before timing
-	 * out.
+	 * @param {Number} [opts.promptTimeout] - The number of milliseconds of inactivity before
+	 * timing out.
 	 * @access public
 	 */
 	constructor(opts = {}) {
@@ -79,23 +85,39 @@ export default class Terminal extends EventEmitter {
 		}
 		this.promptTimeout = opts.promptTimeout | 0;
 
+		this.rawMode = 0;
+
 		this.on('newListener', (event, listener) => {
 			if (event === 'keypress') {
 				if (!this.rl) {
 					this.rl = readline.createInterface(this.stdin);
 				}
-				if (this.stdin.isTTY) {
+
+				if (this.stdin.isTTY && ++this.rawMode === 1) {
+					this.sigintHandler = (chunk, key) => {
+						if (key && key.name === 'c' && key.ctrl) {
+							this.emit('SIGINT');
+						}
+					};
+
 					this.stdin.setRawMode(true);
+					this.stdin.on('keypress', this.sigintHandler);
 				}
-				this.stdin.on(event, listener);
+
+				this.stdin.on('keypress', listener);
 			}
 		});
 
 		this.on('removeListener', (event, listener) => {
 			if (event === 'keypress') {
-				this.stdin.removeListener(event, listener);
+				this.stdin.removeListener('keypress', listener);
+
 				if (this.stdin.isTTY && !this.listenerCount(event)) {
-					this.stdin.setRawMode(false);
+					if (--this.rawMode === 0) {
+						this.stdin.setRawMode(false);
+						this.stdin.removeListener('keypress', this.sigintHandler);
+						this.sigintHandler === 'false';
+					}
 					this.rl.close();
 					this.rl = null;
 				}
@@ -106,10 +128,12 @@ export default class Terminal extends EventEmitter {
 			this.stdout.on('resize', () => {
 				this.emit('resize', {
 					columns: this.stdout.columns,
-					rows: this.stdout.rows
+					rows:    this.stdout.rows
 				});
 			});
 		}
+
+		// process.on('SIGINT', () => this.emit('SIGINT'));
 	}
 
 	beep() {
@@ -149,19 +173,22 @@ export default class Terminal extends EventEmitter {
 		log(`Patching output stream: ${highlight(name)}`);
 
 		const origWrite = stream.write;
+		const self = this;
 
-		stream.write = (chunk, encoding, cb) => {
+		const write = function write(chunk, encoding, cb) {
 			if (typeof encoding === 'function') {
 				cb = encoding;
 				encoding = null;
 			}
 
-			if (this._outputFired === undefined && (!encoding || encodings.has(encoding)) && !(this._outputFired = dataRegExp.test(chunk))) {
-				this.emit('output', chunk, encoding);
+			if (self._outputFired === undefined && (!encoding || encodings.has(encoding)) && !(self._outputFired = dataRegExp.test(chunk))) {
+				self.emit('output', chunk, encoding);
 			}
 
 			return origWrite.call(stream, chunk, encoding, cb);
 		};
+
+		stream.write = write.bind(stream);
 
 		return stream;
 	}

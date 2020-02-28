@@ -1,12 +1,12 @@
-export const beep = '\x07';
+export const bel = '\x07';
 
 export const clear = '\x1bc';
 
 export const cursor = {
 	show:    '\x1b[?25h',
 	hide:    '\x1b[?25l',
-	save:    '\x1b[7',
-	restore: '\x1b[8',
+	save:    '\x1b7',
+	restore: '\x1b8',
 	get:     '\x1b[6n',
 	home:    '\x1b[H',
 	left:    '\x1b[G',
@@ -28,25 +28,41 @@ export const cursor = {
 		return y ? `\x1b[${y + 1};${x + 1}H` : `\x1b[${x + 1}G`;
 	},
 
-	next(n = 1) { return '\x1b[E'.repeat(n); },
-	prev(n = 1) { return '\x1b[F'.repeat(n); }
+	position: /^\x1b\[(\d+);(\d+)R$/,
+
+	next(n = 1) { return !n ? '' : (n < 0 ? '\x1b[F' : '\x1b[E').repeat(Math.abs(n)); },
+	prev(n = 1) { return !n ? '' : (n > 0 ? '\x1b[F' : '\x1b[E').repeat(Math.abs(n)); }
 };
+
+export const custom = {
+	echo(enabled) {
+		return `\x1b]666;Echo=${enabled ? 'on' : 'off'}\x07`;
+	},
+	exit(code) {
+		return `\x1b]666;Exit=${code}\x07`;
+	}
+};
+
+custom.echo.re = /^\x1b\]666;Echo=(\w+)\x07$/;
+custom.exit.re = /^\x1b\]666;Exit=(\d+)\x07$/;
 
 export const erase = {
 	down:    '\x1b[J',
 	line:    '\x1b[2K',
-	lines(count) {
+	lines(count = 0) {
 		let s = '';
 		while (count > 0) {
-			s += this.line + (--count ? cursor.up : '');
+			s += this.line + (--count ? cursor.up() : '');
 		}
-		return s ? `${s}${cursor.left()}` : '';
+		return s ? `${s}${cursor.left}` : '';
 	},
 	screen:  '\x1b[2J',
 	toEnd:   '\x1b[K',
 	toStart: '\x1b[1K',
 	up:      '\x1b[1J'
 };
+
+export const esc = '\x1b[';
 
 export const scroll = {
 	down: '\x1b[T',
@@ -61,7 +77,7 @@ export const scroll = {
  * @returns {String}
  */
 export function link(text, url) {
-	return `\x1b]8;;${url || text}${beep}${text}\x1b]8;;${beep}`;
+	return `\x1b]8;;${url || text}\x07${text}\x1b]8;;\x07`;
 }
 
 const stripRegExp = /\x1b\[(;?\d+)+m/g;
@@ -72,6 +88,6 @@ const stripRegExp = /\x1b\[(;?\d+)+m/g;
  * @param {String} str - The string to strip.
  * @returns {String}
  */
-export function strip(str) {
+export function strip(str = '') {
 	return String(str).replace(stripRegExp, '');
 }

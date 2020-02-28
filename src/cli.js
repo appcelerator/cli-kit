@@ -10,12 +10,30 @@ import path from 'path';
 import pluralize from 'pluralize';
 import semver from 'semver';
 import Terminal from './terminal';
+import WebSocket, { Server as WebSocketServer } from 'ws';
 
-import { declareCLIKitClass } from './lib/util';
-import { terminal } from './index';
+import * as ansi from './lib/ansi';
+
+import { declareCLIKitClass, decodeHeader, split } from './lib/util';
+import { EventEmitter } from 'events';
+import { Writable } from 'stream';
 
 const { error, log, warn } = debug('cli-kit:cli');
 const { highlight }  = debug.styles;
+
+/**
+ * Writes data to a websocket.
+ */
+class OutputSocket extends Writable {
+	constructor(ws) {
+		super();
+		this.ws = ws;
+	}
+
+	write(chunk) {
+		this.ws.send(chunk.replace(/(?<!\r)\n/g, '\r\n'));
+	}
+}
 
 /**
  * The required Node.js version for cli-kit. This is used to assert the Node version at runtime.
@@ -51,6 +69,8 @@ export default class CLI extends Context {
 	 * @param {Boolean} [params.help=false] - When `true`, enables the built-in help command.
 	 * @param {Number} [params.helpExitCode] - The exit code to return when the help command is
 	 * finished.
+	 * @param {String} [params.helpTemplateFile] - Path to a template to render for the help
+	 * command.
 	 * @param {Boolean} [params.hideNoBannerOption] - When `true` and a `banner` is specified, it
 	 * does not add the `--no-banner` option.
 	 * @param {Boolean} [params.hideNoColorOption] - When `true` and `colors` is enabled, it does
@@ -114,19 +134,19 @@ export default class CLI extends Context {
 
 		this.appName                   = params.appName || params.name;
 		this.autoHideBanner            = params.autoHideBanner !== false;
-		this.banner                    = params.banner;
 		this.bannerEnabled             = true;
 		this.colors                    = params.colors !== false;
 		this.defaultCommand            = params.defaultCommand;
 		this.errorIfUnknownCommand     = params.errorIfUnknownCommand !== false;
 		this.help                      = !!params.help;
 		this.helpExitCode              = params.helpExitCode;
+		this.helpTemplateFile          = params.helpTemplateFile;
 		this.hideNoBannerOption        = params.hideNoBannerOption;
 		this.hideNoColorOption         = params.hideNoColorOption;
 		this.nodeVersion               = params.nodeVersion;
 		this.showBannerForExternalCLIs = params.showBannerForExternalCLIs;
 		this.showHelpOnError           = params.showHelpOnError;
-		this.terminal                  = params.terminal || terminal;
+		this.terminal                  = params.terminal || new Terminal();
 		this.version                   = params.version;
 		this.warnings                  = [];
 
@@ -188,18 +208,102 @@ export default class CLI extends Context {
 	}
 
 	/**
+	 * Connects to a cli-kit WebSocket server and initializes a terminal session.
+	 *
+	 * @param {String} url - The URL to connect to.
+	 * @param {Object} [opts] - Various options.
+	 * @param {Object} [opts.headers] - HTTP headers to send when creating the WebSocket.
+	 * @param {Termianl} [opts.terminal] - A terminal instance to override the default CLI terminal
+	 * instance.
+	 * @returns {Promise<Object>} Resolves an `EventEmitter` based handle containing a `send()`
+	 * function to send data as if from `stdin`.
+	 * @access public
+	 */
+	static async connect(url, opts = {}) {
+		if (!url || typeof url !== 'string') {
+			throw E.INVALID_ARGUMENT('Expected URL to be a string', { name: 'url', scope: 'CLI.connect', value: url });
+		}
+
+		if (!opts || typeof opts !== 'object') {
+			throw E.INVALID_ARGUMENT('Expected options to be an object', { name: 'opts', scope: 'CLI.connect', value: opts });
+		}
+
+		let term = opts.terminal;
+		delete opts.terminal;
+
+		if (!term) {
+			term = new Terminal();
+		} else if (!(term instanceof Terminal)) {
+			throw E.INVALID_ARGUMENT('Expected terminal to be a Terminal instance', { name: 'opts.terminal', scope: 'CLI.connect', value: term });
+		}
+
+		log(`Connecting to ${highlight(url)}`);
+		const ws = new WebSocket(url, opts);
+		ws.binaryType = 'arraybuffer';
+
+		const handle = new EventEmitter();
+		handle.send = chunk => {
+			if (ws.readyState === 1) {
+				ws.send(chunk);
+			}
+		};
+
+		ws.on('message', msg => {
+			if (msg === ansi.cursor.get && ws.readyState === 1) {
+				ws.send(`${ansi.esc}${term.rows};${term.columns}R`);
+				return;
+			}
+
+			const code = msg.match(ansi.custom.exit.re);
+			if (code) {
+				handle.emit('exit', code);
+				return;
+			}
+
+			term.stdout.write(msg);
+		});
+
+		ws.on('close', (code, reason) => handle.emit('close', code, reason));
+		ws.on('error', err => handle.emit('error', err));
+
+		return await new Promise(resolve => {
+			ws.on('open', () => {
+				term.on('keypress', (chunk, key) => {
+					// console.log('KEYPRESS', chunk === undefined ? chunk : Buffer.from(chunk), key, Buffer.from(key.sequence));
+					handle.send(key.sequence);
+				});
+				term.on('resize', ({ rows, columns }) => {
+					handle.send(`${ansi.esc}${rows};${columns}R`);
+				});
+				term.on('SIGINT', () => {
+					ws.close();
+					process.exit();
+				});
+
+				resolve(handle);
+			});
+		});
+	}
+
+	/**
 	 * Parses the command line arguments and runs the command.
 	 *
-	 * @param {Array.<String>} [unparsedArgs] - An array of arguments to parse. If not specified, it
+	 * @param {Array.<String>} [_argv] - An array of arguments to parse. If not specified, it
 	 * defaults to the `process.argv` starting with the 3rd argument.
 	 * @param {Object} [opts] - Various options.
 	 * @param {Object} [opts.data] - User-defined data to pass into the selected command.
+	 * @param {Function} [opts.exitCode] - A function that sets the exit code.
+	 * @param {Boolean} [opts.serverMode=false] - When `true`, makes things such that `exec()`
+	 * doesn't change any global state by deep cloning the entire context tree every time the
+	 * arguments are parsed and changing the process state. Enabling this only makes sense if the
+	 * `CLI` instance is going to be reused to parse arguments multiple times and if the state of
+	 * thecontext tree is going to be modified during parsing (i.e. via a callback).
 	 * @param {Termianl} [opts.terminal] - A terminal instance to override the default CLI terminal
 	 * instance.
 	 * @returns {Promise.<Arguments>}
 	 * @access public
 	 */
-	async exec(unparsedArgs, opts = {}) {
+	async exec(_argv, opts = {}) {
 		const { version } = process;
 		let required = this.nodeVersion;
 		if ((required && !semver.satisfies(version, required)) || !semver.satisfies(version, required = clikitNodeVersion)) {
@@ -211,36 +315,61 @@ export default class CLI extends Context {
 			});
 		}
 
-		if (unparsedArgs && !Array.isArray(unparsedArgs)) {
-			throw E.INVALID_ARGUMENT('Expected arguments to be an array', { name: 'args', scope: 'CLI.exec', value: unparsedArgs });
+		if (!_argv) {
+			_argv = process.argv.slice(2);
+		} else if (!Array.isArray(_argv)) {
+			throw E.INVALID_ARGUMENT('Expected arguments to be an array', { name: 'args', scope: 'CLI.exec', value: _argv });
 		}
 
 		if (!opts || typeof opts !== 'object') {
 			throw E.INVALID_ARGUMENT('Expected opts to be an object', { name: 'opts', scope: 'CLI.exec', value: opts });
 		}
 
-		if (opts.terminal && !(opts.terminal instanceof Terminal)) {
-			throw E.INVALID_ARGUMENT('Expected terminal to be a Terminal instance', { name: 'opts.terminal', scope: 'CLI.exec', value: opts.terminal });
-		}
-
 		if (!opts.data) {
 			opts.data = {};
-		}
-
-		if (opts.data && typeof opts.data !== 'object') {
+		} else if (typeof opts.data !== 'object') {
 			throw E.INVALID_ARGUMENT('Expected data to be an object', { name: 'opts.data', scope: 'CLI.exec', value: opts.data });
 		}
 
+		if (!opts.terminal) {
+			opts.terminal = this.terminal;
+		} else if (!(opts.terminal instanceof Terminal)) {
+			throw E.INVALID_ARGUMENT('Expected terminal to be a Terminal instance', { name: 'opts.terminal', scope: 'CLI.exec', value: opts.terminal });
+		}
+
+		let { showHelpOnError } = this;
+		let exitCode = undefined;
+		const parser = new Parser(opts);
+		const __argv = _argv.slice(0);
+		const results = {
+			_:           undefined,
+			_argv,       // the original unparsed arguments
+			__argv,      // the parsed arguments
+			argv:        undefined,
+			cli:         this,
+			cmd:         undefined,
+			console:     opts.terminal.console,
+			contexts:    undefined,
+			data:        opts.data,
+			exitCode:    opts.exitCode = code => code === undefined ? exitCode : (exitCode = code || 0),
+			help:        () => renderHelp(results.cmd),
+			result:      undefined,
+			terminal:    opts.terminal,
+			unknown:     undefined,
+			warnings:    this.warnings
+		};
+
 		this.once('banner', ({ argv, ctx = this }) => {
-			if (this.get('autoHideBanner') !== false) {
-				(opts.terminal || this.get('terminal')).once('output', () => {
+			if (this.autoHideBanner) {
+				opts.terminal.once('output', () => {
 					let banner = ctx.prop('banner');
 					if (banner && this.bannerEnabled) {
 						banner = String(typeof banner === 'function' ? banner(opts) : banner).trim();
-						(opts.terminal || this.get('terminal')).stdout.write(`${banner}\n\n`);
+						opts.terminal.stdout.write(`${banner}\n\n`);
 					}
 				});
 			}
+
 			if ((argv && !argv.banner) || (ctx instanceof Extension && !ctx.isCLIKitExtension && !ctx.get('showBannerForExternalCLIs'))) {
 				this.bannerEnabled = false;
 			} else if (ctx.banner) {
@@ -248,29 +377,8 @@ export default class CLI extends Context {
 			}
 		});
 
-		let { showHelpOnError } = this;
-		let exitCode = undefined;
-		const parser = new Parser();
-		const results = {
-			_:           undefined,
-			__argv:      undefined,
-			argv:        undefined,
-			cli:         this,
-			clikit:      { ...require('./index') },
-			cmd:         undefined,
-			console:     (opts.terminal || this.terminal).console,
-			contexts:    undefined,
-			data:        opts.data,
-			exitCode:    opts.exitCode = code => code === undefined ? exitCode : (exitCode = code || 0),
-			help:        () => renderHelp(results.cmd),
-			result:      undefined,
-			unknown:     undefined,
-			warnings:    this.warnings
-		};
-
 		try {
-			const __argv = unparsedArgs ? Array.prototype.concat.apply([], unparsedArgs.map(a => a.input || a)) : process.argv.slice(2);
-			const { _, argv, contexts, unknown } = await parser.parse(unparsedArgs || process.argv.slice(2), this, opts);
+			const { _, argv, contexts, unknown } = await parser.parse(__argv, opts.serverMode ? new Context(this) : this);
 
 			log('Parsing complete: ' +
 				`${pluralize('option', Object.keys(argv).length, true)}, ` +
@@ -283,7 +391,6 @@ export default class CLI extends Context {
 			const cmd = contexts[0];
 
 			results._        = _;
-			results.__argv   = __argv;
 			results.argv     = argv;
 			results.cmd      = cmd;
 			results.contexts = contexts;
@@ -326,7 +433,10 @@ export default class CLI extends Context {
 				}
 			}
 
-			process.exitCode = results.exitCode();
+			if (!opts.serverMode) {
+				process.exitCode = results.exitCode();
+			}
+
 			return results;
 		} catch (err) {
 			error(err);
@@ -344,6 +454,124 @@ export default class CLI extends Context {
 
 			throw err;
 		}
+	}
+
+	/**
+	 * Starts a WebSocket server.
+	 *
+	 * @param {Object} [opts] - WebSocket server options. Visit
+	 * https://github.com/websockets/ws/blob/HEAD/doc/ws.md#new-websocketserveroptions-callback for
+	 * more information.
+	 * @returns {Promise<WebSocketServer>}
+	 * @access public
+	 */
+	async listen(opts = {}) {
+		if (!opts || typeof opts !== 'object') {
+			throw E.INVALID_ARGUMENT('Expected options to be an object', { name: 'opts', scope: 'CLI.listen', value: opts });
+		}
+
+		if (opts.port !== undefined && (typeof opts.port !== 'number' || opts.port < 1 || opts.port > 65535)) {
+			throw E.INVALID_ARGUMENT('Expected port to be a number between 1 and 65535', { name: 'opts.port', scope: 'CLI.listen', value: opts.port });
+		}
+
+		log(`Starting WebSocketServer${opts.port ? `on port ${highlight(opts.port)}` : ''}...`);
+
+		return new Promise((resolve, reject) => {
+			this.connections = {};
+			this.server = new WebSocketServer(opts, () => resolve(this.server));
+
+			this.server.on('connection', (ws, req) => {
+				const { remoteAddress, remotePort } = req.socket;
+				const key = remoteAddress + ':' + remotePort;
+				const { headers } = req;
+				let echo = false;
+				const stdout = new OutputSocket(ws);
+				const stderr = new OutputSocket(ws);
+				const terminal = new Terminal({ stdout, stderr });
+
+				log('%s upgraded to WebSocket', highlight(key));
+				log(headers);
+
+				const conn = this.connections[key] = {
+					buffer: '',
+					cols: 0,
+					rows: 0
+				};
+
+				ws.on('close', () => {
+					delete this.connections[key];
+					log('%s closed WebSocket', highlight(key));
+				});
+
+				ws.on('error', err => {
+					delete this.connections[key];
+					if (err.code !== 'ECONNRESET') {
+						error(err);
+					}
+				});
+
+				ws.on('message', async msg => {
+					if (Buffer.isBuffer(msg)) {
+						msg = msg.toString();
+					}
+
+					let m = msg.match(ansi.cursor.position);
+					if (m) {
+						conn.rows = ~~m[1];
+						conn.cols = ~~m[2];
+						log(`Terminal set to ${conn.cols} x ${conn.rows}`);
+						return;
+					}
+
+					m = msg.match(ansi.custom.echo.re);
+					if (m) {
+						echo = m[1] !== 'off';
+						return;
+					}
+
+					// TODO: support cursor position
+
+					msg = msg.replace(/\r\n|\n|\r/g, '\r\n');
+					msg = msg.replace(/\x7f/g, '\b'); // normalize backspaces
+					conn.buffer += msg;
+
+					// replace backspaces
+					for (let p = 0; (p = conn.buffer.indexOf('\b', p)) !== -1;) {
+						conn.buffer = conn.buffer.substring(0, p - 1) + conn.buffer.substring(p + 1);
+					}
+
+					if (echo) {
+						ws.send(msg);
+					}
+
+					for (let p; (p = conn.buffer.indexOf('\r')) !== -1;) {
+						const argv = split(conn.buffer.substring(0, p));
+						conn.buffer = conn.buffer.substring(p + 2);
+
+						log('Running:', argv);
+						const { exitCode } = await this.exec(argv, {
+							data: {
+								cwd:       decodeHeader(headers['clikit-cwd']),
+								env:       decodeHeader(headers['clikit-env']),
+								userAgent: headers['user-agent'] || undefined
+							},
+							serverMode: true,
+							terminal
+						});
+
+						ws.send(ansi.custom.exit(exitCode() || 0));
+					}
+				});
+
+				// get the remote terminal size
+				ws.send(ansi.cursor.save);
+				ws.send(ansi.cursor.move(999, 999));
+				ws.send(ansi.cursor.get);
+				ws.send(ansi.cursor.restore);
+			});
+
+			this.server.on('error', reject);
+		});
 	}
 
 	/**
