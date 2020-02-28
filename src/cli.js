@@ -14,7 +14,8 @@ import WebSocket, { Server as WebSocketServer } from 'ws';
 
 import * as ansi from './lib/ansi';
 
-import { declareCLIKitClass, split } from './lib/util';
+import { declareCLIKitClass, decodeHeader, split } from './lib/util';
+import { EventEmitter } from 'events';
 import { Writable } from 'stream';
 
 const { error, log, warn } = debug('cli-kit:cli');
@@ -211,62 +212,76 @@ export default class CLI extends Context {
 	 *
 	 * @param {String} url - The URL to connect to.
 	 * @param {Object} [opts] - Various options.
+	 * @param {Object} [opts.headers] - HTTP headers to send when creating the WebSocket.
 	 * @param {Termianl} [opts.terminal] - A terminal instance to override the default CLI terminal
 	 * instance.
-	 * @returns {Promise<Function>} Resolves a function to send data as if from stdin.
+	 * @returns {Promise<Object>} Resolves an `EventEmitter` based handle containing a `send()`
+	 * function to send data as if from `stdin`.
 	 * @access public
 	 */
-	static connect(url, opts = {}) {
-		return new Promise(resolve => {
-			if (!opts || typeof opts !== 'object') {
-				throw new TypeError('Expected options to be an object');
+	static async connect(url, opts = {}) {
+		if (!url || typeof url !== 'string') {
+			throw E.INVALID_ARGUMENT('Expected URL to be a string', { name: 'url', scope: 'CLI.connect', value: url });
+		}
+
+		if (!opts || typeof opts !== 'object') {
+			throw E.INVALID_ARGUMENT('Expected options to be an object', { name: 'opts', scope: 'CLI.connect', value: opts });
+		}
+
+		let term = opts.terminal;
+		delete opts.terminal;
+
+		if (!term) {
+			term = new Terminal();
+		} else if (!(term instanceof Terminal)) {
+			throw E.INVALID_ARGUMENT('Expected terminal to be a Terminal instance', { name: 'opts.terminal', scope: 'CLI.connect', value: term });
+		}
+
+		log(`Connecting to ${highlight(url)}`);
+		const ws = new WebSocket(url, opts);
+		ws.binaryType = 'arraybuffer';
+
+		const handle = new EventEmitter();
+		handle.send = chunk => {
+			if (ws.readyState === 1) {
+				ws.send(chunk);
+			}
+		};
+
+		ws.on('message', msg => {
+			if (msg === ansi.cursor.get && ws.readyState === 1) {
+				ws.send(`${ansi.esc}${term.rows};${term.columns}R`);
+				return;
 			}
 
-			let term = opts.terminal;
-			delete opts.terminal;
-
-			if (!term) {
-				term = new Terminal();
-			} else if (!(term instanceof Terminal)) {
-				throw E.INVALID_ARGUMENT('Expected terminal to be a Terminal instance', { name: 'opts.terminal', scope: 'CLI.connect', value: term });
+			const code = msg.match(ansi.custom.exit.re);
+			if (code) {
+				handle.emit('exit', code);
+				return;
 			}
 
-			log(`Connecting to ${highlight(url)}`);
-			const ws = new WebSocket(url, opts);
-			ws.binaryType = 'arraybuffer';
+			term.stdout.write(msg);
+		});
 
+		ws.on('close', (code, reason) => handle.emit('close', code, reason));
+		ws.on('error', err => handle.emit('error', err));
+
+		return await new Promise(resolve => {
 			ws.on('open', () => {
-				const send = chunk => {
-					if (ws.readyState === 1) {
-						ws.send(chunk);
-					}
-				};
-
-				term.on('keypress', send);
+				term.on('keypress', (chunk, key) => {
+					// console.log('KEYPRESS', chunk === undefined ? chunk : Buffer.from(chunk), key, Buffer.from(key.sequence));
+					handle.send(key.sequence);
+				});
 				term.on('resize', ({ rows, columns }) => {
-					send(`${ansi.esc}${rows};${columns}R`);
+					handle.send(`${ansi.esc}${rows};${columns}R`);
+				});
+				term.on('SIGINT', () => {
+					ws.close();
+					process.exit();
 				});
 
-				resolve(send);
+				resolve(handle);
 			});
-
-			ws.on('message', msg => {
-				if (msg === ansi.cursor.get && ws.readyState === 1) {
-					ws.send(`${ansi.esc}${term.rows};${term.columns}R`);
-					return;
-				}
-
-				const exit = msg.match(ansi.custom.exit.re);
-				if (exit) {
-					process.exit(exit);
-				}
-
-				term.stdout.write(msg);
-			});
-
-			ws.on('close', () => process.exit());
-
-			term.on('SIGINT', () => ws.close());
 		});
 	}
 
@@ -450,9 +465,18 @@ export default class CLI extends Context {
 	 * @returns {Promise<WebSocketServer>}
 	 * @access public
 	 */
-	listen(opts = {}) {
-		return new Promise(resolve => {
-			log('Starting WebSocketServer...');
+	async listen(opts = {}) {
+		if (!opts || typeof opts !== 'object') {
+			throw E.INVALID_ARGUMENT('Expected options to be an object', { name: 'opts', scope: 'CLI.listen', value: opts });
+		}
+
+		if (opts.port !== undefined && (typeof opts.port !== 'number' || opts.port < 1 || opts.port > 65535)) {
+			throw E.INVALID_ARGUMENT('Expected port to be a number between 1 and 65535', { name: 'opts.port', scope: 'CLI.listen', value: opts.port });
+		}
+
+		log(`Starting WebSocketServer${opts.port ? `on port ${highlight(opts.port)}` : ''}...`);
+
+		return new Promise((resolve, reject) => {
 			this.connections = {};
 			this.server = new WebSocketServer(opts, () => resolve(this.server));
 
@@ -460,15 +484,13 @@ export default class CLI extends Context {
 				const { remoteAddress, remotePort } = req.socket;
 				const key = remoteAddress + ':' + remotePort;
 				const { headers } = req;
-				const echo = headers['clikit-echo'] !== 'off';
+				let echo = false;
 				const stdout = new OutputSocket(ws);
 				const stderr = new OutputSocket(ws);
 				const terminal = new Terminal({ stdout, stderr });
 
 				log('%s upgraded to WebSocket', highlight(key));
 				log(headers);
-
-				// TODO: get the cwd, env
 
 				const conn = this.connections[key] = {
 					buffer: '',
@@ -493,48 +515,62 @@ export default class CLI extends Context {
 						msg = msg.toString();
 					}
 
-					const pos = msg.match(ansi.cursor.position);
-					if (pos) {
-						conn.rows = ~~pos[1];
-						conn.cols = ~~pos[2];
+					let m = msg.match(ansi.cursor.position);
+					if (m) {
+						conn.rows = ~~m[1];
+						conn.cols = ~~m[2];
 						log(`Terminal set to ${conn.cols} x ${conn.rows}`);
 						return;
 					}
 
+					m = msg.match(ansi.custom.echo.re);
+					if (m) {
+						echo = m[1] !== 'off';
+						return;
+					}
+
+					// TODO: support cursor position
+
 					msg = msg.replace(/\r\n|\n|\r/g, '\r\n');
+					msg = msg.replace(/\x7f/g, '\b'); // normalize backspaces
 					conn.buffer += msg;
+
+					// replace backspaces
+					for (let p = 0; (p = conn.buffer.indexOf('\b', p)) !== -1;) {
+						conn.buffer = conn.buffer.substring(0, p - 1) + conn.buffer.substring(p + 1);
+					}
 
 					if (echo) {
 						ws.send(msg);
 					}
 
-					let p = conn.buffer.indexOf('\r');
-					while (p !== -1) {
+					for (let p; (p = conn.buffer.indexOf('\r')) !== -1;) {
 						const argv = split(conn.buffer.substring(0, p));
 						conn.buffer = conn.buffer.substring(p + 2);
 
 						log('Running:', argv);
 						const { exitCode } = await this.exec(argv, {
 							data: {
-								userAgent: headers['user-agent'] || null
+								cwd:       decodeHeader(headers['clikit-cwd']),
+								env:       decodeHeader(headers['clikit-env']),
+								userAgent: headers['user-agent'] || undefined
 							},
 							serverMode: true,
 							terminal
 						});
 
 						ws.send(ansi.custom.exit(exitCode() || 0));
-
-						p = conn.buffer.indexOf('\r');
 					}
 				});
 
+				// get the remote terminal size
 				ws.send(ansi.cursor.save);
 				ws.send(ansi.cursor.move(999, 999));
 				ws.send(ansi.cursor.get);
 				ws.send(ansi.cursor.restore);
 			});
 
-			this.server.on('error', error);
+			this.server.on('error', reject);
 		});
 	}
 

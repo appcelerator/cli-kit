@@ -92,6 +92,22 @@ describe('CLI', () => {
 			});
 		});
 
+		it('should error if default command does not exist', async () => {
+			const cli = new CLI({
+				defaultCommand: 'foo'
+			});
+			await expect(cli.exec([])).to.be.rejectedWith(Error, 'The default command "foo" was not found!');
+		});
+
+		it('should execute default command as a function', async () => {
+			const spy = sinon.spy();
+			const cli = new CLI({
+				defaultCommand: spy
+			});
+			await cli.exec([]);
+			expect(spy).to.be.calledOnce;
+		});
+
 		it('should throw exception showHelpOnError is false', async () => {
 			const cli = new CLI({
 				showHelpOnError: false,
@@ -317,6 +333,22 @@ describe('CLI', () => {
 				await cli.exec();
 			} catch (err) {
 				expect(err.message).to.equal(`This program requires Node.js version >=999, currently ${process.version}`);
+				return;
+			}
+
+			throw new Error('Expected error');
+		});
+
+		it('should error if Node.js version is too old with custom name', async () => {
+			try {
+				const cli = new CLI({
+					appName: 'Foo',
+					nodeVersion: '>=999'
+				});
+
+				await cli.exec();
+			} catch (err) {
+				expect(err.message).to.equal(`Foo requires Node.js version >=999, currently ${process.version}`);
 				return;
 			}
 

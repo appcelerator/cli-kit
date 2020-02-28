@@ -172,7 +172,9 @@ export default class Extension extends Command {
 					const p = __argv.findIndex(arg => arg && arg.type === 'extension' && arg.extension === cmd);
 
 					if (p !== -1) {
-						args.push(...__argv.slice(p + 1).flatMap(a => a.input));
+						for (let i = p + 1, len = __argv.length; i < len; i++) {
+							args.push.apply(args, __argv[i].input);
+						}
 					}
 
 					log(`Running: ${highlight(`${this.exe} ${args.join(' ')}`)}`);

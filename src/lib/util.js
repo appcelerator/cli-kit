@@ -22,6 +22,26 @@ export function declareCLIKitClass(obj, name) {
 }
 
 /**
+ * Decodes a header value.
+ *
+ * @param {String} value - The value to decode.
+ * @returns {*}
+ */
+export function decodeHeader(value) {
+	return value === undefined || value === null ? '' : JSON.parse(Buffer.from(value, 'base64').toString('utf8'));
+}
+
+/**
+ * Encodes a JavaScript value using base64 for use in an HTTP header.
+ *
+ * @param {*} it - A value to encode.
+ * @returns {String}
+ */
+export function encodeHeader(it) {
+	return it === undefined || it === null ? it : Buffer.from(JSON.stringify(it), 'utf8').toString('base64');
+}
+
+/**
  * Strips off the file extension and returns the filename.
  *
  * @param {String} file - The file to extract the filename from.
