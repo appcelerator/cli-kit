@@ -14,10 +14,11 @@ A command line application toolkit for Node.js.
 ## Features
 
 * Command line parsing
-* Support for command hierarchies
+* Support for dynamic command hierarchies
 * Auto-generated help
 * CLI template engine
 * External CLI extensions
+* Client and server for remote CLI session such as [xterm.js][xterm]
 * Automatic Node.js version enforcement
 
 ## Installation
@@ -288,3 +289,4 @@ MIT
 [david-url]: https://david-dm.org/cb1kenobi/cli-kit
 [david-dev-image]: https://img.shields.io/david/dev/cb1kenobi/cli-kit.svg
 [david-dev-url]: https://david-dm.org/cb1kenobi/cli-kit#info=devDependencies
+[xterm]: https://xtermjs.org/
