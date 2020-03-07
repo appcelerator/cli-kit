@@ -42,7 +42,7 @@
     "argv-split": "^2.0.1",
     "fast-levenshtein": "^2.0.6",
     "fs-extra": "^8.1.0",
-    "hook-emitter": "^4.0.1",
+    "hook-emitter": "4.0.1",
     "lodash.camelcase": "^4.3.0",
     "node-pty-prebuilt-multiarch": "^0.9.0",
     "pkg-dir": "^4.2.0",
