@@ -1,9 +1,5 @@
 if (error) {
-	if (error.type) {
-		>> ${error.type}: ${error.message}
-	} else {
-		>> ${error.message}
-	}
+	>> ${style.alert(error.message)}
 	if (error.code === 'ERR_MISSING_REQUIRED_OPTION') {
 		for (const option of error.meta.required) {
 			>>|  ${option.format}  ${option.desc}
@@ -26,24 +22,28 @@ if (Array.isArray(warnings) && warnings.length) {
 	}
 }
 
-if (usage) {
-	>>> ${usage.title.toUpperCase()}: ${usage.text}
+if (header) {
+	>>>? ${header}
+} else {
+	>>>? ${desc || ''}
 }
 
->>>? ${desc || ''}
+if (usage) {
+	>>> ${style.heading(usage.title)}: ${style.highlight(usage.text)}
+}
 
 if (commands.count) {
-	>> ${commands.title.toUpperCase()}:
+	>> ${style.heading(commands.title)}:
 	for (const cmd of commands.entries) {
-		>>|  ${cmd.name}  ${cmd.desc || ''}
+		>>|  ${style.highlight(cmd.name)}  ${cmd.desc || ''}
 	}
 	>>
 }
 
 if (arguments.count) {
-	>> ${arguments.title.toUpperCase()}:
+	>> ${style.heading(arguments.title)}:
 	for (const arg of arguments.entries) {
-		>>|  ${arg.name}${arg.multiple ? '...' : ''}  ${arg.desc || ''}
+		>>|  ${style.highlight(arg.name)}${arg.multiple ? style.highlight('...') : ''}  ${arg.desc || ''}
 	}
 	>>
 }
@@ -51,20 +51,25 @@ if (arguments.count) {
 if (options.count) {
 	for (const scope of options.scopes) {
 		if (scope.count) {
-			>> ${scope.title.toUpperCase()}:
+			>> ${style.heading(scope.title)}:
 			for (const [ group, options ] of Object.entries(scope.groups)) {
 				if (group) {
-					>> ${group}
+					>> ${style.lowlight(group)}
 				}
 				for (const option of options) {
 					let s = '';
 					if (option.short) {
 						s += `-${option.short},`;
 					}
-					>>|  ${s}--${option.negate ? 'no-' : ''}${option.long}${option.isFlag ? '' : ('=<' + (option.hint || 'value') + '>')}  ${option.desc || ''}
+					s += `--${option.negate ? 'no-' : ''}${option.long}${option.isFlag ? '' : ('=<' + (option.hint || 'value') + '>')}`;
+					>>|  ${style.highlight(s)}  ${option.desc || ''}
 				}
 			}
 			>>
 		}
 	}
+}
+
+if (footer) {
+	>>> ${footer}
 }

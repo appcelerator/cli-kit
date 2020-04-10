@@ -1,4 +1,4 @@
-import CLI, { Terminal } from '../dist/index';
+import CLI, { ansi, Terminal } from '../dist/index';
 import path from 'path';
 
 import { spawnSync } from 'child_process';
@@ -178,7 +178,7 @@ describe('CLI', () => {
 
 			// process.stdout.write(out.toString() + '\n');
 
-			expect(out.toString()).to.equal([
+			expect(ansi.strip(out.toString())).to.equal([
 				'My Amazing CLI, version 1.2.3',
 				'Copyright (c) 2018, Me',
 				'',
@@ -244,7 +244,7 @@ describe('CLI', () => {
 
 			await cli.exec([]);
 
-			expect(out.toString()).to.equal([
+			expect(ansi.strip(out.toString())).to.equal([
 				'My Amazing CLI, version 1.2.3',
 				'Copyright (c) 2018, Me',
 				'',

@@ -5,8 +5,6 @@ import helpCommand from '../commands/help';
 
 import { declareCLIKitClass } from '../lib/util';
 
-const { warn } = debug('cli-kit:command');
-
 /**
  * Defines a command and its options and arguments.
  *
@@ -32,6 +30,11 @@ export default class Command extends Context {
 	 * @param {String|Function} [params.defaultCommand] - The default command to execute when this
 	 * command has no `action`. When value is a `String`, it looks up the subcommand and calls it.
 	 * If value is a `Function`, it simply invokes it.
+	 * @param {String|Function|Object} [params.help] - Additional help content to display on the
+	 * help screen. When may be an object with the properties `header` and `footer` which values
+	 * that are either a string or an async function that resolves a string. When value is a string
+	 * or function, it is trasnformed into a object with the value being used as the header. Note
+	 * that the command description is not displayed when a header message has been defined.
 	 * @param {Boolean} [params.hidden=false] - When `true`, the option is not displayed on the
 	 * help screen or auto-suggest.
 	 * @access public
@@ -92,6 +95,30 @@ export default class Command extends Context {
 			throw E.INVALID_ARGUMENT('Expected command action to be a function or Command instance', { name: 'action', scope: 'Command.constructor', value: params.action });
 		}
 
+		const help = {};
+		if (params.help) {
+			if (typeof params.help === 'string' || typeof params.help === 'function') {
+				help.header = params.help;
+			} else if (typeof params.help === 'object') {
+				if (params.help.header) {
+					if (typeof params.help.header === 'string' || typeof params.help.header === 'function') {
+						help.header = params.help.header;
+					} else {
+						throw E.INVALID_ARGUMENT('Expected help content header to be a string or function');
+					}
+				}
+				if (params.help.footer) {
+					if (typeof params.help.footer === 'string' || typeof params.help.footer === 'function') {
+						help.footer = params.help.footer;
+					} else {
+						throw E.INVALID_ARGUMENT('Expected help content footer to be a string or function');
+					}
+				}
+			} else {
+				throw E.INVALID_ARGUMENT('Expected help content to be a string, function, or object containing a header or footer');
+			}
+		}
+
 		params.name = name;
 
 		super(params);
@@ -107,6 +134,7 @@ export default class Command extends Context {
 
 		this.aliases        = params.aliases;
 		this.clikitHelp     = params.clikitHelp;
+		this.help           = help;
 		this.defaultCommand = params.defaultCommand;
 		this.hidden         = !!params.hidden;
 	}
@@ -150,6 +178,24 @@ export default class Command extends Context {
 			}
 		}
 		this._aliases = result;
+	}
+
+	/**
+	 * Renders the help screen for this context including the parent contexts.
+	 *
+	 * @returns {Promise<Object>}
+	 * @access private
+	 */
+	generateHelp() {
+		this.on('generateHelp', async results => {
+			const opts = {
+				style: debug.styles
+			};
+			results.header = typeof this.help.header === 'function' ? await this.help.header.call(this, opts) : this.help.header;
+			results.footer = typeof this.help.footer === 'function' ? await this.help.footer.call(this, opts) : this.help.footer;
+		});
+
+		return super.generateHelp();
 	}
 
 	/**

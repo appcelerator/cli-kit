@@ -1,6 +1,6 @@
 /* eslint no-control-regex:0 */
 
-import CLI, { Extension, Terminal } from '../dist/index';
+import CLI, { ansi, Extension, Terminal } from '../dist/index';
 import path from 'path';
 
 import { spawnSync } from 'child_process';
@@ -112,7 +112,7 @@ describe('Extension', () => {
 
 			// console.log(output);
 
-			expect(output).to.equal([
+			expect(ansi.strip(output)).to.equal([
 				'USAGE: test-cli <command> [options]',
 				'',
 				'COMMANDS:',
@@ -128,7 +128,7 @@ describe('Extension', () => {
 
 			// console.log(output);
 
-			expect(output).to.equal([
+			expect(ansi.strip(output)).to.equal([
 				'USAGE: test-cli cli-kit-extension <command> [options] [<foo>] [<bar>]',
 				'',
 				'CLI-KIT-EXTENSION COMMANDS:',

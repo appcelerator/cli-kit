@@ -48,12 +48,13 @@ export default {
 		exitCode(+!!err); // 0=success, 1=error
 
 		const formatError = err => {
+			const type = err && err.constructor && err.constructor.name || null;
 			return err ? {
 				code:    err.code,
-				message: err.message,
+				message: !argv.json && type ? `${type}: ${err.message}` : err.message,
 				meta:    err.meta,
 				stack:   err.stack,
-				type:    err.constructor && err.constructor.name || null
+				type
 			} : null;
 		};
 
@@ -94,6 +95,16 @@ export default {
 			} else {
 				const file = ctx.get('helpTemplateFile', path.resolve(__dirname, '..', '..', 'templates', 'help.tpl'));
 				log(`Rendering help template: ${highlight(file)}`);
+
+				// only commands have a header and footer, but CLI instances do not and thus we
+				// need to define them to make the template happy
+				if (!help.header) {
+					help.header = null;
+				}
+				if (!help.footer) {
+					help.footer = null;
+				}
+
 				// determine the output stream
 				(err ? _stderr : _stdout).write(renderFile(file, help));
 			}

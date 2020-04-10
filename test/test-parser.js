@@ -1,5 +1,4 @@
-// import Parser from '../dist/parser/parser';
-import CLI, { Terminal } from '../dist/index';
+import CLI, { ansi, Terminal } from '../dist/index';
 
 import { WritableStream } from 'memory-streams';
 
@@ -157,7 +156,7 @@ describe('Parser', () => {
 
 			await cli.exec([]);
 
-			expect(out.toString()).to.equal([
+			expect(ansi.strip(out.toString())).to.equal([
 				'Error: Missing required argument "foo"',
 				'',
 				'USAGE: test-cli [options] <foo>',

@@ -55,6 +55,11 @@ export function render(template, data) {
 		}
 
 		// log(template);
+		// log(Object.keys(data));
+
+		if (!data.style) {
+			data.style = debug.styles;
+		}
 
 		const vars = Object.keys(data);
 		let body = (vars.length ? `let { ${vars.join(', ')} } = __data;\n\n` : '') +

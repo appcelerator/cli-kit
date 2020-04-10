@@ -35,7 +35,8 @@ export default class Context extends HookEmitter {
 	 * `cmd` is a `String` and `params` is present, then it will treat `cmd` as the command name,
 	 * not a file path.
 	 * @param {String} [params.desc] - The description of the CLI or command displayed in the help
-	 * output.
+	 * output. If context is a command with a help header defined, this description is not
+	 * displayed.
 	 * @param {Object|String|Extension|ExtensionMap|Array.<String|Extension>} [params.extensions] -
 	 * An object of extension names to extension paths or instances, an extension path, an
 	 * `Extension` instance, or an array of those types. An extension path may be a directory
@@ -129,13 +130,7 @@ export default class Context extends HookEmitter {
 	 * @access private
 	 */
 	generateHelp() {
-		return this.hook('generateHelp', () => {
-			const results = {
-				contexts: [],
-				error: undefined,
-				suggestions: [],
-				warnings: undefined
-			};
+		return this.hook('generateHelp', results => {
 			const scopes = [];
 			let ctx = this;
 
@@ -229,7 +224,12 @@ export default class Context extends HookEmitter {
 			};
 
 			return results;
-		})();
+		})({
+			contexts: [],
+			error: undefined,
+			suggestions: [],
+			warnings: undefined
+		});
 	}
 
 	/**
