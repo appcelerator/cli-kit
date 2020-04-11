@@ -212,7 +212,27 @@ export default class Parser {
 
 			// loop over the parsed args and fill in the `argv` and `_`
 			log('Filling argv and _');
-			let i = 0;
+
+			// combine parsed args that are options with multiple flag set
+			for (let k = 0; k < this.args.length; k++) {
+				let current = this.args[k];
+				if (current instanceof ParsedArgument && current.type === 'option' && current.option.multiple) {
+					for (let j = k + 1; j < this.args.length; j++) {
+						let next = this.args[j];
+						if (next instanceof ParsedArgument && next.type === 'option' && next.option === current.option) {
+							if (!Array.isArray(current.value)) {
+								current.value = [ current.value ];
+							}
+							if (next.value !== undefined) {
+								current.value = [].concat(current.value, next.value);
+							}
+							this.args.splice(j--, 1);
+						}
+					}
+				}
+			}
+
+			let index = 0;
 			let extra = [];
 
 			const setArg = async (idx, value) => {
@@ -237,7 +257,7 @@ export default class Parser {
 					if (arg.multiple) {
 						// if this arg gobbles up multiple parsed args, then we decrement `i` so
 						// that we never increment it and no further arguments will be applied
-						i--;
+						index--;
 						if (Array.isArray(this.argv[name])) {
 							this.argv[name].push(value);
 						} else {
@@ -251,31 +271,12 @@ export default class Parser {
 				this._.push(value);
 			};
 
-			// combine parsed args that are options with multiple flag set
-			for (let i = 0; i < this.args.length; i++) {
-				let current = this.args[i];
-				if (current instanceof ParsedArgument && current.type === 'option' && current.option.multiple) {
-					for (let j = i + 1; j < this.args.length; j++) {
-						let next = this.args[j];
-						if (next instanceof ParsedArgument && next.type === 'option' && next.option === current.option) {
-							if (!Array.isArray(current.value)) {
-								current.value = [ current.value ];
-							}
-							if (next.value !== undefined) {
-								current.value = [].concat(current.value, next.value);
-							}
-							this.args.splice(j--, 1);
-						}
-					}
-				}
-			}
-
 			// loop over the parsed args and assign the values to _ and argv
 			for (const parsedArg of this.args) {
 				let name;
 				const isParsed = parsedArg instanceof ParsedArgument;
 				if (!isParsed || parsedArg.type === 'argument') {
-					await setArg(i++, isParsed ? parsedArg.input[0] : parsedArg);
+					await setArg(index++, isParsed ? parsedArg.input[0] : parsedArg);
 					continue;
 				}
 
@@ -353,10 +354,15 @@ export default class Parser {
 
 			// check for missing arguments and options if help is not specified
 			if (!this.argv.help) {
-				// note that `i` has been incrementing above for each known argument
-				for (const len = ctx.args.length; i < len; i++) {
-					if (ctx.args[i].required) {
-						throw E.MISSING_REQUIRED_ARGUMENT(`Missing required argument "${ctx.args[i].name}"`, { name: 'args', scope: 'Parser.parse', value: ctx.args[i] });
+				// note that `index` has been incrementing above for each known argument, however
+				// if the last index was a multi value argument, then it gobbled up all the args
+				// and any remaining args would be starved anyways, so skip the validation
+				const len = ctx.args.length;
+				if (index < len && !ctx.args[index].multiple) {
+					for (; index < len; index++) {
+						if (ctx.args[index].required) {
+							throw E.MISSING_REQUIRED_ARGUMENT(`Missing required argument "${ctx.args[index].name}"`, { name: 'args', scope: 'Parser.parse', value: ctx.args[index] });
+						}
 					}
 				}
 
