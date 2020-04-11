@@ -1,6 +1,6 @@
 {
   "name": "cli-kit",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "description": "Everything you need to create awesome command line interfaces",
   "main": "./dist/index.js",
   "author": "Chris Barber <chris@cb1inc.com> (https://github.com/cb1kenobi)",
@@ -47,7 +47,7 @@
     "node-pty-prebuilt-multiarch": "^0.9.0",
     "pkg-dir": "^4.2.0",
     "pluralize": "^8.0.0",
-    "semver": "^7.2.1",
+    "semver": "^7.2.2",
     "snooplogg": "^2.3.3",
     "source-map-support": "^0.5.16",
     "which": "^2.0.2",
