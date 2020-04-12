@@ -358,11 +358,12 @@ export default class Parser {
 				// if the last index was a multi value argument, then it gobbled up all the args
 				// and any remaining args would be starved anyways, so skip the validation
 				const len = ctx.args.length;
-				if (index < len && !ctx.args[index].multiple) {
-					for (; index < len; index++) {
-						if (ctx.args[index].required) {
-							throw E.MISSING_REQUIRED_ARGUMENT(`Missing required argument "${ctx.args[index].name}"`, { name: 'args', scope: 'Parser.parse', value: ctx.args[index] });
-						}
+				for (; index < len; index++) {
+					if (ctx.args[index].required && (!ctx.args[index].multiple || !this.argv[ctx.args[index].name].length)) {
+						throw E.MISSING_REQUIRED_ARGUMENT(
+							`Missing required argument "${ctx.args[index].name}"`,
+							{ name: 'args', scope: 'Parser.parse', value: ctx.args[index] }
+						);
 					}
 				}
 
