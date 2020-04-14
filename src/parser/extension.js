@@ -1,13 +1,15 @@
 import Command from './command';
 import debug from '../lib/debug';
 import E from '../lib/errors';
+import fs from 'fs';
 import helpCommand from '../commands/help';
+import _path from 'path';
 
 import { declareCLIKitClass, filename, findPackage, isExecutable } from '../lib/util';
-import { spawn } from 'node-pty-prebuilt-multiarch';
+import { spawn, spawnSync } from 'child_process';
 
 const { log, warn } = debug('cli-kit:extension');
-const { highlight, note } = debug.styles;
+const { highlight } = debug.styles;
 
 /**
  * Defines a namespace that wraps an external program or script.
@@ -166,7 +168,6 @@ export default class Extension extends Command {
 		if (exe) {
 			this.action = async ({ __argv, cmd, terminal }) => {
 				if (Array.isArray(this.exe)) {
-					const term = this.get('terminal');
 					const exe = this.exe[0];
 					const args = this.exe.slice(1);
 					const p = __argv.findIndex(arg => arg && arg.type === 'extension' && arg.extension === cmd);
@@ -177,8 +178,43 @@ export default class Extension extends Command {
 						}
 					}
 
-					log(`Running: ${highlight(`${this.exe} ${args.join(' ')}`)}`);
-					const child = spawn(exe, args);
+					let spawnFn = spawn;
+
+					// check if node-pty exists and that it's compiled for this version of Node.js
+					try {
+						let cwd = _path.dirname(require.resolve('node-pty-prebuilt-multiarch'));
+						for (let last; cwd !== last && !fs.existsSync(_path.join(cwd, 'package.json')); last = cwd, cwd = _path.dirname(cwd)) {}
+
+						const { status } = spawnSync(process.execPath, [
+							'-e',
+							'try { require(\'node-pty-prebuilt-multiarch\') } catch (e) { process.exit(e.message.includes(\'NODE_MODULE_VERSION\') ? 2 : 1) }'
+						], { cwd });
+
+						if (status !== 1) {
+							// node-pty exists!
+							if (status === 2) {
+								// but it's the wrong Node version, rebuild
+								warn(`node-pty built for different Node version, rebuilding: ${highlight(cwd)}`);
+								spawnSync('npm', [ 'rebuild' ], { cwd });
+							}
+							spawnFn = require('node-pty-prebuilt-multiarch').spawn;
+						}
+
+
+					} catch (e) {
+						// not installed
+					}
+
+					// spawn the process
+					log(`Running: ${highlight(`${exe} ${args.join(' ')}`)}`);
+					const child = spawnFn(exe, args);
+					if (spawnFn === spawn) {
+						// if we're using the built-in spawn, then we need to manually stream the
+						// stdio output instead of pipe() because we don't want the child process
+						// to close the terminal streams
+						child.stdout.on('data', data => terminal.stdout.write(data.toString()));
+						child.stderr.on('data', data => terminal.stderr.write(data.toString()));
+					}
 					child.on('data', terminal.stdout.write);
 					await new Promise(resolve => child.on('close', (code = 0) => resolve({ code })));
 				} else {

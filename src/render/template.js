@@ -3,7 +3,7 @@ import E from '../lib/errors';
 import fs from 'fs';
 
 const logger = debug('cli-kit:template:in');
-const { error, log } = logger;
+const { error /* , log */ } = logger;
 // const log2 = logger('out').log;
 
 /**

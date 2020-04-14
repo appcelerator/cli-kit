@@ -58,6 +58,16 @@ finds a command, it adds the command's context to a stack and re-parses any unid
 
 This allows you to create deep and dynamic hierarchies of commands, options, and arguments.
 
+## Pseudo-Terminal Support
+
+cli-kit extensions can be native binary executables or other Node.js scripts. When the extension is
+a native executable, then it is executed using Node's `spawn()`. However, Node's `spawn()` does not
+expose a TTY to the child process and thus things like prompting may not work or xterm.js support.
+
+To solve this, the executable needs to be run in a pseudo terminal. Add the
+[`node-pty-prebuilt-multiarch`][node-pty] dependency to your project and cli-kit will use it to
+spawn the native executable.
+
 ## API
 
 ### class `CLI`
@@ -290,3 +300,4 @@ MIT
 [david-dev-image]: https://img.shields.io/david/dev/cb1kenobi/cli-kit.svg
 [david-dev-url]: https://david-dm.org/cb1kenobi/cli-kit#info=devDependencies
 [xterm]: https://xtermjs.org/
+[node-pty]: https://www.npmjs.com/package/node-pty-prebuilt-multiarch

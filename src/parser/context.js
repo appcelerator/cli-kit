@@ -1,4 +1,3 @@
-import Argument from './argument';
 import ArgumentList from './argument-list';
 import CommandMap from './command-map';
 import debug from '../lib/debug';
@@ -149,7 +148,7 @@ export default class Context extends HookEmitter {
 			const shorts = new Set();
 			let j = scopes.length;
 			while (j--) {
-				for (const [ group, options ] of Object.entries(scopes[j].groups)) {
+				for (const options of Object.values(scopes[j].groups)) {
 					for (let i = 0; i < options.length; i++) {
 						const { long, short } = options[i];
 						let nuke = false;

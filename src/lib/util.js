@@ -195,7 +195,6 @@ export function wrap(str, width, indent) {
 			let i = 0;
 			let j = 0;
 			let k;
-			let next;
 
 			// remove escape characters
 			line = line.replace(/\u001b\[J/g, ''); // eslint-disable-line no-control-regex

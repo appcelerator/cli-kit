@@ -5,13 +5,6 @@ import { declareCLIKitClass } from '../lib/util';
 let Extension;
 
 /**
- * Matches
- *
- * @type {RegExp}
- */
-const jsRegExp = /^(.+)\.js$/;
-
-/**
  * Stores a map of `Extension` instances that have been registered for a context.
  *
  * @extends {Map}
