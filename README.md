@@ -7,7 +7,6 @@ A command line application toolkit for Node.js.
 [![Travis CI Build][travis-image]][travis-url]
 [![Appveyor CI Build][appveyor-image]][appveyor-url]
 [![Test Coverage][coveralls-image]][coveralls-url]
-[![Greenkeeper badge][greenkeeper-image]][greenkeeper-url]
 [![Deps][david-image]][david-url]
 [![Dev Deps][david-dev-image]][david-dev-url]
 
@@ -293,8 +292,6 @@ MIT
 [appveyor-url]: https://ci.appveyor.com/project/cb1kenobi/cli-kit
 [coveralls-image]: https://img.shields.io/coveralls/cb1kenobi/cli-kit/master.svg
 [coveralls-url]: https://coveralls.io/r/cb1kenobi/cli-kit
-[greenkeeper-image]: https://badges.greenkeeper.io/cb1kenobi/cli-kit.svg
-[greenkeeper-url]: https://greenkeeper.io/
 [david-image]: https://img.shields.io/david/cb1kenobi/cli-kit.svg
 [david-url]: https://david-dm.org/cb1kenobi/cli-kit
 [david-dev-image]: https://img.shields.io/david/dev/cb1kenobi/cli-kit.svg
