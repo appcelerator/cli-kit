@@ -2,7 +2,7 @@ if (error) {
 	>> ${style.alert(error.message)}
 	if (error.code === 'ERR_MISSING_REQUIRED_OPTION') {
 		for (const option of error.meta.required) {
-			>>|  ${option.format}  ${option.desc}
+			>>|  ${option.format}  ${option.desc || ''}
 		}
 	}
 	>>
@@ -11,7 +11,7 @@ if (error) {
 if (suggestions.length) {
 	>> Did you mean?
 	for (const s of suggestions) {
-		>>|  ${s.name}  ${s.desc ? ' - ' + s.desc : ''}
+		>>|  ${style.highlight(s.name)}${s.desc ? ' - ' + s.desc : ''}
 	}
 	>>
 }

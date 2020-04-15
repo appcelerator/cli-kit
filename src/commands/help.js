@@ -74,7 +74,7 @@ export default {
 				err = new Error(`Unknown command "${unknownCommand}"`);
 
 				const levenshtein = require('fast-levenshtein');
-				help.suggestions = Array.from(ctx.commands.values())
+				help.suggestions = help.commands.entries
 					.map(cmd => ({ name: cmd.name, desc: cmd.desc, dist: levenshtein.get(unknownCommand, cmd.name) }))
 					.filter(s => s.dist <= 2)
 					.sort((a, b) => {

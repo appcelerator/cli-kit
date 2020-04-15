@@ -364,6 +364,9 @@ export default class CLI extends Context {
 				opts.terminal.once('output', () => {
 					let banner = ctx.prop('banner');
 					if (banner && this.bannerEnabled) {
+						// once we've displayed the banner, no need to display it again
+						this.bannerEnabled = false;
+
 						banner = String(typeof banner === 'function' ? banner(opts) : banner).trim();
 						opts.terminal.stdout.write(`${banner}\n\n`);
 					}
