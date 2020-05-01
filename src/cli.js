@@ -179,7 +179,7 @@ export default class CLI extends Context {
 		if (this.version && !this.lookup.short.v && !this.lookup.long.version) {
 			this.option('-v, --version', {
 				callback: async ({ exitCode, opts, next }) => {
-					if (await next()) {
+					if (await next() === true) {
 						let version = this.version;
 						if (typeof version === 'function') {
 							version = await version(opts);
@@ -406,7 +406,17 @@ export default class CLI extends Context {
 					results.cmd = this.commands.get('help');
 					contexts.unshift(results.cmd);
 
-				} else if (!(cmd instanceof Command) && typeof this.defaultCommand === 'string') {
+				} else if (typeof this.defaultCommand === 'string' &&
+					(
+						// if we don't have a command, then do the default command
+						!(cmd instanceof Command) ||
+
+						// if we have a command, but the command does not have an action, then do the default command
+						(typeof cmd.action !== 'function' &&
+							(!(cmd.action instanceof Command) || typeof cmd.action.action !== 'function')
+						)
+					)
+				) {
 					log(`Selected default command: ${this.defaultCommand}`);
 					results.cmd = this.commands.get(this.defaultCommand);
 					if (!(results.cmd instanceof Command)) {

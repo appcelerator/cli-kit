@@ -43,7 +43,7 @@ exports.lint = parallel(lintSrc, lintTest);
 /*
  * build tasks
  */
-const build = series(parallel(cleanDist, cleanTest, lintSrc), function build() {
+const build = series(cleanDist, cleanTest, lintSrc, function build() {
 	fs.copySync(path.join(__dirname, 'package.json'), path.resolve(testCLIKitDir, 'package.json'));
 
 	return gulp
@@ -60,7 +60,7 @@ const build = series(parallel(cleanDist, cleanTest, lintSrc), function build() {
 });
 exports.build = exports.default = build;
 
-exports.docs = series(parallel(cleanDocs, lintSrc), async () => {
+exports.docs = series(cleanDocs, lintSrc, async () => {
 	const esdoc = require('esdoc').default;
 
 	esdoc.generate({
@@ -187,9 +187,19 @@ function resolveModule(name) {
 	}
 }
 
-exports.test             = series(parallel(lintTest, build),                async function test() { return runTests(); });
-exports['test-only']     = series(lintTest,                                 async function test() { return runTests(); });
-exports.coverage         = series(parallel(cleanCoverage, lintTest, build), async function test() { return runTests(true); });
-exports['coverage-only'] = series(parallel(cleanCoverage, lintTest),        async function test() { return runTests(true); });
+exports.test             = series(lintTest, build,                async function test() { return runTests(); });
+exports['test-only']     = series(lintTest,                       async function test() { return runTests(); });
+exports.coverage         = series(cleanCoverage, lintTest, build, async function test() { return runTests(true); });
+exports['coverage-only'] = series(cleanCoverage, lintTest,        async function test() { return runTests(true); });
+
+exports.watch = series(build, async function watch() {
+	return new Promise(resolve => {
+		const watcher = gulp.watch(`${process.cwd()}/src/**/*.js`, build);
+		process.on('SIGINT', () => {
+			watcher.close();
+			resolve();
+		});
+	});
+});
 
 process.on('uncaughtException', () => {});
