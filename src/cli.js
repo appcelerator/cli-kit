@@ -179,7 +179,7 @@ export default class CLI extends Context {
 		if (this.version && !this.lookup.short.v && !this.lookup.long.version) {
 			this.option('-v, --version', {
 				callback: async ({ exitCode, opts, next }) => {
-					if (await next()) {
+					if (await next() === true) {
 						let version = this.version;
 						if (typeof version === 'function') {
 							version = await version(opts);

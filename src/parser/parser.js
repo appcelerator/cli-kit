@@ -402,20 +402,6 @@ export default class Parser {
 		}
 
 		await this.parseArg(ctx, 0);
-
-		// if there are no more contexts to descend, check if the top-most context is actually
-		// a default subcommand
-		let cmd = this.contexts[0];
-		if (cmd === ctx && cmd.action instanceof Command) {
-			cmd = cmd.action;
-			cmd.link(ctx);
-			this.contexts.unshift(cmd);
-		}
-
-		if (cmd !== ctx) {
-			log('Descending into next context\'s parser');
-			await this.parseWithContext(cmd);
-		}
 	}
 
 	/**
@@ -428,7 +414,26 @@ export default class Parser {
 	 * @access private
 	 */
 	async parseArg(ctx, i, to) {
-		if (i >= (to !== undefined ? to : this.args.length)) {
+		if (to !== undefined && i >= to) {
+			// all caught up, return
+			return;
+		} else if (to === undefined && i >= this.args.length) {
+			let cmd = this.contexts[0];
+
+			// if there are no more contexts to descend, check if the top-most context is actually
+			// a default subcommand
+			if (cmd === ctx && cmd.action instanceof Command) {
+				cmd = cmd.action;
+				cmd.link(ctx);
+				this.contexts.unshift(cmd);
+			}
+
+			if (cmd !== ctx) {
+				log('Descending into next context\'s parser');
+				return this.parseWithContext(cmd);
+			}
+
+			log('End of the line');
 			return;
 		}
 
@@ -482,8 +487,7 @@ export default class Parser {
 
 							log(`Option ${highlight(option.format)} called next(), processing next arg`);
 
-							const { value } = this.args[i];
-
+							// check if the option callback added any new commands, options, or arguments
 							if (ctx.rev > rev) {
 								log(`Rev changed from ${highlight(rev)} to ${highlight(ctx.rev)}, reparsing ${highlight(0)} through ${highlight(i - 1)}`);
 								await this.parseArg(ctx, 0, i);
@@ -491,7 +495,7 @@ export default class Parser {
 
 							await this.parseArg(ctx, i + 1, to);
 
-							return value;
+							return this.args[i].value;
 						},
 						opts: this.opts,
 						option,
