@@ -904,10 +904,10 @@ browser-stdout@1.3.1:
   resolved "https://registry.yarnpkg.com/browser-stdout/-/browser-stdout-1.3.1.tgz#baa559ee14ced73452229bad7326467c61fabd60"
   integrity sha512-qhAVI1+Av2X7qelOfAIYwXONood6XlZE/fXaBSmW/T5SzLAmCgzi+eiWE7fUvbHaeNBQH13UftjpXxsfLkMpgw==
 
-bryt@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/bryt/-/bryt-1.0.1.tgz#1f349604894e7858ecdc29b1439ca9019d9beb2b"
-  integrity sha512-8q5DgK7LK0NP1I5HTlAjcJzrFFPedJqhaqAU8pr1afG/LKbUwhmoLTbxL0Xd0hCEiofXyQn3CwlcmwF4MKEDdg==
+bryt@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/bryt/-/bryt-1.0.2.tgz#041b58d0038aabb7517920e4d7ccad27f172cdd3"
+  integrity sha512-K/qt3xOAOU71q5Y2yJKOqleBwfeJ3J5tOn1pds9b/iQvQ/cq984oSzuv6iOXRxoTdZH3WGOazX1HXu0+sLU7VA==
   dependencies:
     brotli "^1.3.2"
 
@@ -1009,6 +1009,14 @@ chalk@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/chalk/-/chalk-3.0.0.tgz#3f73c2bf526591f574cc492c51e2456349f844e4"
   integrity sha512-4D3B6Wf41KOYRFdszmDqMCGq5VV/uMAB273JILmO+3jAlh8X4qDtdtgCR3fxtbLEMzSx22QdhnDcJvu2u1fVwg==
+  dependencies:
+    ansi-styles "^4.1.0"
+    supports-color "^7.1.0"
+
+chalk@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/chalk/-/chalk-4.0.0.tgz#6e98081ed2d17faab615eb52ac66ec1fe6209e72"
+  integrity sha512-N9oWFcegS0sFr9oh1oz2d7Npos6vNoWW9HvtCg5N1KRFpUhaAhvTv5Y58g880fZaEYSNm3qDz8SU1UrGvp+n7A==
   dependencies:
     ansi-styles "^4.1.0"
     supports-color "^7.1.0"
@@ -2803,12 +2811,12 @@ homedir-polyfill@^1.0.1:
   dependencies:
     parse-passwd "^1.0.0"
 
-hook-emitter@^4.0.2:
-  version "4.0.2"
-  resolved "https://registry.yarnpkg.com/hook-emitter/-/hook-emitter-4.0.2.tgz#eceea04f7c8d7f62c74c8f93bc06ed7e0dd82219"
-  integrity sha512-CDsWdWKid9xqovcHMhJCCH9Ekcf8TIXVgPVAcF0Q0t0Y6H01Qoh76h6ep7S2l4GZHBKX/BzKFyqZ9YoGcHSoTw==
+hook-emitter@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/hook-emitter/-/hook-emitter-4.1.0.tgz#c9e94556e361986e8b34f036e3d4d2ec59c25c64"
+  integrity sha512-6yGJ+q+TBFtvk++Y4xCzj6QhZCLgDmOi4D7wClNFowto96OMBjr3dDPAgOJQpjzJV/FeFDZPh8KEWbu6vbnTGw==
   dependencies:
-    source-map-support "^0.5.16"
+    source-map-support "^0.5.19"
 
 hosted-git-info@^2.1.4:
   version "2.8.8"
@@ -3880,12 +3888,12 @@ nan@^2.12.1:
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.14.1.tgz#d7be34dfa3105b91494c3147089315eff8874b01"
   integrity sha512-isWHgVjnFjh2x2yuJ/tj3JbwoHu3UC2dX5G/88Cm24yB6YopVgxvBObDY7n5xW6ExmFhJpSEQqFPvq9zaXc8Jw==
 
-nanobuffer@^1.1.6:
-  version "1.1.6"
-  resolved "https://registry.yarnpkg.com/nanobuffer/-/nanobuffer-1.1.6.tgz#892a06a76d2764e3169dee39d1e66d0309d19c59"
-  integrity sha512-NukLjjC2QX3JFku7D6oUfg/scZbkukwD4crDjdNTGmrRDrWmxIVIvHCRhtQlS2AQ6OrFPxpeC6/Tjpgi9oPmhw==
+nanobuffer@^1.1.7:
+  version "1.1.7"
+  resolved "https://registry.yarnpkg.com/nanobuffer/-/nanobuffer-1.1.7.tgz#d81b71411c1dc47af58c4c5f864cd2b0eb0bf404"
+  integrity sha512-LP1JYWQh4qFmpLaauE3mWuOjGJSxts+wnYeTlSb4zurdn8xIhJ906oyb7M7Ih6EiImaUskFdHfYx9gyijf1FLA==
   dependencies:
-    source-map-support "^0.5.16"
+    source-map-support "^0.5.19"
 
 nanomatch@^1.2.9:
   version "1.2.13"
@@ -5024,15 +5032,15 @@ snapdragon@^0.8.1:
     source-map-resolve "^0.5.0"
     use "^3.1.0"
 
-snooplogg@^2.3.3:
-  version "2.3.3"
-  resolved "https://registry.yarnpkg.com/snooplogg/-/snooplogg-2.3.3.tgz#5ff87d24e6dd4d59bb45f9c97372b45a64eaeb9d"
-  integrity sha512-ibqjTxEjn4axSxl+bX17h71ioK/MN8xHdaLFNAkyqHvywOI5xqT7blyUm6ALPDYzfVNIe6Itr+61odaVSEU20A==
+snooplogg@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/snooplogg/-/snooplogg-3.0.0.tgz#045f8fadc1ff3f66509861b1a47ec16ff25fbc3d"
+  integrity sha512-9tqC5IyBMpidwdsrugmZKBSZvM8gYU7nl3iaKWoV2ch5GbimzHGwUISyud4dx0cp8FeFsKK77zLV68xHnH628w==
   dependencies:
-    bryt "^1.0.1"
-    chalk "^3.0.0"
-    nanobuffer "^1.1.6"
-    source-map-support "^0.5.16"
+    bryt "^1.0.2"
+    chalk "^4.0.0"
+    nanobuffer "^1.1.7"
+    source-map-support "^0.5.19"
     supports-color "^7.1.0"
 
 source-map-resolve@^0.5.0, source-map-resolve@^0.5.2:
