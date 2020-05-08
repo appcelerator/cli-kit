@@ -293,6 +293,9 @@ export default class CLI extends Context {
 	 * @param {Object} [opts] - Various options.
 	 * @param {Object} [opts.data] - User-defined data to pass into the selected command.
 	 * @param {Function} [opts.exitCode] - A function that sets the exit code.
+	 * @param {Array.<String>} [params.parentContextNames] - An array of parent context names.
+	 * @param {Boolean} [opts.remoteHelp=false] - When `true`, don't execute the built-in help
+	 * command. This is set when a request comes from a remote connection.
 	 * @param {Boolean} [opts.serverMode=false] - When `true`, makes things such that `exec()`
 	 * doesn't change any global state by deep cloning the entire context tree every time the
 	 * arguments are parsed and changing the process state. Enabling this only makes sense if the
@@ -352,7 +355,7 @@ export default class CLI extends Context {
 			contexts:    undefined,
 			data:        opts.data,
 			exitCode:    opts.exitCode = code => code === undefined ? exitCode : (exitCode = code || 0),
-			help:        () => renderHelp(results.cmd),
+			help:        () => renderHelp(results.cmd, opts),
 			result:      undefined,
 			terminal:    opts.terminal,
 			unknown:     undefined,
@@ -365,7 +368,7 @@ export default class CLI extends Context {
 					let banner = ctx.prop('banner');
 					if (banner && this.bannerEnabled) {
 						// once we've displayed the banner, no need to display it again
-						this.bannerEnabled = false;
+						// this.bannerEnabled = false;
 
 						banner = String(typeof banner === 'function' ? banner(opts) : banner).trim();
 						opts.terminal.stdout.write(`${banner}\n\n`);
@@ -393,18 +396,25 @@ export default class CLI extends Context {
 
 			const cmd = contexts[0];
 
-			results._        = _;
-			results.argv     = argv;
-			results.cmd      = cmd;
-			results.contexts = contexts;
-			results.unknown  = unknown;
+			results._                  = _;
+			results.argv               = argv;
+			results.cmd                = cmd;
+			results.contexts           = contexts;
+			results.parentContextNames = opts.parentContextNames;
+			results.unknown            = unknown;
 
 			if (results.exitCode() === undefined) {
 				// determine the command to run
 				if (this.help && argv.help && (!(cmd instanceof Extension) || cmd.isCLIKitExtension)) {
-					log('Selected help command');
-					results.cmd = this.commands.get('help');
-					contexts.unshift(results.cmd);
+					// disable the built-in help if the help is to be rendered remotely
+					// note: the current `cmd` could be a command under an extension, so we call
+					// `cmd.prop()` to scan the command's parents to see if this command is
+					// actually remote
+					if (!cmd.prop('remoteHelp')) {
+						log('Selected help command');
+						results.cmd = this.commands.get('help');
+						contexts.unshift(results.cmd);
+					}
 
 				} else if (typeof this.defaultCommand === 'string' &&
 					(
@@ -415,7 +425,8 @@ export default class CLI extends Context {
 						(typeof cmd.action !== 'function' &&
 							(!(cmd.action instanceof Command) || typeof cmd.action.action !== 'function')
 						)
-					)
+					) &&
+					(!cmd.prop('remoteHelp') || this.defaultCommand !== 'help')
 				) {
 					log(`Selected default command: ${this.defaultCommand}`);
 					results.cmd = this.commands.get(this.defaultCommand);
@@ -568,6 +579,7 @@ export default class CLI extends Context {
 								env:       decodeHeader(headers['clikit-env']),
 								userAgent: headers['user-agent'] || undefined
 							},
+							parentContextNames: decodeHeader(headers['clikit-parents']),
 							serverMode: true,
 							terminal
 						});
@@ -598,13 +610,14 @@ export default class CLI extends Context {
 	async schema(opts = {}) {
 		const obj = {
 			args:       [],
+			banner:     String(typeof this.banner === 'function' ? (await this.banner(opts)) : this.banner).trim(),
 			commands:   {},
 			desc:       this.desc,
 			extensions: {},
 			name:       this.name,
 			options:    {},
 			title:      this.title,
-			version:    typeof this.version === 'function' ? (await this.version(opts)) : this.version
+			version:    String(typeof this.version === 'function' ? (await this.version(opts)) : this.version).trim()
 		};
 
 		for (const arg of this.args) {

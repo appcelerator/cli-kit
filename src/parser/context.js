@@ -125,10 +125,11 @@ export default class Context extends HookEmitter {
 	/**
 	 * Renders the help screen for this context including the parent contexts.
 	 *
+	 * @param {Object} [opts] - Various parameters.
 	 * @returns {Promise<Object>}
 	 * @access private
 	 */
-	generateHelp() {
+	generateHelp(opts = {}) {
 		return this.hook('generateHelp', results => {
 			const scopes = [];
 			let ctx = this;
@@ -210,7 +211,11 @@ export default class Context extends HookEmitter {
 			};
 
 			// set the usage line
-			const usage = results.contexts.slice();
+			const usage = [];
+			if (Array.isArray(opts.parentContextNames)) {
+				usage.push.apply(usage, opts.parentContextNames);
+			}
+			usage.push.apply(usage, results.contexts.slice());
 			results.commands.count && usage.push('<command>');
 			results.options.count && usage.push('[options]');
 			usage.push.apply(usage, results.arguments.entries.map(arg => {

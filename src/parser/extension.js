@@ -244,7 +244,7 @@ export default class Extension extends Command {
 			// if the export was a function, call it now to get its CLI definition
 			try {
 				if (typeof ctx === 'function') {
-					ctx = await ctx();
+					ctx = await ctx(this);
 				}
 
 				if (!ctx || typeof ctx !== 'object') {
@@ -257,14 +257,15 @@ export default class Extension extends Command {
 			this.isCLIKitExtension = true;
 
 			this.aliases        = ctx.aliases;
-			this.banner         = ctx.banner;
 			this.camelCase      = ctx.camelCase;
 			this.defaultCommand = ctx.defaultCommand;
+			this.remoteHelp     = ctx.remoteHelp;
 			this.treatUnknownOptionsAsArguments = ctx.treatUnknownOptionsAsArguments;
 			this.version        = ctx.version;
 
 			this.init({
 				args:       ctx.args,
+				banner:     ctx.banner,
 				commands:   ctx.commands,
 				desc:       this.desc || ctx.desc,
 				extensions: ctx.extensions,

@@ -7,15 +7,18 @@ const { log } = debug('cli-kit:help');
 const { highlight } = debug.styles;
 
 /**
- * Renders help for a specific context, and its parent contexts, to a string.
+ * Renders help for a specific context, and its parent contexts, to a string. This function is
+ * passed into the selected command's `action()` as a property called `help()` so that a command
+ * can render its own help output.
  *
  * @param {Context} ctx - The context to render help.
+ * @param {Object} [opts] - Various options to pass into `generateHelp()`.
  * @returns {String}
  */
-export async function renderHelp(ctx) {
+export async function renderHelp(ctx, opts) {
 	const file = ctx.get('helpTemplateFile', path.resolve(__dirname, '..', '..', 'templates', 'help.tpl'));
 	log(`Rendering help template: ${highlight(file)}`);
-	return renderFile(file, await ctx.generateHelp());
+	return renderFile(file, await ctx.generateHelp(opts));
 }
 
 /**
@@ -24,10 +27,23 @@ export async function renderHelp(ctx) {
  * @type {Object}
  */
 export default {
+	/**
+	 * Indicates this command is the built-in cli-kit help command so that if the CLI instance this
+	 * command belongs to gets added to another CLI instance, we don't copy it over.
+	 * @type {Boolean}
+	 */
 	clikitHelp: true,
 
+	/**
+	 * While this is a command, we don't want to show it since we already show the `--help` flag.
+	 * @type {Boolean}
+	 */
 	hidden: true,
 
+	/**
+	 * Output the help as JSON. Neato.
+	 * @type {Object}
+	 */
 	options: {
 		'--json': null
 	},
@@ -39,12 +55,13 @@ export default {
 	 * @param {Object} [params.argv] - The parsed options.
 	 * @param {Array.<Context>} params.contexts - The stack of contexts found during parsing.
 	 * @param {Error} [params.err] - An error object in the event an error occurred.
-	 * @param {Function} params.exit - A function that sets the exit code.
+	 * @param {Function} params.exitCode - A function that sets the exit code.
+	 * @param {Array.<String>} [params.parentContextNames] - An array of parent context names.
 	 * @param {String} [params.unknownCommand] - The name of the unknown command.
 	 * @param {Array.<Error>} [params.warnings] - A list of warnings (error objects).
 	 * @returns {Promise}
 	 */
-	async action({ _ = [], argv = {}, console, contexts, err, exitCode, warnings } = {}) {
+	async action({ _ = [], argv = {}, console, contexts, err, exitCode, parentContextNames, warnings } = {}) {
 		exitCode(+!!err); // 0=success, 1=error
 
 		const formatError = err => {
@@ -66,7 +83,7 @@ export default {
 			}
 
 			// generate the help object
-			const help = await ctx.generateHelp({ err, warnings });
+			const help = await ctx.generateHelp({ err, parentContextNames, warnings });
 
 			// check if we should error if passed an invalid command
 			if (!err && _.length && (ctx.get('errorIfUnknownCommand') || argv.help)) {
