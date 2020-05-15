@@ -120,7 +120,6 @@ describe('Extension', () => {
 				'',
 				'GLOBAL OPTIONS:',
 				'  -h,--help  Displays the help screen',
-				'',
 				''
 			].join('\n'));
 
@@ -147,7 +146,6 @@ describe('Extension', () => {
 				'',
 				'GLOBAL OPTIONS:',
 				'  -h,--help  Displays the help screen',
-				'',
 				''
 			].join('\n'));
 		});

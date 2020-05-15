@@ -317,14 +317,20 @@ export default class Parser {
 								}
 							}
 
-							// set the new value
 							if (value !== undefined) {
+								// set the parsed value (overwrites the default value)
 								this.argv[name] = value;
 							}
 
 							// argv[name] either has the new value or the default value, but either way we must re-check it
 							if (this.argv[name] !== undefined && (!option.multiple || this.argv[name].length)) {
 								required.delete(option);
+							}
+
+							// if argv[name] has no value and no default, at least set it to an empty string
+							// note: this must be done after the required check above
+							if (this.argv[name] === undefined && option.datatype === 'string') {
+								this.argv[name] = option.transform('');
 							}
 						}
 						break;

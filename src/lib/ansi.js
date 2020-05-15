@@ -1,3 +1,5 @@
+import { encode } from './util';
+
 export const bel = '\x07';
 
 export const clear = '\x1bc';
@@ -38,13 +40,21 @@ export const custom = {
 	echo(enabled) {
 		return `\x1b]666;Echo=${enabled ? 'on' : 'off'}\x07`;
 	},
+	exec(command) {
+		return `\x1b]666;Exec=${encode(command)}\x07`;
+	},
 	exit(code) {
 		return `\x1b]666;Exit=${code}\x07`;
+	},
+	keypress(key) {
+		return `\x1b]666;Keypress=${encode(key)}\x07`;
 	}
 };
 
 custom.echo.re = /^\x1b\]666;Echo=(\w+)\x07$/;
+custom.exec.re = /^\x1b\]666;Exec=(.+)\x07$/;
 custom.exit.re = /^\x1b\]666;Exit=(\d+)\x07$/;
+custom.keypress.re = /^\x1b\]666;Keypress=(.+)\x07$/;
 
 export const erase = {
 	down:    '\x1b[J',

@@ -14,8 +14,9 @@ import WebSocket, { Server as WebSocketServer } from 'ws';
 
 import * as ansi from './lib/ansi';
 
-import { declareCLIKitClass, decodeHeader, split } from './lib/util';
+import { declareCLIKitClass, decode, split } from './lib/util';
 import { EventEmitter } from 'events';
+import { generateKey } from './lib/keys';
 import { Writable } from 'stream';
 
 const { error, log, warn } = debug('cli-kit:cli');
@@ -256,7 +257,7 @@ export default class CLI extends Context {
 
 			const code = msg.match(ansi.custom.exit.re);
 			if (code) {
-				handle.emit('exit', code);
+				handle.emit('exit', code[1]);
 				return;
 			}
 
@@ -270,7 +271,7 @@ export default class CLI extends Context {
 			ws.on('open', () => {
 				term.on('keypress', (chunk, key) => {
 					// console.log('KEYPRESS', chunk === undefined ? chunk : Buffer.from(chunk), key, Buffer.from(key.sequence));
-					handle.send(key.sequence);
+					handle.send(ansi.custom.keypress(key));
 				});
 				term.on('resize', ({ rows, columns }) => {
 					handle.send(`${ansi.esc}${rows};${columns}R`);
@@ -519,6 +520,7 @@ export default class CLI extends Context {
 				const conn = this.connections[key] = {
 					buffer: '',
 					cols: 0,
+					current: null,
 					rows: 0
 				};
 
@@ -534,57 +536,121 @@ export default class CLI extends Context {
 					}
 				});
 
+				const exec = async (args, post) => {
+					const command = split(args);
+					log(`Running: ${highlight(command)}`);
+
+					conn.current = this.exec(command, {
+						data: {
+							cwd:       decode(headers['clikit-cwd']),
+							env:       decode(headers['clikit-env']),
+							userAgent: headers['user-agent'] || undefined
+						},
+						parentContextNames: decode(headers['clikit-parents']),
+						serverMode: true,
+						terminal
+					});
+
+					if (typeof post === 'function') {
+						post();
+					}
+
+					const { exitCode } = await conn.current;
+
+					conn.current = null;
+
+					const ec = exitCode() || 0;
+					log(`Command finished (code ${ec})`);
+					ws.send(ansi.custom.exit(ec));
+				};
+
 				ws.on('message', async msg => {
 					if (Buffer.isBuffer(msg)) {
 						msg = msg.toString();
 					}
 
-					let m = msg.match(ansi.cursor.position);
-					if (m) {
-						conn.rows = ~~m[1];
-						conn.cols = ~~m[2];
-						log(`Terminal set to ${conn.cols} x ${conn.rows}`);
-						return;
-					}
+					let m;
 
-					m = msg.match(ansi.custom.echo.re);
-					if (m) {
-						echo = m[1] !== 'off';
-						return;
-					}
+					try {
+						// check if we received a cursor message
+						m = msg.match(ansi.cursor.position);
+						if (m) {
+							conn.rows = ~~m[1];
+							conn.cols = ~~m[2];
+							log(`Terminal set to ${highlight(conn.cols)} x ${highlight(conn.rows)}`);
+							return;
+						}
 
-					// TODO: support cursor position
+						// check if we received an echo message
+						m = msg.match(ansi.custom.echo.re);
+						if (m) {
+							echo = m[1] !== 'off';
+							log(`Setting echo ${highlight(echo ? 'on' : 'off')}`);
+							return;
+						}
 
-					msg = msg.replace(/\r\n|\n|\r/g, '\r\n');
-					msg = msg.replace(/\x7f/g, '\b'); // normalize backspaces
-					conn.buffer += msg;
+						// check if we received an execute message
+						m = msg.match(ansi.custom.exec.re);
+						if (m) {
+							return await exec(decode(m[1]));
+						}
 
-					// replace backspaces
-					for (let p = 0; (p = conn.buffer.indexOf('\b', p)) !== -1;) {
-						conn.buffer = conn.buffer.substring(0, p - 1) + conn.buffer.substring(p + 1);
-					}
+						// check if we received a keypress message
+						m = msg.match(ansi.custom.keypress.re);
+						if (m) {
+							const key = decode(m[1]);
 
-					if (echo) {
-						ws.send(msg);
-					}
+							if (conn.current) {
+								terminal.stdin.emit('keypress', key.sequence, key);
+								return;
+							}
 
-					for (let p; (p = conn.buffer.indexOf('\r')) !== -1;) {
-						const argv = split(conn.buffer.substring(0, p));
-						conn.buffer = conn.buffer.substring(p + 2);
+							msg = key.sequence;
+							m = null;
+						}
 
-						log('Running:', argv);
-						const { exitCode } = await this.exec(argv, {
-							data: {
-								cwd:       decodeHeader(headers['clikit-cwd']),
-								env:       decodeHeader(headers['clikit-env']),
-								userAgent: headers['user-agent'] || undefined
-							},
-							parentContextNames: decodeHeader(headers['clikit-parents']),
-							serverMode: true,
-							terminal
-						});
+						// message is a raw message, so we have to clean it up, buffer, and manually dispatch
 
-						ws.send(ansi.custom.exit(exitCode() || 0));
+						msg = msg.replace(/\r\n|\n|\r/g, '\r\n'); // normalize new lines
+						msg = msg.replace(/\x7f/g, '\b'); // normalize backspaces
+
+						// TODO: support cursor position
+
+						// repeat back to the client what they just passed us
+						if (echo) {
+							ws.send(msg.replace(/[\b]/g, '\b \b'));
+						}
+
+						// if there's already an active command, treat message as an incoming key from stdin
+						if (conn.current) {
+							terminal.stdin.emit('keypress', msg, generateKey(msg));
+							return;
+						}
+
+						// no pending command, so we need to buffer and as soon as we see a line return,
+						// then we execute it and any remaining characters are treated as keypresses
+
+						conn.buffer += msg;
+
+						// replace backspaces
+						for (let p = 0; (p = conn.buffer.indexOf('\b', p)) !== -1;) {
+							conn.buffer = conn.buffer.substring(0, p - 1) + conn.buffer.substring(p + 1);
+						}
+
+						let p = conn.buffer.indexOf('\r');
+						if (p !== -1) {
+							const command = conn.buffer.substring(0, p);
+							const buffer = conn.buffer.substring(p + 2);
+							conn.buffer = '';
+
+							await exec(command, () => {
+								terminal.stdin.write(buffer);
+							});
+						}
+					} finally {
+						if (m) {
+							conn.buffer = '';
+						}
 					}
 				});
 

@@ -187,7 +187,6 @@ describe('CLI', () => {
 				'GLOBAL OPTIONS:',
 				'  --no-banner  Suppress the banner',
 				'  -h,--help  Displays the help screen',
-				'',
 				''
 			].join('\n'));
 		});
@@ -258,7 +257,6 @@ describe('CLI', () => {
 				'GLOBAL OPTIONS:',
 				'  --no-banner  Suppress the banner',
 				'  -h,--help  Displays the help screen',
-				'',
 				''
 			].join('\n'));
 		});

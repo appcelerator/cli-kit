@@ -1,6 +1,6 @@
 {
   "name": "cli-kit",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Everything you need to create awesome command line interfaces",
   "main": "./dist/index.js",
   "author": "Chris Barber <chris@cb1inc.com> (https://github.com/cb1kenobi)",
@@ -50,7 +50,7 @@
     "snooplogg": "^3.0.0",
     "source-map-support": "^0.5.19",
     "which": "^2.0.2",
-    "ws": "^7.2.5"
+    "ws": "^7.3.0"
   },
   "devDependencies": {
     "@babel/core": "^7.9.6",
@@ -68,7 +68,7 @@
     "esdoc-standard-plugin": "^1.0.0",
     "eslint": "^7.0.0",
     "eslint-plugin-chai-expect": "^2.1.0",
-    "eslint-plugin-mocha": "^6.3.0",
+    "eslint-plugin-mocha": "^7.0.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-security": "^1.4.0",
     "gulp": "^4.0.2",

@@ -40,7 +40,7 @@ describe('Server', () => {
 		}
 	});
 
-	it('should connect and run an extension', async function () {
+	it('should connect and run an extension by stdin', async function () {
 		this.timeout(4000);
 		this.slow(3000);
 
@@ -69,6 +69,40 @@ describe('Server', () => {
 			await new Promise(resolve => setTimeout(resolve, 500));
 
 			expect(out.toString().replace(/^\u001b7\u001b\[999C\u001b\[999B\u001b8/, '')).to.equal('foo there\r\nhi there\r\n');
+		} finally {
+			await new Promise(resolve => server.close(resolve));
+		}
+	});
+
+	it('should connect and run an extension by exec', async function () {
+		this.timeout(4000);
+		this.slow(3000);
+
+		const cli = new CLI({
+			help: true,
+			extensions: {
+				foo: 'echo "hi"'
+			}
+		});
+
+		const server = await cli.listen({ port: 1337 });
+		try {
+			const out = new WritableStream();
+			const stdin = new PassThrough();
+			const terminal = new Terminal({
+				stdout: out,
+				stderr: out,
+				stdin
+			});
+
+			const { send } = await CLI.connect('ws://localhost:1337', { terminal });
+			send(ansi.custom.echo(true));
+
+			send(ansi.custom.exec('foo there'));
+
+			await new Promise(resolve => setTimeout(resolve, 500));
+
+			expect(out.toString().replace(/^\u001b7\u001b\[999C\u001b\[999B\u001b8/, '')).to.equal('hi there\r\n');
 		} finally {
 			await new Promise(resolve => server.close(resolve));
 		}

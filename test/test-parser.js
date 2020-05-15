@@ -59,7 +59,8 @@ describe('Parser', () => {
 				}
 			});
 
-			await cli.exec([ '-b' ]);
+			const result = await cli.exec([ '-b' ]);
+			expect(result.argv).to.have.property('bar', '');
 		});
 
 		it('should default bool options without value', async () => {
@@ -86,14 +87,7 @@ describe('Parser', () => {
 				}
 			});
 
-			try {
-				await cli.exec([ '-b' ]);
-			} catch (e) {
-				expect(e.message).to.equal('Missing 1 required option:');
-				return;
-			}
-
-			throw new Error('Expected error');
+			await expect(cli.exec([ '-b' ])).to.eventually.be.rejectedWith(Error, 'Missing 1 required option:');
 		});
 
 		it('should not error if optional multiple option is not specified', async () => {
@@ -166,7 +160,6 @@ describe('Parser', () => {
 				'',
 				'GLOBAL OPTIONS:',
 				'  -h,--help  Displays the help screen',
-				'',
 				''
 			].join('\n'));
 		});

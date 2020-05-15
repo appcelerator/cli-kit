@@ -267,18 +267,29 @@ export default class Context extends HookEmitter {
 			throw E.INVALID_ARGUMENT('Expected parameters to be an object or Context', { name: 'params', scope: 'Context.init', value: params });
 		}
 
-		this.args       = new ArgumentList(),
-		this.banner     = params.banner;
-		this.commands   = new CommandMap(),
-		this.desc       = params.desc;
-		this.extensions = new ExtensionMap(),
-		this.lookup     = new Lookup(),
-		this.name       = params.name;
-		this.options    = new OptionMap();
-		this.parent     = params.parent;
-		this.rev        = 0;
-		this.title      = params.title || params.name;
+		this.args                           = new ArgumentList();
+		this.autoHideBanner                 = params.autoHideBanner;
+		this.banner                         = params.banner;
+		this.commands                       = new CommandMap();
+		this.defaultCommand                 = params.defaultCommand;
+		this.desc                           = params.desc;
+		this.errorIfUnknownCommand          = params.errorIfUnknownCommand;
+		this.extensions                     = new ExtensionMap();
+		this.helpExitCode                   = params.helpExitCode;
+		this.helpTemplateFile               = params.helpTemplateFile;
+		this.hideNoBannerOption             = params.hideNoBannerOption;
+		this.hideNoColorOption              = params.hideNoColorOption;
+		this.lookup                         = new Lookup();
+		this.name                           = params.name;
+		this.nodeVersion                    = params.nodeVersion;
+		this.options                        = new OptionMap();
+		this.parent                         = params.parent;
+		this.rev                            = 0;
+		this.showBannerForExternalCLIs      = params.showBannerForExternalCLIs;
+		this.showHelpOnError                = params.showHelpOnError;
+		this.title                          = params.title || params.name;
 		this.treatUnknownOptionsAsArguments = !!params.treatUnknownOptionsAsArguments;
+		this.version                        = params.version;
 
 		params.args       && this.argument(params.args);
 		params.commands   && this.command(params.commands);

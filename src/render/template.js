@@ -71,6 +71,7 @@ export function render(template, data) {
 
 		const fn = new Function('__data', '__print', body);
 		let output = '';
+
 		fn(data, (str, linebreaks, flags) => {
 			str = flags.includes('|') ? String(str).replace(/\s*$/g, '') : String(str).trim();
 			if (!flags.includes('?') || str) {
@@ -78,7 +79,7 @@ export function render(template, data) {
 			}
 		});
 
-		return output;
+		return output.replace(/(\r\n|\r|\n)+$/g, '\n');
 	} catch (e) {
 		error(e);
 		throw e;

@@ -61,7 +61,7 @@ describe('Template', () => {
 		describe('New lines', () => {
 			it('should add new lines at the end', () => {
 				const s = render('>>>foo');
-				expect(s).to.equal('foo\n\n');
+				expect(s).to.equal('foo\n');
 			});
 		});
 
