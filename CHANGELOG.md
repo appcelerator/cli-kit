@@ -4,6 +4,7 @@
    loops when JSON stringifying error objects during error the printing.
  * fix(cli): Improved server eval exit code handling.
  * fix(help): Highlight format for missing options.
+ * chore: Updated dev dependencies.
 
 # 1.1.0 (May 15, 2020)
 
