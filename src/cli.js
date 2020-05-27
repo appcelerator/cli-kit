@@ -464,7 +464,7 @@ export default class CLI extends Context {
 
 			return results;
 		} catch (err) {
-			error(err);
+			error(err.stack || err.message || err.toString());
 
 			await this.emit('banner');
 
@@ -555,13 +555,18 @@ export default class CLI extends Context {
 						post();
 					}
 
-					const { exitCode } = await conn.current;
+					let ec = 1;
 
-					conn.current = null;
-
-					const ec = exitCode() || 0;
-					log(`Command finished (code ${ec})`);
-					ws.send(ansi.custom.exit(ec));
+					try {
+						const { exitCode } = await conn.current;
+						ec = exitCode() || 0;
+					} catch (err) {
+						error(err);
+					} finally {
+						conn.current = null;
+						log(`Command finished (code ${ec})`);
+						ws.send(ansi.custom.exit(ec));
+					}
 				};
 
 				ws.on('message', async msg => {

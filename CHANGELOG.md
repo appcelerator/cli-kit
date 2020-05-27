@@ -1,3 +1,10 @@
+# 1.1.1 (May 26, 2020)
+
+ * fix(cli): On error, print the error stack instead of the error object to prevent infinite
+   loops when JSON stringifying error objects during error the printing.
+ * fix(cli): Improved server eval exit code handling.
+ * fix(help): Highlight format for missing options.
+
 # 1.1.0 (May 15, 2020)
 
  * feat(cli): Added new `keypress` ansi sequence for improved raw input handling in server mode.

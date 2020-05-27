@@ -2,7 +2,7 @@ if (error) {
 	>> ${style.alert(error.message)}
 	if (error.code === 'ERR_MISSING_REQUIRED_OPTION') {
 		for (const option of error.meta.required) {
-			>>|  ${option.format}  ${option.desc || ''}
+			>>|  ${style.highlight(option.format)}  ${option.desc || ''}
 		}
 	}
 	>>
