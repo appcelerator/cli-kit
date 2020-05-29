@@ -53,7 +53,7 @@ export default class CommandMap extends Map {
 
 		if (params !== undefined) {
 			if (typeof cmd !== 'string') {
-				throw E.INVALID_ARGUMENT('Command parameters are not allowed when cmd is a string', { name: 'cmd', scope: 'CommandMap.add', value: { cmd, params } });
+				throw E.INVALID_ARGUMENT('Command parameters are only allowed when command is a string', { name: 'cmd', scope: 'CommandMap.add', value: { cmd, params } });
 			} else if (typeof params === 'function') {
 				params = { action: params };
 			} else if (typeof params !== 'object') {
@@ -68,7 +68,7 @@ export default class CommandMap extends Map {
 			Array.isArray(cmd) ? cmd : [ cmd ];
 
 		for (let it of commands) {
-			let cmd = null;
+			cmd = null;
 
 			if (it instanceof Command) {
 				cmd = it;
@@ -101,8 +101,8 @@ export default class CommandMap extends Map {
 			} else if (it && typeof it === 'object') {
 				// ctor params or Command-like
 				if (it.clikit instanceof Set) {
-					if (it.clikit.has('Extension')) {
-						// extensions not supported here
+					if (it.clikit.has('Action') || it.clikit.has('Extension')) {
+						// actions and extensions not supported here
 						continue;
 					} else if (it.clikit.has('Command')) {
 						cmd = new Command(it.name, it);

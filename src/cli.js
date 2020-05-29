@@ -1,3 +1,4 @@
+import Action from './parser/action';
 import Command from './parser/command';
 import Context from './parser/context';
 import debug from './lib/debug';
@@ -419,8 +420,11 @@ export default class CLI extends Context {
 
 				} else if (typeof this.defaultCommand === 'string' &&
 					(
-						// if we don't have a command, then do the default command
-						!(cmd instanceof Command) ||
+						// if we don't have an action or command, then do the default command
+						(
+							!(cmd instanceof Action) &&
+							!(cmd instanceof Command)
+						) ||
 
 						// if we have a command, but the command does not have an action, then do the default command
 						(typeof cmd.action !== 'function' &&
@@ -429,12 +433,14 @@ export default class CLI extends Context {
 					) &&
 					(!cmd.prop('remoteHelp') || this.defaultCommand !== 'help')
 				) {
-					log(`Selected default command: ${this.defaultCommand}`);
+					log(`Selected default command: ${highlight(this.defaultCommand)}`);
 					results.cmd = this.commands.get(this.defaultCommand);
 					if (!(results.cmd instanceof Command)) {
 						throw E.DEFAULT_COMMAND_NOT_FOUND(`The default command "${this.defaultCommand}" was not found!`);
 					}
 					contexts.unshift(results.cmd);
+				} else if (cmd instanceof Action) {
+					results.cmd = contexts[1];
 				}
 
 				// handle the banner
@@ -444,7 +450,9 @@ export default class CLI extends Context {
 				showHelpOnError = results.cmd.prop('showHelpOnError');
 
 				// execute the command
-				if (results.cmd && typeof results.cmd.action === 'function') {
+				if (results.cmd instanceof Action) {
+					//
+				} else if (results.cmd && typeof results.cmd.action === 'function') {
 					log(`Executing command: ${highlight(results.cmd.name)}`);
 					results.result = await results.cmd.action(results);
 				} else if (results.cmd && results.cmd.action instanceof Command && typeof results.cmd.action.action === 'function') {
@@ -470,7 +478,7 @@ export default class CLI extends Context {
 
 			const help = this.help && showHelpOnError !== false && this.commands.get('help');
 			if (help) {
-				results.contexts = err.contexts || parser.contexts || [ this ];
+				results.contexts = (err.contexts || parser.contexts || [ this ]).filter(ctx => ctx instanceof Action);
 				results.err = err;
 				results.result = await help.action(results);
 				process.exitCode = results.exitCode();

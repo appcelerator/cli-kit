@@ -1,3 +1,4 @@
+import ActionMap from './action-map';
 import ArgumentList from './argument-list';
 import CommandMap from './command-map';
 import debug from '../lib/debug';
@@ -10,7 +11,7 @@ import OptionMap from './option-map';
 import { declareCLIKitClass } from '../lib/util';
 
 const { log } = debug('cli-kit:context');
-const { highlight } = debug.styles;
+const { highlight, note } = debug.styles;
 
 /**
  * Defines a context that contains commands, options, and args. Serves as the
@@ -61,6 +62,27 @@ export default class Context extends HookEmitter {
 	}
 
 	/**
+	 * Adds an action to this context.
+	 *
+	 * @param {Object|String|Action|ActiondMap|Array.<Object|String|Action>} format - An object
+	 * used for `Action` constructor params, a format string, an `Action` instance, or an array
+	 * of those types. May also be an `ActionMap` instance.
+	 * @param {Object} [params] - When `action` is the format string, then this is the options to
+	 * pass into the `Action` constructor.
+	 * @returns {Context}
+	 * @access public
+	 */
+	action(format, params) {
+		const actions = this.actions.add(format, params);
+		for (const act of actions) {
+			log(`Adding action: ${highlight(act.name)} ${note(`(${this.name})`)}`);
+			this.register(act);
+		}
+		this.rev++;
+		return this;
+	}
+
+	/**
 	 * Adds an argument to this context.
 	 *
 	 * @param {Object|String|Argument|ArgumentList|Array<Object|String|Argument>} arg - An object
@@ -92,7 +114,7 @@ export default class Context extends HookEmitter {
 	command(cmd, params) {
 		const cmds = this.commands.add(cmd, params);
 		for (const cmd of cmds) {
-			log(`Adding command: ${highlight(cmd.name)}`);
+			log(`Adding command: ${highlight(cmd.name)} ${note(`(${this.name})`)}`);
 			this.register(cmd);
 		}
 		this.rev++;
@@ -115,7 +137,7 @@ export default class Context extends HookEmitter {
 	extension(ext, name) {
 		const exts = this.extensions.add(ext, name);
 		for (const ext of exts) {
-			log(`Adding extension: ${highlight(ext.name)}`);
+			log(`Adding extension: ${highlight(ext.name)} ${note(`(${this.name})`)}`);
 			this.register(ext);
 		}
 		this.rev++;
@@ -177,6 +199,12 @@ export default class Context extends HookEmitter {
 
 			// set the description
 			results.desc = this.desc ? String(this.desc).trim().replace(/^\w/, c => c.toLocaleUpperCase()) : null;
+
+			// set the actions
+			results.actions = {
+				title: this.parent ? `${this.title} actions` : 'Actions',
+				...this.actions.generateHelp()
+			};
 
 			// set the commands
 			results.commands = {
@@ -267,6 +295,7 @@ export default class Context extends HookEmitter {
 			throw E.INVALID_ARGUMENT('Expected parameters to be an object or Context', { name: 'params', scope: 'Context.init', value: params });
 		}
 
+		this.actions                        = new ActionMap();
 		this.args                           = new ArgumentList();
 		this.autoHideBanner                 = params.autoHideBanner;
 		this.banner                         = params.banner;
@@ -291,6 +320,7 @@ export default class Context extends HookEmitter {
 		this.treatUnknownOptionsAsArguments = !!params.treatUnknownOptionsAsArguments;
 		this.version                        = params.version;
 
+		params.actions    && this.action(params.actions);
 		params.args       && this.argument(params.args);
 		params.commands   && this.command(params.commands);
 		params.extensions && this.extension(params.extensions);
@@ -376,7 +406,14 @@ export default class Context extends HookEmitter {
 	 * @access private
 	 */
 	register(it) {
-		const dest = it.clikit.has('Extension') ? 'extensions' : 'commands';
+		let dest;
+		if (it.clikit.has('Extension')) {
+			dest = 'extensions';
+		} else if (it.clikit.has('Command')) {
+			dest = 'commands';
+		} else if (it.clikit.has('Action')) {
+			dest = 'actions';
+		}
 		it.parent = this;
 		this.lookup[dest][it.name] = it;
 

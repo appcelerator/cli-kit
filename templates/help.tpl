@@ -32,6 +32,14 @@ if (usage) {
 	>>> ${style.heading(usage.title)}: ${style.highlight(usage.text)}
 }
 
+if (actions.count) {
+	>> ${style.heading(actions.title)}:
+	for (const action of actions.entries) {
+		>>|  ${style.highlight(action.format)}  ${action.desc || ''}
+	}
+	>>
+}
+
 if (commands.count) {
 	>> ${style.heading(commands.title)}:
 	for (const cmd of commands.entries) {

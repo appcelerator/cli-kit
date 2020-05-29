@@ -1,3 +1,8 @@
+# 1.2.0
+
+ * feat: Added support for "actions".
+ * chore: Updated dev dependencies.
+
 # 1.1.1 (May 26, 2020)
 
  * fix(cli): On error, print the error stack instead of the error object to prevent infinite

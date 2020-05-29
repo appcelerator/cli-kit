@@ -7,6 +7,13 @@ const { highlight, note } = debug.styles;
  */
 export default class Lookup {
 	/**
+	 * A map of action names and aliases to action instances.
+	 *
+	 * @type {Object}
+	 */
+	actions = {};
+
+	/**
 	 * A map of command names and aliases to command instances.
 	 *
 	 * @type {Object}
@@ -51,6 +58,13 @@ export default class Lookup {
 	 */
 	toString() {
 		const lines = [];
+
+		if (Object.keys(this.actions).length) {
+			lines.push(note('  Actions:'));
+			for (const name of Object.keys(this.actions)) {
+				lines.push(`    ${highlight(name)}`);
+			}
+		}
 
 		if (Object.keys(this.commands).length) {
 			lines.push(note('  Commands:'));

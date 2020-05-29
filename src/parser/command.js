@@ -46,7 +46,7 @@ export default class Command extends Context {
 	 */
 	constructor(name, params = {}) {
 		if (!name || typeof name !== 'string') {
-			throw E.INVALID_ARGUMENT('Expected name to be a non-empty string', { name: 'name', scope: 'Command.constructor', value: name });
+			throw E.INVALID_ARGUMENT('Expected command name to be a non-empty string', { name: 'name', scope: 'Command.constructor', value: name });
 		}
 
 		if (typeof params === 'function') {
@@ -155,7 +155,9 @@ export default class Command extends Context {
 			if (typeof value === 'object' && !Array.isArray(value)) {
 				Object.assign(result, value);
 			} else {
-				if (!Array.isArray(value)) {
+				if (value instanceof Set) {
+					value = Array.from(value);
+				} else if (!Array.isArray(value)) {
 					value = [ value ];
 				}
 
