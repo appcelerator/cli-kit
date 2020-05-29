@@ -1,7 +1,7 @@
 # 1.2.0
 
- * feat: Added syntactic sugar for declaring commands with aliases and arguments.
- * feat: Added command aliases to the help screen.
+ * feat(commands): Added syntactic sugar for declaring commands with aliases and arguments.
+ * feat(help): Added command aliases to the help screen.
  * chore: Updated dev dependencies.
 
 # 1.1.1 (May 26, 2020)
