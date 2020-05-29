@@ -5,8 +5,8 @@ import helpCommand from '../commands/help';
 
 import { declareCLIKitClass } from '../lib/util';
 
-const formatRegExp = /^([@! ]*\w+(?:\s*,\s*[@! ]*\w+)*)((?:\s*[<[]\w+[>\]])*)?$/;
-const nameRegExp = /^([@! ]*)(\w+)\s*$/;
+const formatRegExp = /^([@! ]*[\w-_]+(?:\s*,\s*[@! ]*[\w-_]+)*)((?:\s*[<[][\w-_]+[>\]])*)?$/;
+const nameRegExp = /^([@! ]*)([\w-_]+)\s*$/;
 
 /**
  * Defines a command and its options and arguments.

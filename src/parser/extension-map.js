@@ -111,16 +111,29 @@ export default class ExtensionMap extends Map {
 	generateHelp() {
 		const entries = [];
 
-		for (const cmd of Array.from(this.keys()).sort()) {
+		for (const cmd of Array.from(this.keys())) {
 			const { aliases, clikitHelp, desc, hidden, name } = this.get(cmd);
 			if (!hidden && !clikitHelp) {
+				const labels = [ name ];
+				for (const [ alias, display ] of Object.entries(aliases)) {
+					if (display === 'visible') {
+						labels.push(alias);
+					}
+				}
+				labels.sort((a, b) => {
+					return a.length === b.length ? a.localeCompare(b) : a.length - b.length;
+				});
+
 				entries.push({
 					name,
 					desc,
+					label: labels.join(', '),
 					aliases: aliases ? Object.keys(aliases) : null
 				});
 			}
 		}
+
+		entries.sort((a, b) => a.label.localeCompare(b.label));
 
 		return {
 			count: entries.length,

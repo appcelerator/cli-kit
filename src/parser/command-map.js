@@ -155,7 +155,7 @@ export default class CommandMap extends Map {
 	generateHelp() {
 		const entries = [];
 
-		for (const cmd of Array.from(this.keys()).sort()) {
+		for (const cmd of Array.from(this.keys())) {
 			const { aliases, clikitHelp, desc, hidden, name } = this.get(cmd);
 			if (!hidden && !clikitHelp) {
 				const labels = [ name ];
