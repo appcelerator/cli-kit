@@ -1,4 +1,3 @@
-import Action from './parser/action';
 import Command from './parser/command';
 import Context from './parser/context';
 import debug from './lib/debug';
@@ -346,6 +345,9 @@ export default class CLI extends Context {
 		let exitCode = undefined;
 		const parser = new Parser(opts);
 		const __argv = _argv.slice(0);
+
+		opts.exitCode = code => code === undefined ? exitCode : (exitCode = code || 0);
+
 		const results = {
 			_:           undefined,
 			_argv,       // the original unparsed arguments
@@ -356,9 +358,10 @@ export default class CLI extends Context {
 			console:     opts.terminal.console,
 			contexts:    undefined,
 			data:        opts.data,
-			exitCode:    opts.exitCode = code => code === undefined ? exitCode : (exitCode = code || 0),
+			exitCode:    opts.exitCode,
 			help:        () => renderHelp(results.cmd, opts),
 			result:      undefined,
+			setExitCode: opts.exitCode,
 			terminal:    opts.terminal,
 			unknown:     undefined,
 			warnings:    this.warnings
@@ -421,12 +424,10 @@ export default class CLI extends Context {
 				} else if (typeof this.defaultCommand === 'string' &&
 					(
 						// if we don't have an action or command, then do the default command
-						(
-							!(cmd instanceof Action) &&
-							!(cmd instanceof Command)
-						) ||
+						!(cmd instanceof Command) ||
 
-						// if we have a command, but the command does not have an action, then do the default command
+						// if we have a command, but the command does not have an action, then do
+						// the default command
 						(typeof cmd.action !== 'function' &&
 							(!(cmd.action instanceof Command) || typeof cmd.action.action !== 'function')
 						)
@@ -439,8 +440,6 @@ export default class CLI extends Context {
 						throw E.DEFAULT_COMMAND_NOT_FOUND(`The default command "${this.defaultCommand}" was not found!`);
 					}
 					contexts.unshift(results.cmd);
-				} else if (cmd instanceof Action) {
-					results.cmd = contexts[1];
 				}
 
 				// handle the banner
@@ -450,9 +449,7 @@ export default class CLI extends Context {
 				showHelpOnError = results.cmd.prop('showHelpOnError');
 
 				// execute the command
-				if (results.cmd instanceof Action) {
-					//
-				} else if (results.cmd && typeof results.cmd.action === 'function') {
+				if (results.cmd && typeof results.cmd.action === 'function') {
 					log(`Executing command: ${highlight(results.cmd.name)}`);
 					results.result = await results.cmd.action(results);
 				} else if (results.cmd && results.cmd.action instanceof Command && typeof results.cmd.action.action === 'function') {
@@ -478,7 +475,7 @@ export default class CLI extends Context {
 
 			const help = this.help && showHelpOnError !== false && this.commands.get('help');
 			if (help) {
-				results.contexts = (err.contexts || parser.contexts || [ this ]).filter(ctx => ctx instanceof Action);
+				results.contexts = err.contexts || parser.contexts || [ this ];
 				results.err = err;
 				results.result = await help.action(results);
 				process.exitCode = results.exitCode();

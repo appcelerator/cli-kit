@@ -282,12 +282,6 @@ export default class Parser {
 				}
 
 				switch (parsedArg.type) {
-					case 'action':
-						const { action } = parsedArg;
-						name = action.camelCase || ctx.get('camelCase') ? camelCase(action.name) : action.name;
-						this.argv.action = parsedArg.input[0];
-						break;
-
 					case 'argument':
 						// already handled above
 						break;
@@ -470,7 +464,7 @@ export default class Parser {
 				this.args[i] = arg;
 			}
 
-			if ((type === 'action' || type === 'command' || type === 'extension') && sameContext) {
+			if ((type === 'command' || type === 'extension') && sameContext) {
 				// link the context hook emitters
 				arg[type].link(ctx);
 
@@ -672,19 +666,9 @@ export default class Parser {
 		}
 
 		// check if the argument is a command
-		if (type === 'action' || type === 'command' || type === 'extension') {
+		if (type === 'command' || type === 'extension') {
 			log(`Skipping known ${type}: ${highlight(arg[type].name)}`);
 			return;
-		}
-
-		// check if we have an action
-		const action = lookup.actions[subject];
-		if (action) {
-			log(`Found action: ${highlight(subject)}`);
-			return new ParsedArgument('action', {
-				action,
-				input: [ subject ]
-			});
 		}
 
 		// check if command and make sure we haven't already added a command this round

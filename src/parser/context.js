@@ -1,4 +1,3 @@
-import ActionMap from './action-map';
 import ArgumentList from './argument-list';
 import CommandMap from './command-map';
 import debug from '../lib/debug';
@@ -59,27 +58,6 @@ export default class Context extends HookEmitter {
 		super();
 		declareCLIKitClass(this, 'Context');
 		this.init(params);
-	}
-
-	/**
-	 * Adds an action to this context.
-	 *
-	 * @param {Object|String|Action|ActiondMap|Array.<Object|String|Action>} format - An object
-	 * used for `Action` constructor params, a format string, an `Action` instance, or an array
-	 * of those types. May also be an `ActionMap` instance.
-	 * @param {Object} [params] - When `action` is the format string, then this is the options to
-	 * pass into the `Action` constructor.
-	 * @returns {Context}
-	 * @access public
-	 */
-	action(format, params) {
-		const actions = this.actions.add(format, params);
-		for (const act of actions) {
-			log(`Adding action: ${highlight(act.name)} ${note(`(${this.name})`)}`);
-			this.register(act);
-		}
-		this.rev++;
-		return this;
 	}
 
 	/**
@@ -200,12 +178,6 @@ export default class Context extends HookEmitter {
 			// set the description
 			results.desc = this.desc ? String(this.desc).trim().replace(/^\w/, c => c.toLocaleUpperCase()) : null;
 
-			// set the actions
-			results.actions = {
-				title: this.parent ? `${this.title} actions` : 'Actions',
-				...this.actions.generateHelp()
-			};
-
 			// set the commands
 			results.commands = {
 				title: this.parent ? `${this.title} commands` : 'Commands',
@@ -214,7 +186,7 @@ export default class Context extends HookEmitter {
 
 			const ext = this.extensions.generateHelp();
 			results.commands.count += ext.count;
-			results.commands.entries.push.apply(results.commands.entries, ext.entries);
+			results.commands.entries.push(...ext.entries);
 
 			// update the default command
 			if (this.defaultCommand) {
@@ -295,7 +267,6 @@ export default class Context extends HookEmitter {
 			throw E.INVALID_ARGUMENT('Expected parameters to be an object or Context', { name: 'params', scope: 'Context.init', value: params });
 		}
 
-		this.actions                        = new ActionMap();
 		this.args                           = new ArgumentList();
 		this.autoHideBanner                 = params.autoHideBanner;
 		this.banner                         = params.banner;
@@ -320,7 +291,6 @@ export default class Context extends HookEmitter {
 		this.treatUnknownOptionsAsArguments = !!params.treatUnknownOptionsAsArguments;
 		this.version                        = params.version;
 
-		params.actions    && this.action(params.actions);
 		params.args       && this.argument(params.args);
 		params.commands   && this.command(params.commands);
 		params.extensions && this.extension(params.extensions);
@@ -411,9 +381,12 @@ export default class Context extends HookEmitter {
 			dest = 'extensions';
 		} else if (it.clikit.has('Command')) {
 			dest = 'commands';
-		} else if (it.clikit.has('Action')) {
-			dest = 'actions';
 		}
+
+		if (!dest) {
+			return;
+		}
+
 		it.parent = this;
 		this.lookup[dest][it.name] = it;
 

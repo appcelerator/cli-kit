@@ -101,7 +101,7 @@ export default class CommandMap extends Map {
 			} else if (it && typeof it === 'object') {
 				// ctor params or Command-like
 				if (it.clikit instanceof Set) {
-					if (it.clikit.has('Action') || it.clikit.has('Extension')) {
+					if (it.clikit.has('Extension')) {
 						// actions and extensions not supported here
 						continue;
 					} else if (it.clikit.has('Command')) {
@@ -158,13 +158,26 @@ export default class CommandMap extends Map {
 		for (const cmd of Array.from(this.keys()).sort()) {
 			const { aliases, clikitHelp, desc, hidden, name } = this.get(cmd);
 			if (!hidden && !clikitHelp) {
+				const labels = [ name ];
+				for (const [ alias, display ] of Object.entries(aliases)) {
+					if (display === 'visible') {
+						labels.push(alias);
+					}
+				}
+				labels.sort((a, b) => {
+					return a.length === b.length ? a.localeCompare(b) : a.length - b.length;
+				});
+
 				entries.push({
 					name,
 					desc,
+					label: labels.join(', '),
 					aliases: aliases ? Object.keys(aliases) : null
 				});
 			}
 		}
+
+		entries.sort((a, b) => a.label.localeCompare(b.label));
 
 		return {
 			count: entries.length,
