@@ -601,7 +601,7 @@ export default class Parser {
 
 			if (!option && type) {
 				// not an option in this context, leave it alone
-				log(`Skipping ${type === 'unknown' ? 'un' : ''}known option: ${highlight(arg.name)}`);
+				log(`Skipping ${type === 'unknown' ? 'un' : ''}known option: ${highlight(arg.getName())}`);
 				return;
 			}
 

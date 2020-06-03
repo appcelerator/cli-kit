@@ -341,7 +341,6 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected terminal to be a Terminal instance', { name: 'opts.terminal', scope: 'CLI.exec', value: opts.terminal });
 		}
 
-		let { showHelpOnError } = this;
 		let exitCode = undefined;
 		const parser = new Parser(opts);
 		const __argv = _argv.slice(0);
@@ -445,9 +444,6 @@ export default class CLI extends Context {
 				// handle the banner
 				await this.emit('banner', { argv, ctx: results.cmd });
 
-				// allow command to override showHelpOnError if not set already
-				showHelpOnError = results.cmd.prop('showHelpOnError');
-
 				// execute the command
 				if (results.cmd && typeof results.cmd.action === 'function') {
 					log(`Executing command: ${highlight(results.cmd.name)}`);
@@ -473,7 +469,7 @@ export default class CLI extends Context {
 
 			await this.emit('banner');
 
-			const help = this.help && showHelpOnError !== false && this.commands.get('help');
+			const help = this.help && this.prop('showHelpOnError') !== false && this.commands.get('help');
 			if (help) {
 				results.contexts = err.contexts || parser.contexts || [ this ];
 				results.err = err;
