@@ -190,7 +190,7 @@ export default class CLI extends Context {
 						return false;
 					}
 				},
-				desc: 'outputs the version'
+				desc: 'Outputs the version'
 			});
 		}
 
