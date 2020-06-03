@@ -1,7 +1,10 @@
-# 1.2.0 (May 29, 2020)
+# 1.2.0
 
  * feat(commands): Added syntactic sugar for declaring commands with aliases and arguments.
  * feat(help): Added command aliases to the help screen.
+ * fix(cli): Dynamically resolve 'showHelpOnError'.
+ * fix(parser): Correctly resolve the parsed argument name in the debug logging.
+ * style(cli): Capitalized `--version` description.
  * chore: Updated dev dependencies.
 
 # 1.1.1 (May 26, 2020)
