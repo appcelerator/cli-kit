@@ -275,6 +275,7 @@ export default class Parser {
 			for (const parsedArg of this.args) {
 				let name;
 				const isParsed = parsedArg instanceof ParsedArgument;
+
 				if (!isParsed || parsedArg.type === 'argument') {
 					await setArg(index++, isParsed ? parsedArg.input[0] : parsedArg);
 					continue;
@@ -423,7 +424,9 @@ export default class Parser {
 		if (to !== undefined && i >= to) {
 			// all caught up, return
 			return;
-		} else if (to === undefined && i >= this.args.length) {
+		}
+
+		if (to === undefined && i >= this.args.length) {
 			let cmd = this.contexts[0];
 
 			// if there are no more contexts to descend, check if the top-most context is actually
@@ -454,26 +457,21 @@ export default class Parser {
 		}
 
 		if (arg) {
-			if ((arg.type !== 'command' && arg.type !== 'extension') || this.contexts[0] === ctx) {
+			const { type } = arg;
+			const sameContext = this.contexts[0] === ctx;
+
+			if ((type !== 'command' && type !== 'extension') || sameContext) {
 				this.args[i] = arg;
 			}
 
-			// if we found a command and this context is not
-			if (arg.type === 'command' && this.contexts[0] === ctx) {
+			if ((type === 'command' || type === 'extension') && sameContext) {
 				// link the context hook emitters
-				arg.command.link(ctx);
+				arg[type].link(ctx);
 
 				// add the context to the stack
-				this.contexts.unshift(arg.command);
+				this.contexts.unshift(arg[type]);
 
-			} else if (arg.type === 'extension' && this.contexts[0] === ctx) {
-				// link the context hook emitters
-				arg.extension.link(ctx);
-
-				// add the context to the stack
-				this.contexts.unshift(arg.extension);
-
-			} else if (arg.type === 'option' && typeof arg.option.callback === 'function' && !arg.option.multiple) {
+			} else if (type === 'option' && typeof arg.option.callback === 'function' && !arg.option.multiple) {
 				const { option } = arg;
 				log(`Firing option ${highlight(option.format)} callback ${note(`(${option.parent.name})`)}`);
 				let fired = false;
@@ -558,6 +556,7 @@ export default class Parser {
 		const arg = args[i];
 		const isParsed = arg instanceof ParsedArgument;
 		const type = isParsed && arg.type;
+
 		log(`Processing argument [${i}]: ${highlight(arg)}`);
 
 		// check if the argument is a the `--` extra arguments sequence
@@ -602,7 +601,7 @@ export default class Parser {
 
 			if (!option && type) {
 				// not an option in this context, leave it alone
-				log(`Skipping ${type === 'unknown' ? 'un' : ''}known option: ${highlight(arg.name)}`);
+				log(`Skipping ${type === 'unknown' ? 'un' : ''}known option: ${highlight(arg.getName())}`);
 				return;
 			}
 
@@ -680,16 +679,16 @@ export default class Parser {
 				command: cmd,
 				input: [ arg ]
 			});
-		} else {
-			const ext = lookup.extensions[subject];
-			if (ext) {
-				await ext.load();
-				log(`Found extension: ${highlight(ext.name)}`);
-				return new ParsedArgument('extension', {
-					extension: ext,
-					input: [ arg ]
-				});
-			}
+		}
+
+		const ext = lookup.extensions[subject];
+		if (ext) {
+			await ext.load();
+			log(`Found extension: ${highlight(ext.name)}`);
+			return new ParsedArgument('extension', {
+				extension: ext,
+				input: [ arg ]
+			});
 		}
 
 		if (!type) {

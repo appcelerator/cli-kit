@@ -5,6 +5,9 @@ import helpCommand from '../commands/help';
 
 import { declareCLIKitClass } from '../lib/util';
 
+const formatRegExp = /^([@! ]*[\w-_]+(?:\s*,\s*[@! ]*[\w-_]+)*)((?:\s*[<[][\w-_]+[>\]])*)?$/;
+const nameRegExp = /^([@! ]*)([\w-_]+)\s*$/;
+
 /**
  * Defines a command and its options and arguments.
  *
@@ -26,7 +29,8 @@ export default class Command extends Context {
 	 * @param {Object|CLI|Command|Context|Function} [params] - Command parameters or an action
 	 * function.
 	 * @param {Function|Command} [params.action] - A function to call when the command is found.
-	 * @param {Array.<String>|String} [params.aliases] - An array of command aliases.
+	 * @param {Set.<String>|Array.<String>|String|Object} [params.aliases] - An array of command
+	 * aliases.
 	 * @param {String|Function} [params.defaultCommand] - The default command to execute when this
 	 * command has no `action`. When value is a `String`, it looks up the subcommand and calls it.
 	 * If value is a `Function`, it simply invokes it.
@@ -46,11 +50,39 @@ export default class Command extends Context {
 	 */
 	constructor(name, params = {}) {
 		if (!name || typeof name !== 'string') {
-			throw E.INVALID_ARGUMENT('Expected name to be a non-empty string', { name: 'name', scope: 'Command.constructor', value: name });
+			throw E.INVALID_ARGUMENT('Expected command name to be a non-empty string', { name: 'name', scope: 'Command.constructor', value: name });
+		}
+
+		// parse the name and create the aliases and args: "ls, list <bar>"
+		const format = name.trim();
+		const m = format.match(formatRegExp);
+		if (!m || !m[1]) {
+			throw E.INVALID_ARGUMENT('Expected command name to be a non-empty string', { name: 'name', scope: 'Command.constructor', value: name });
 		}
 
 		if (typeof params === 'function') {
 			params = { action: params };
+		}
+
+		// reset the name
+		name = null;
+
+		// get the aliases from the format and find the command name
+		const aliases = new Set();
+		for (let alias of m[1].split(',')) {
+			const n = alias.match(nameRegExp);
+			if (!n) {
+				throw E.INVALID_ARGUMENT('Invalid command alias format', { name: 'alias', scope: 'Command.constructor', value: alias });
+			}
+			if (!n[1].includes('@') && !name) {
+				name = n[2];
+			} else {
+				aliases.add(n[1].includes('!') ? `!${n[2]}` : n[2]);
+			}
+		}
+
+		if (!name) {
+			throw  E.INVALID_ARGUMENT('Expected command name format to contain at least one non-aliased name', { name: 'format', scope: 'Command.constructor', value: format });
 		}
 
 		if (!params || (typeof params !== 'object' || Array.isArray(params))) {
@@ -121,6 +153,11 @@ export default class Command extends Context {
 
 		params.name = name;
 
+		const args = m[2] && m[2].trim().split(/\s+/);
+		if (args?.length) {
+			params.args = params.args ? [ ...args, ...params.args ] : args;
+		}
+
 		super(params);
 		declareCLIKitClass(this, 'Command');
 
@@ -132,7 +169,8 @@ export default class Command extends Context {
 			this.action = this.lookup.commands[params.defaultCommand];
 		}
 
-		this.aliases        = params.aliases;
+		// mix aliases Set with params.aliases
+		this._aliases       = this.createAliases(aliases, params.aliases);
 		this.clikitHelp     = params.clikitHelp;
 		this.help           = help;
 		this.defaultCommand = params.defaultCommand;
@@ -150,34 +188,56 @@ export default class Command extends Context {
 	}
 
 	set aliases(value) {
+		this._aliases = this.createAliases(value);
+	}
+
+	/**
+	 * Merges multiple alias constructs into a single alias object.
+	 *
+	 * @param {...Set.<String>|Array.<String>|String|Object} values - One or more alias values.
+	 * @returns {Object}
+	 * @access private
+	 */
+	createAliases(...values) {
 		const result = {};
-		if (value) {
+
+		for (let value of values) {
+			if (!value) {
+				continue;
+			}
+
+			if (value instanceof Set) {
+				value = Array.from(value);
+			}
+
 			if (typeof value === 'object' && !Array.isArray(value)) {
 				Object.assign(result, value);
-			} else {
-				if (!Array.isArray(value)) {
-					value = [ value ];
+				continue;
+			}
+
+			if (!Array.isArray(value)) {
+				value = [ value ];
+			}
+
+			for (const alias of value) {
+				if (!alias || typeof alias !== 'string') {
+					throw E.INVALID_ARGUMENT('Expected command aliases to be an array of strings', { name: 'aliases.alias', scope: 'Command.constructor', value: alias });
 				}
 
-				for (const alias of value) {
-					if (!alias || typeof alias !== 'string') {
-						throw E.INVALID_ARGUMENT('Expected command aliases to be an array of strings', { name: 'aliases.alias', scope: 'Command.constructor', value: alias });
+				for (const a of alias.split(/[ ,|]+/)) {
+					if (a === '!') {
+						throw E.INVALID_ALIAS(`Invalid command alias "${alias}"`, { name: 'aliases', scope: 'Command.constructor', value: alias });
 					}
-
-					for (const a of alias.split(/[ ,|]+/)) {
-						if (a === '!') {
-							throw E.INVALID_ALIAS(`Invalid command alias "${alias}"`, { name: 'aliases', scope: 'Command.constructor', value: alias });
-						}
-						if (a[0] === '!') {
-							result[a.substring(1)] = 'hidden';
-						} else {
-							result[a] = 'visible';
-						}
+					if (a[0] === '!') {
+						result[a.substring(1)] = 'hidden';
+					} else {
+						result[a] = 'visible';
 					}
 				}
 			}
 		}
-		this._aliases = result;
+
+		return result;
 	}
 
 	/**

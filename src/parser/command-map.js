@@ -53,7 +53,7 @@ export default class CommandMap extends Map {
 
 		if (params !== undefined) {
 			if (typeof cmd !== 'string') {
-				throw E.INVALID_ARGUMENT('Command parameters are not allowed when cmd is a string', { name: 'cmd', scope: 'CommandMap.add', value: { cmd, params } });
+				throw E.INVALID_ARGUMENT('Command parameters are only allowed when command is a string', { name: 'cmd', scope: 'CommandMap.add', value: { cmd, params } });
 			} else if (typeof params === 'function') {
 				params = { action: params };
 			} else if (typeof params !== 'object') {
@@ -68,7 +68,7 @@ export default class CommandMap extends Map {
 			Array.isArray(cmd) ? cmd : [ cmd ];
 
 		for (let it of commands) {
-			let cmd = null;
+			cmd = null;
 
 			if (it instanceof Command) {
 				cmd = it;
@@ -102,7 +102,7 @@ export default class CommandMap extends Map {
 				// ctor params or Command-like
 				if (it.clikit instanceof Set) {
 					if (it.clikit.has('Extension')) {
-						// extensions not supported here
+						// actions and extensions not supported here
 						continue;
 					} else if (it.clikit.has('Command')) {
 						cmd = new Command(it.name, it);
@@ -155,16 +155,29 @@ export default class CommandMap extends Map {
 	generateHelp() {
 		const entries = [];
 
-		for (const cmd of Array.from(this.keys()).sort()) {
+		for (const cmd of Array.from(this.keys())) {
 			const { aliases, clikitHelp, desc, hidden, name } = this.get(cmd);
 			if (!hidden && !clikitHelp) {
+				const labels = [ name ];
+				for (const [ alias, display ] of Object.entries(aliases)) {
+					if (display === 'visible') {
+						labels.push(alias);
+					}
+				}
+				labels.sort((a, b) => {
+					return a.length === b.length ? a.localeCompare(b) : a.length - b.length;
+				});
+
 				entries.push({
 					name,
 					desc,
+					label: labels.join(', '),
 					aliases: aliases ? Object.keys(aliases) : null
 				});
 			}
 		}
+
+		entries.sort((a, b) => a.label.localeCompare(b.label));
 
 		return {
 			count: entries.length,

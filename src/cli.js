@@ -190,7 +190,7 @@ export default class CLI extends Context {
 						return false;
 					}
 				},
-				desc: 'outputs the version'
+				desc: 'Outputs the version'
 			});
 		}
 
@@ -341,10 +341,12 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected terminal to be a Terminal instance', { name: 'opts.terminal', scope: 'CLI.exec', value: opts.terminal });
 		}
 
-		let { showHelpOnError } = this;
 		let exitCode = undefined;
 		const parser = new Parser(opts);
 		const __argv = _argv.slice(0);
+
+		opts.exitCode = code => code === undefined ? exitCode : (exitCode = code || 0);
+
 		const results = {
 			_:           undefined,
 			_argv,       // the original unparsed arguments
@@ -355,9 +357,10 @@ export default class CLI extends Context {
 			console:     opts.terminal.console,
 			contexts:    undefined,
 			data:        opts.data,
-			exitCode:    opts.exitCode = code => code === undefined ? exitCode : (exitCode = code || 0),
+			exitCode:    opts.exitCode,
 			help:        () => renderHelp(results.cmd, opts),
 			result:      undefined,
+			setExitCode: opts.exitCode,
 			terminal:    opts.terminal,
 			unknown:     undefined,
 			warnings:    this.warnings
@@ -419,17 +422,18 @@ export default class CLI extends Context {
 
 				} else if (typeof this.defaultCommand === 'string' &&
 					(
-						// if we don't have a command, then do the default command
+						// if we don't have an action or command, then do the default command
 						!(cmd instanceof Command) ||
 
-						// if we have a command, but the command does not have an action, then do the default command
+						// if we have a command, but the command does not have an action, then do
+						// the default command
 						(typeof cmd.action !== 'function' &&
 							(!(cmd.action instanceof Command) || typeof cmd.action.action !== 'function')
 						)
 					) &&
 					(!cmd.prop('remoteHelp') || this.defaultCommand !== 'help')
 				) {
-					log(`Selected default command: ${this.defaultCommand}`);
+					log(`Selected default command: ${highlight(this.defaultCommand)}`);
 					results.cmd = this.commands.get(this.defaultCommand);
 					if (!(results.cmd instanceof Command)) {
 						throw E.DEFAULT_COMMAND_NOT_FOUND(`The default command "${this.defaultCommand}" was not found!`);
@@ -439,9 +443,6 @@ export default class CLI extends Context {
 
 				// handle the banner
 				await this.emit('banner', { argv, ctx: results.cmd });
-
-				// allow command to override showHelpOnError if not set already
-				showHelpOnError = results.cmd.prop('showHelpOnError');
 
 				// execute the command
 				if (results.cmd && typeof results.cmd.action === 'function') {
@@ -468,7 +469,7 @@ export default class CLI extends Context {
 
 			await this.emit('banner');
 
-			const help = this.help && showHelpOnError !== false && this.commands.get('help');
+			const help = this.help && this.prop('showHelpOnError') !== false && this.commands.get('help');
 			if (help) {
 				results.contexts = err.contexts || parser.contexts || [ this ];
 				results.err = err;

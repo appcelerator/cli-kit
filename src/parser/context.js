@@ -10,7 +10,7 @@ import OptionMap from './option-map';
 import { declareCLIKitClass } from '../lib/util';
 
 const { log } = debug('cli-kit:context');
-const { highlight } = debug.styles;
+const { highlight, note } = debug.styles;
 
 /**
  * Defines a context that contains commands, options, and args. Serves as the
@@ -92,7 +92,7 @@ export default class Context extends HookEmitter {
 	command(cmd, params) {
 		const cmds = this.commands.add(cmd, params);
 		for (const cmd of cmds) {
-			log(`Adding command: ${highlight(cmd.name)}`);
+			log(`Adding command: ${highlight(cmd.name)} ${note(`(${this.name})`)}`);
 			this.register(cmd);
 		}
 		this.rev++;
@@ -115,7 +115,7 @@ export default class Context extends HookEmitter {
 	extension(ext, name) {
 		const exts = this.extensions.add(ext, name);
 		for (const ext of exts) {
-			log(`Adding extension: ${highlight(ext.name)}`);
+			log(`Adding extension: ${highlight(ext.name)} ${note(`(${this.name})`)}`);
 			this.register(ext);
 		}
 		this.rev++;
@@ -186,7 +186,7 @@ export default class Context extends HookEmitter {
 
 			const ext = this.extensions.generateHelp();
 			results.commands.count += ext.count;
-			results.commands.entries.push.apply(results.commands.entries, ext.entries);
+			results.commands.entries.push(...ext.entries);
 
 			// update the default command
 			if (this.defaultCommand) {
@@ -376,7 +376,17 @@ export default class Context extends HookEmitter {
 	 * @access private
 	 */
 	register(it) {
-		const dest = it.clikit.has('Extension') ? 'extensions' : 'commands';
+		let dest;
+		if (it.clikit.has('Extension')) {
+			dest = 'extensions';
+		} else if (it.clikit.has('Command')) {
+			dest = 'commands';
+		}
+
+		if (!dest) {
+			return;
+		}
+
 		it.parent = this;
 		this.lookup[dest][it.name] = it;
 

@@ -5,15 +5,15 @@ describe('Commands', () => {
 		it('should error if command name is invalid', () => {
 			expect(() => {
 				new Command();
-			}).to.throw(TypeError, 'Expected name to be a non-empty string');
+			}).to.throw(TypeError, 'Expected command name to be a non-empty string');
 
 			expect(() => {
 				new Command(123);
-			}).to.throw(TypeError, 'Expected name to be a non-empty string');
+			}).to.throw(TypeError, 'Expected command name to be a non-empty string');
 
 			expect(() => {
 				new Command({});
-			}).to.throw(TypeError, 'Expected name to be a non-empty string');
+			}).to.throw(TypeError, 'Expected command name to be a non-empty string');
 
 			expect(() => {
 				new CLI({
@@ -21,7 +21,7 @@ describe('Commands', () => {
 						'': {}
 					}
 				});
-			}).to.throw(TypeError, 'Expected name to be a non-empty string');
+			}).to.throw(TypeError, 'Expected command name to be a non-empty string');
 		});
 
 		it('should error if command options are invalid', () => {
@@ -39,7 +39,7 @@ describe('Commands', () => {
 						'': 123
 					}
 				});
-			}).to.throw(TypeError, 'Expected name to be a non-empty string');
+			}).to.throw(TypeError, 'Expected command name to be a non-empty string');
 
 			expect(() => {
 				new CLI({

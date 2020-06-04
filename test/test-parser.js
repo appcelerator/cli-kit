@@ -159,7 +159,7 @@ describe('Parser', () => {
 				'  foo',
 				'',
 				'GLOBAL OPTIONS:',
-				'  -h,--help  Displays the help screen',
+				'  -h, --help  Displays the help screen',
 				''
 			].join('\n'));
 		});

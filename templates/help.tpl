@@ -35,7 +35,7 @@ if (usage) {
 if (commands.count) {
 	>> ${style.heading(commands.title)}:
 	for (const cmd of commands.entries) {
-		>>|  ${style.highlight(cmd.name)}  ${cmd.desc || ''}
+		>>|  ${style.highlight(cmd.label)}  ${cmd.desc || ''}
 	}
 	>>
 }
@@ -59,7 +59,7 @@ if (options.count) {
 				for (const option of options) {
 					let s = '';
 					if (option.short) {
-						s += `-${option.short},`;
+						s += `-${option.short}, `;
 					}
 					s += `--${option.negate ? 'no-' : ''}${option.long}${option.isFlag ? '' : ('=<' + (option.hint || 'value') + '>')}`;
 					>>|  ${style.highlight(s)}  ${option.desc || ''}
