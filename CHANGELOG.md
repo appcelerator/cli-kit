@@ -1,4 +1,4 @@
-# 1.2.0
+# 1.2.0 (Jun 3, 2020)
 
  * feat(commands): Added syntactic sugar for declaring commands with aliases and arguments.
  * feat(help): Added command aliases to the help screen.
