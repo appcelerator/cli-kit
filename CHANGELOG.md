@@ -1,3 +1,9 @@
+# 1.2.1 (Jun 15, 2020)
+
+ * fix: Force all options after an extension is found to be an argument.
+ * fix: Sort commands and extensions alphabetically in the help output.
+ * chore: Updated dependencies.
+
 # 1.2.0 (Jun 3, 2020)
 
  * feat(commands): Added syntactic sugar for declaring commands with aliases and arguments.

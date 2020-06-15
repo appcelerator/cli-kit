@@ -158,20 +158,20 @@ export default class CommandMap extends Map {
 		for (const cmd of Array.from(this.keys())) {
 			const { aliases, clikitHelp, desc, hidden, name } = this.get(cmd);
 			if (!hidden && !clikitHelp) {
-				const labels = [ name ];
+				const labels = new Set([ name ]);
+
 				for (const [ alias, display ] of Object.entries(aliases)) {
 					if (display === 'visible') {
-						labels.push(alias);
+						labels.add(alias);
 					}
 				}
-				labels.sort((a, b) => {
-					return a.length === b.length ? a.localeCompare(b) : a.length - b.length;
-				});
 
 				entries.push({
 					name,
 					desc,
-					label: labels.join(', '),
+					label: Array.from(labels).sort((a, b) => {
+						return a.length === b.length ? a.localeCompare(b) : a.length - b.length;
+					}).join(', '),
 					aliases: aliases ? Object.keys(aliases) : null
 				});
 			}

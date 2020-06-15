@@ -3,6 +3,7 @@ import Command from './command';
 import Context from './context';
 import debug from '../lib/debug';
 import E from '../lib/errors';
+import Extension from './extension';
 import ParsedArgument from './parsed-argument';
 import pluralize from 'pluralize';
 
@@ -470,6 +471,12 @@ export default class Parser {
 
 				// add the context to the stack
 				this.contexts.unshift(arg[type]);
+
+			} else if (type === 'option' && !sameContext && this.contexts[0] instanceof Extension && !this.contexts[0].isCLIKitExtension) {
+				log(`Forcing option ${highlight(arg.option.format)} to be an argument because we found a non-cli-kit extension ${highlight(this.contexts[0].name)}`);
+				this.args[i] = new ParsedArgument('argument', {
+					input: arg.input
+				});
 
 			} else if (type === 'option' && typeof arg.option.callback === 'function' && !arg.option.multiple) {
 				const { option } = arg;

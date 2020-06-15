@@ -187,6 +187,7 @@ export default class Context extends HookEmitter {
 			const ext = this.extensions.generateHelp();
 			results.commands.count += ext.count;
 			results.commands.entries.push(...ext.entries);
+			results.commands.entries.sort((a, b) => a.name.localeCompare(b.name));
 
 			// update the default command
 			if (this.defaultCommand) {
