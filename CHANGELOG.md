@@ -1,3 +1,9 @@
+# 1.2.2 (Jun 17, 2020)
+
+ * fix(cli): Fixed issue where extension banner was not overriding parent context's banner.
+ * fix(terminal): Fixed issue where banner was not being displayed if output occurred before banner
+   callback was registered.
+
 # 1.2.1 (Jun 15, 2020)
 
  * fix: Force all options after an extension is found to be an argument.

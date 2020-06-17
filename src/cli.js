@@ -368,12 +368,9 @@ export default class CLI extends Context {
 
 		this.once('banner', ({ argv, ctx = this }) => {
 			if (this.autoHideBanner) {
-				opts.terminal.once('output', () => {
+				opts.terminal.onOutput(() => {
 					let banner = ctx.prop('banner');
 					if (banner && this.bannerEnabled) {
-						// once we've displayed the banner, no need to display it again
-						// this.bannerEnabled = false;
-
 						banner = String(typeof banner === 'function' ? banner(opts) : banner).trim();
 						opts.terminal.stdout.write(`${banner}\n\n`);
 					}
@@ -415,7 +412,7 @@ export default class CLI extends Context {
 					// `cmd.prop()` to scan the command's parents to see if this command is
 					// actually remote
 					if (!cmd.prop('remoteHelp')) {
-						log('Selected help command');
+						log(`Selected help command, was ${cmd.name}`);
 						results.cmd = this.commands.get('help');
 						contexts.unshift(results.cmd);
 					}
@@ -442,7 +439,7 @@ export default class CLI extends Context {
 				}
 
 				// handle the banner
-				await this.emit('banner', { argv, ctx: results.cmd });
+				await this.emit('banner', { argv, ctx: cmd });
 
 				// execute the command
 				if (results.cmd && typeof results.cmd.action === 'function') {

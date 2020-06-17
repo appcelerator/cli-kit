@@ -37,6 +37,19 @@ process.stdout.setMaxListeners(Infinity);
  */
 export default class Terminal extends EventEmitter {
 	/**
+	 * Tracks all pending callbacks to be notified when output first occurs.
+	 * @type {Array.<Function>}
+	 */
+	outputCallbacks = [];
+
+	/**
+	 * A semiphore counter to track the number of keypress listeners and automatically
+	 * enable/disable raw mode on the stdin stream.
+	 * @type {Number}
+	 */
+	rawMode = 0;
+
+	/**
 	 * Initializes the terminal, streams, and a console instance.
 	 *
 	 * @param {Object} [opts] - Various options.
@@ -84,8 +97,6 @@ export default class Terminal extends EventEmitter {
 			}
 		}
 		this.promptTimeout = opts.promptTimeout | 0;
-
-		this.rawMode = 0;
 
 		this.on('newListener', (event, listener) => {
 			if (event === 'keypress') {
@@ -157,6 +168,23 @@ export default class Terminal extends EventEmitter {
 	}
 
 	/**
+	 * Adds a callback to be notified when output first occurs unless output has already occurred
+	 * in which case the callback is immediately invoked. This is basically a synchronous promise.
+	 *
+	 * @param {Function} cb - The callback to notify when output first occurs.
+	 * @returns {Terminal}
+	 * @access public
+	 */
+	onOutput(cb) {
+		if (this.outputCallbacks) {
+			this.outputCallbacks.push(cb);
+		} else {
+			cb(this.outputResolution);
+		}
+		return this;
+	}
+
+	/**
 	 * Patches a stream's `write()` method to detect output contents and emit an `output` event for
 	 * text-based output.
 	 *
@@ -181,8 +209,12 @@ export default class Terminal extends EventEmitter {
 				encoding = null;
 			}
 
-			if (self._outputFired === undefined && (!encoding || encodings.has(encoding)) && !(self._outputFired = dataRegExp.test(chunk))) {
-				self.emit('output', chunk, encoding);
+			if (self.outputFired === undefined && (!encoding || encodings.has(encoding)) && !(self.outputFired = dataRegExp.test(chunk))) {
+				self.outputResolution = { chunk, encoding };
+				for (const cb of self.outputCallbacks) {
+					cb(self.outputResolution);
+				}
+				self.outputCallbacks = [];
 			}
 
 			return origWrite.call(stream, chunk, encoding, cb);

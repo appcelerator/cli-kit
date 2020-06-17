@@ -88,7 +88,7 @@ describe('Terminal', () => {
 				const { console } = new Terminal({
 					stderr,
 					stdout
-				}).on('output', () => {
+				}).onOutput(() => {
 					stdout.write('foo\n\n');
 				});
 
@@ -107,7 +107,7 @@ describe('Terminal', () => {
 				const { console } = new Terminal({
 					stderr,
 					stdout
-				}).on('output', () => {
+				}).onOutput(() => {
 					stderr.write('foo\n\n');
 				});
 
@@ -126,7 +126,7 @@ describe('Terminal', () => {
 				const stdout = new WritableStream();
 				const { console } = new Terminal({
 					stdout
-				}).on('output', () => {
+				}).onOutput(() => {
 					stdout.write('foo\n\n');
 				});
 
@@ -138,7 +138,7 @@ describe('Terminal', () => {
 				const stdout = new WritableStream();
 				const { console } = new Terminal({
 					stdout
-				}).on('output', () => {
+				}).onOutput(() => {
 					stdout.write('foo\n\n');
 				});
 
@@ -150,7 +150,7 @@ describe('Terminal', () => {
 				const stdout = new WritableStream();
 				const { console } = new Terminal({
 					stdout
-				}).on('output', () => {
+				}).onOutput(() => {
 					stdout.write('foo\n\n');
 				});
 
@@ -162,7 +162,7 @@ describe('Terminal', () => {
 				const stdout = new WritableStream();
 				const { console } = new Terminal({
 					stdout
-				}).on('output', () => {
+				}).onOutput(() => {
 					stdout.write('foo\n\n');
 				});
 
@@ -178,7 +178,7 @@ describe('Terminal', () => {
 				const callback = sinon.fake();
 				const { console } = new Terminal({
 					stdout
-				}).on('output', callback);
+				}).onOutput(callback);
 
 				stdout.write(hash, 'hex');
 
