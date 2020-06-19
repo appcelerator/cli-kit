@@ -216,6 +216,8 @@ export default class CLI extends Context {
 	 * @param {Object} [opts.headers] - HTTP headers to send when creating the WebSocket.
 	 * @param {Termianl} [opts.terminal] - A terminal instance to override the default CLI terminal
 	 * instance.
+	 * @param {Number} [opts.timeout=5000] - The number of milliseconds to wait to connect to the
+	 * server and complete the initialization handshake.
 	 * @returns {Promise<Object>} Resolves an `EventEmitter` based handle containing a `send()`
 	 * function to send data as if from `stdin`.
 	 * @access public
@@ -238,50 +240,57 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected terminal to be a Terminal instance', { name: 'opts.terminal', scope: 'CLI.connect', value: term });
 		}
 
-		log(`Connecting to ${highlight(url)}`);
-		const ws = new WebSocket(url, opts);
-		ws.binaryType = 'arraybuffer';
+		return await new Promise((resolve, reject) => {
+			log(`Connecting to ${highlight(url)}`);
+			const ws = new WebSocket(url, opts);
+			ws.binaryType = 'arraybuffer';
 
-		const handle = new EventEmitter();
-		handle.send = chunk => {
-			if (ws.readyState === 1) {
-				ws.send(chunk);
-			}
-		};
+			const handle = new EventEmitter();
+			handle.send = chunk => {
+				if (ws.readyState === 1) {
+					ws.send(chunk);
+				}
+			};
 
-		ws.on('message', msg => {
-			if (msg === ansi.cursor.get && ws.readyState === 1) {
-				ws.send(`${ansi.esc}${term.rows};${term.columns}R`);
-				return;
-			}
+			const initTimer = setTimeout(() => {
+				const err = new Error(ws.readyState === 1 ? 'Failed to initialize terminal session' : 'Failed to connect to server');
+				err.code = 'ETIMEOUT';
+				reject(err);
+			}, opts.timeout || 5000);
 
-			const code = msg.match(ansi.custom.exit.re);
-			if (code) {
-				handle.emit('exit', code[1]);
-				return;
-			}
+			ws.on('close', (code, reason) => handle.emit('close', code, reason));
 
-			term.stdout.write(msg);
-		});
+			ws.on('error', err => handle.emit('error', err));
 
-		ws.on('close', (code, reason) => handle.emit('close', code, reason));
-		ws.on('error', err => handle.emit('error', err));
+			ws.on('message', msg => {
+				if (msg === ansi.cursor.get && ws.readyState === 1) {
+					clearTimeout(initTimer);
+					ws.send(`${ansi.esc}${term.rows};${term.columns}R`);
+					resolve(handle);
+					return;
+				}
 
-		return await new Promise(resolve => {
-			ws.on('open', () => {
-				term.on('keypress', (chunk, key) => {
-					// console.log('KEYPRESS', chunk === undefined ? chunk : Buffer.from(chunk), key, Buffer.from(key.sequence));
-					handle.send(ansi.custom.keypress(key));
-				});
-				term.on('resize', ({ rows, columns }) => {
-					handle.send(`${ansi.esc}${rows};${columns}R`);
-				});
-				term.on('SIGINT', () => {
-					ws.close();
-					process.exit();
-				});
+				const code = msg.match(ansi.custom.exit.re);
+				if (code) {
+					handle.emit('exit', code[1]);
+					return;
+				}
 
-				resolve(handle);
+				term.stdout.write(msg);
+			});
+
+			term.on('keypress', (chunk, key) => {
+				// console.log('KEYPRESS', chunk === undefined ? chunk : Buffer.from(chunk), key, Buffer.from(key.sequence));
+				handle.send(ansi.custom.keypress(key));
+			});
+
+			term.on('resize', ({ rows, columns }) => {
+				handle.send(`${ansi.esc}${rows};${columns}R`);
+			});
+
+			term.on('SIGINT', () => {
+				ws.close();
+				process.exit();
 			});
 		});
 	}
@@ -500,35 +509,26 @@ export default class CLI extends Context {
 		log(`Starting WebSocketServer${opts.port ? `on port ${highlight(opts.port)}` : ''}...`);
 
 		return new Promise((resolve, reject) => {
-			this.connections = {};
 			this.server = new WebSocketServer(opts, () => resolve(this.server));
 
 			this.server.on('connection', (ws, req) => {
+				const { headers } = req;
 				const { remoteAddress, remotePort } = req.socket;
 				const key = remoteAddress + ':' + remotePort;
-				const { headers } = req;
+				const terminal = new Terminal({
+					stdout: new OutputSocket(ws),
+					stderr: new OutputSocket(ws)
+				});
+				let buffer = '';
+				let current = null;
 				let echo = false;
-				const stdout = new OutputSocket(ws);
-				const stderr = new OutputSocket(ws);
-				const terminal = new Terminal({ stdout, stderr });
 
 				log('%s upgraded to WebSocket', highlight(key));
 				log(headers);
 
-				const conn = this.connections[key] = {
-					buffer: '',
-					cols: 0,
-					current: null,
-					rows: 0
-				};
-
-				ws.on('close', () => {
-					delete this.connections[key];
-					log('%s closed WebSocket', highlight(key));
-				});
+				ws.on('close', () => log('%s closed WebSocket', highlight(key)));
 
 				ws.on('error', err => {
-					delete this.connections[key];
 					if (err.code !== 'ECONNRESET') {
 						error(err);
 					}
@@ -538,7 +538,7 @@ export default class CLI extends Context {
 					const command = split(args);
 					log(`Running: ${highlight(command)}`);
 
-					conn.current = this.exec(command, {
+					current = this.exec(command, {
 						data: {
 							cwd:       decode(headers['clikit-cwd']),
 							env:       decode(headers['clikit-env']),
@@ -556,12 +556,12 @@ export default class CLI extends Context {
 					let ec = 1;
 
 					try {
-						const { exitCode } = await conn.current;
+						const { exitCode } = await current;
 						ec = exitCode() || 0;
 					} catch (err) {
 						error(err);
 					} finally {
-						conn.current = null;
+						current = null;
 						log(`Command finished (code ${ec})`);
 						ws.send(ansi.custom.exit(ec));
 					}
@@ -578,9 +578,9 @@ export default class CLI extends Context {
 						// check if we received a cursor message
 						m = msg.match(ansi.cursor.position);
 						if (m) {
-							conn.rows = ~~m[1];
-							conn.cols = ~~m[2];
-							log(`Terminal set to ${highlight(conn.cols)} x ${highlight(conn.rows)}`);
+							const rows = terminal.stdout.rows = terminal.stderr.rows = ~~m[1];
+							const cols = terminal.stdout.columns = terminal.stderr.columns = ~~m[2];
+							log(`Terminal set to ${highlight(cols)} x ${highlight(rows)}`);
 							return;
 						}
 
@@ -603,7 +603,7 @@ export default class CLI extends Context {
 						if (m) {
 							const key = decode(m[1]);
 
-							if (conn.current) {
+							if (current) {
 								terminal.stdin.emit('keypress', key.sequence, key);
 								return;
 							}
@@ -625,7 +625,7 @@ export default class CLI extends Context {
 						}
 
 						// if there's already an active command, treat message as an incoming key from stdin
-						if (conn.current) {
+						if (current) {
 							terminal.stdin.emit('keypress', msg, generateKey(msg));
 							return;
 						}
@@ -633,26 +633,23 @@ export default class CLI extends Context {
 						// no pending command, so we need to buffer and as soon as we see a line return,
 						// then we execute it and any remaining characters are treated as keypresses
 
-						conn.buffer += msg;
+						buffer += msg;
 
 						// replace backspaces
-						for (let p = 0; (p = conn.buffer.indexOf('\b', p)) !== -1;) {
-							conn.buffer = conn.buffer.substring(0, p - 1) + conn.buffer.substring(p + 1);
+						for (let p = 0; (p = buffer.indexOf('\b', p)) !== -1;) {
+							buffer = buffer.substring(0, p - 1) + buffer.substring(p + 1);
 						}
 
-						let p = conn.buffer.indexOf('\r');
+						let p = buffer.indexOf('\r');
 						if (p !== -1) {
-							const command = conn.buffer.substring(0, p);
-							const buffer = conn.buffer.substring(p + 2);
-							conn.buffer = '';
-
-							await exec(command, () => {
-								terminal.stdin.write(buffer);
-							});
+							const command = buffer.substring(0, p);
+							const str = buffer.substring(p + 2);
+							buffer = '';
+							await exec(command, () => terminal.stdin.write(str));
 						}
 					} finally {
 						if (m) {
-							conn.buffer = '';
+							buffer = '';
 						}
 					}
 				});

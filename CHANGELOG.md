@@ -1,3 +1,9 @@
+# 1.2.3 (Jun 19, 2020)
+
+ * feat(cli): Added `timeout` option to `CLI.connect()` with default of 5 seconds.
+ * fix(cli): `CLI.connect()` now waits for terminal resize handshake to complete before resolving.
+ * fix(cli): Set the remote terminal size on the stdout/stderr streams.
+
 # 1.2.2 (Jun 17, 2020)
 
  * fix(cli): Fixed issue where extension banner was not overriding parent context's banner.
