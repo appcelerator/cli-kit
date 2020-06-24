@@ -1,3 +1,10 @@
+# 1.2.4 (Jun 24, 2020)
+
+ * fix(cli): Server-side output streams extend TTY `WriteStream` to improve compatibility with
+   packages that check `isTTY` and terminal helper functions such as `cursorTo()` and
+   `clearLine()`.
+ * chore: Updated dev dependencies.
+
 # 1.2.3 (Jun 19, 2020)
 
  * feat(cli): Added `timeout` option to `CLI.connect()` with default of 5 seconds.
