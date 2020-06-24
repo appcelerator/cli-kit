@@ -17,7 +17,7 @@ import * as ansi from './lib/ansi';
 import { declareCLIKitClass, decode, split } from './lib/util';
 import { EventEmitter } from 'events';
 import { generateKey } from './lib/keys';
-import { Writable } from 'stream';
+import { WriteStream } from 'tty';
 
 const { error, log, warn } = debug('cli-kit:cli');
 const { highlight }  = debug.styles;
@@ -25,9 +25,9 @@ const { highlight }  = debug.styles;
 /**
  * Writes data to a websocket.
  */
-class OutputSocket extends Writable {
-	constructor(ws) {
-		super();
+class OutputSocket extends WriteStream {
+	constructor(fd, ws) {
+		super(fd);
 		this.ws = ws;
 	}
 
@@ -421,7 +421,7 @@ export default class CLI extends Context {
 					// `cmd.prop()` to scan the command's parents to see if this command is
 					// actually remote
 					if (!cmd.prop('remoteHelp')) {
-						log(`Selected help command, was ${cmd.name}`);
+						log(`Selected help command, was "${cmd.name}"`);
 						results.cmd = this.commands.get('help');
 						contexts.unshift(results.cmd);
 					}
@@ -516,8 +516,8 @@ export default class CLI extends Context {
 				const { remoteAddress, remotePort } = req.socket;
 				const key = remoteAddress + ':' + remotePort;
 				const terminal = new Terminal({
-					stdout: new OutputSocket(ws),
-					stderr: new OutputSocket(ws)
+					stdout: new OutputSocket(1, ws),
+					stderr: new OutputSocket(2, ws)
 				});
 				let buffer = '';
 				let current = null;
