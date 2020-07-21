@@ -1,5 +1,7 @@
 import snooplogg from 'snooplogg';
 
+const { chalk } = snooplogg;
+
 export const logger = snooplogg
 	.config({
 		inspectOptions: {
@@ -10,6 +12,7 @@ export const logger = snooplogg
 		minBrightness: 80,
 		theme: 'detailed'
 	})
-	.style('heading', s => String(s).toUpperCase());
+	.style('heading', s => String(s).toUpperCase())
+	.style('subheading', s => chalk.gray(s));
 
 export default logger;

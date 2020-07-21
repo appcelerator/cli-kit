@@ -1,3 +1,15 @@
+# 1.4.0 (Jul 21, 2020)
+
+ * feat(cli): Added support for user-defined in `styles` passed into the `CLI` constructor as well
+   as the `exec()` method.
+ * feat(template): Added `subheading` style.
+ * fix(template): Properly escape tildes in templates with nested expressions.
+ * fix(help): Fixed option heading and subheading styling where the trailing `:` wasn't styled and
+   whitespace was being trimmed.
+ * fix(help): Fixed option format to use proper required indicators.
+ * fix(cli): Fixed rendering of errors to debug log when server connection executes a command that
+   throws an exception.
+
 # 1.3.0 (Jul 21, 2020)
 
  * feat(cli): Added `exec` hook event.

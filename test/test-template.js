@@ -3,7 +3,7 @@ import path from 'path';
 
 import { template } from '../dist/index';
 
-const { render, renderFile } = template;
+const { escapeTildes, render, renderFile } = template;
 
 describe('Template', () => {
 	describe('render()', () => {
@@ -83,6 +83,24 @@ describe('Template', () => {
 			it('should not render if value is falsey', () => {
 				const s = render('>?${text}', { text: '' });
 				expect(s).to.equal('');
+			});
+		});
+
+		describe('Tildes', () => {
+			it('should handle single tildes', () => {
+				const s = render('>hello ` tilde');
+				expect(s).to.equal('hello ` tilde');
+			});
+
+			it('should handle nested template literal', () => {
+				const s = render('>hello ` ${`${name}`}', { name: 'tilde' });
+				expect(s).to.equal('hello ` tilde');
+			});
+
+			it('should escape tildes not in an expresssion', () => {
+				expect(escapeTildes('hello ` ${`${name}`}')).to.equal('hello \\` ${`${name}`}');
+				expect(escapeTildes('hello ` ${`${name} \\`!`}')).to.equal('hello \\` ${`${name} \\`!`}');
+				expect(escapeTildes('hello ` \\${`${name} \\`!`}')).to.equal('hello \\` \\${\\`${name} \\\\`!\\`}');
 			});
 		});
 

@@ -83,6 +83,7 @@ export default class CLI extends Context {
 	 * banner, assuming banner is enabled, for non-cli-kit enabled CLIs.
 	 * @param {Boolean} [params.showHelpOnError=true] - If an error occurs and `help` is enabled,
 	 * then display the error before the help information.
+	 * @param {Object} [params.styles] - Custom defined style functions.
 	 * @param {Terminal} [params.terminal] - A custom terminal instance, otherwise uses the default
 	 * global terminal instance.
 	 * @param {String} [params.title='Global'] - The title for the global context.
@@ -147,6 +148,7 @@ export default class CLI extends Context {
 		this.nodeVersion               = params.nodeVersion;
 		this.showBannerForExternalCLIs = params.showBannerForExternalCLIs;
 		this.showHelpOnError           = params.showHelpOnError;
+		this.styles                    = params.styles;
 		this.terminal                  = params.terminal || new Terminal();
 		this.version                   = params.version;
 		this.warnings                  = [];
@@ -355,6 +357,7 @@ export default class CLI extends Context {
 		const __argv = _argv.slice(0);
 
 		opts.exitCode = code => code === undefined ? exitCode : (exitCode = code || 0);
+		opts.styles = Object.assign({}, this.styles, opts.styles);
 
 		let results = {
 			_:           undefined,
@@ -370,6 +373,7 @@ export default class CLI extends Context {
 			help:        () => renderHelp(results.cmd, opts),
 			result:      undefined,
 			setExitCode: opts.exitCode,
+			styles:      opts.styles,
 			terminal:    opts.terminal,
 			unknown:     undefined,
 			warnings:    this.warnings
@@ -485,7 +489,7 @@ export default class CLI extends Context {
 
 			return results;
 		} catch (err) {
-			error(err.stack || (err.message && err.message.toString()) || err.toString());
+			error(err.stack || err.message || err.toString());
 
 			await this.emit('banner');
 
@@ -573,7 +577,7 @@ export default class CLI extends Context {
 						const { exitCode } = await current;
 						ec = exitCode() || 0;
 					} catch (err) {
-						error(err);
+						error(err.stack || err.message || err.toString());
 					} finally {
 						current = null;
 						log(`Command finished (code ${ec})`);

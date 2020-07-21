@@ -51,17 +51,17 @@ if (arguments.count) {
 if (options.count) {
 	for (const scope of options.scopes) {
 		if (scope.count) {
-			>> ${style.heading(scope.title)}:
+			>>|${style.heading(`${scope.title}:`)}
 			for (const [ group, options ] of Object.entries(scope.groups)) {
 				if (group) {
-					>> ${style.lowlight(group)}
+					>>|${style.subheading(`${group}:`)}
 				}
 				for (const option of options) {
 					let s = '';
 					if (option.short) {
 						s += `-${option.short}, `;
 					}
-					s += `--${option.negate ? 'no-' : ''}${option.long}${option.isFlag ? '' : ('=<' + (option.hint || 'value') + '>')}`;
+					s += `--${option.negate ? 'no-' : ''}${option.long}${option.isFlag ? '' : `=${option.required ? '<' : '['}${option.hint || 'value'}${option.required ? '>' : ']'}`}`;
 					>>|  ${style.highlight(s)}  ${option.desc || ''}
 				}
 			}

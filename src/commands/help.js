@@ -61,7 +61,7 @@ export default {
 	 * @param {Array.<Error>} [params.warnings] - A list of warnings (error objects).
 	 * @returns {Promise}
 	 */
-	async action({ _ = [], argv = {}, console, contexts, err, exitCode, parentContextNames, warnings } = {}) {
+	async action({ _ = [], argv = {}, console, contexts, err, exitCode, parentContextNames, styles, warnings } = {}) {
 		exitCode(+!!err); // 0=success, 1=error
 
 		const formatError = err => {
@@ -113,17 +113,13 @@ export default {
 				const file = ctx.get('helpTemplateFile', path.resolve(__dirname, '..', '..', 'templates', 'help.tpl'));
 				log(`Rendering help template: ${highlight(file)}`);
 
-				// only commands have a header and footer, but CLI instances do not and thus we
-				// need to define them to make the template happy
-				if (!help.header) {
-					help.header = null;
-				}
-				if (!help.footer) {
-					help.footer = null;
-				}
-
 				// determine the output stream
-				(err ? _stderr : _stdout).write(renderFile(file, help));
+				(err ? _stderr : _stdout).write(renderFile(file, {
+					style: styles,
+					header: null,
+					footer: null,
+					...help
+				}));
 			}
 
 			// set the exit code
