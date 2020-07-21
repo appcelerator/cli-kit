@@ -1,3 +1,13 @@
+# 1.3.0 (Jul 21, 2020)
+
+ * feat(cli): Added `exec` hook event.
+ * feat(context): Added `ctx` property to `generateHelp` hook event.
+ * fix(parser): Fixed bug in server mode where `parse` hook event was being omitted from the cloned
+   context which is not accessible instead of the originating `CLI` instance.
+ * fix(cli): Fixed issue with server mode execution where a context would be deeply cloned, however
+   `Command` and `Extension` objects were passed by reference.
+ * chore: Updated dependencies.
+
 # 1.2.4 (Jun 24, 2020)
 
  * fix(cli): Server-side output streams extend TTY `WriteStream` to improve compatibility with

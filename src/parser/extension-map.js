@@ -30,6 +30,8 @@ export default class ExtensionMap extends Map {
 	 * instance.
 	 * @param {String} [name] - The extension name used for the context name. If not set, it will
 	 * attempt to find a `package.json` with a `cli-kit.name` value.
+	 * @param {Boolean} [clone] - When `true` and `ext` is an `Extension` or `ExtensionMap`, it
+	 * will clone the `Extension` instead of set by reference.
 	 * @returns {Array.<Extension>}
 	 * @access public
 	 *
@@ -41,7 +43,7 @@ export default class ExtensionMap extends Map {
 	 *   .add(new ExtensionMap())
 	 *   .add([ '/path/to/ext', new Extension() ])
 	 */
-	add(ext, name) {
+	add(ext, name, clone) {
 		if (!ext) {
 			throw E.INVALID_ARGUMENT('Expected extension to be an extension instance or a path', { name: 'ext', scope: 'ExtensionMap.add', value: ext });
 		}
@@ -70,7 +72,7 @@ export default class ExtensionMap extends Map {
 		for (let it of extensions) {
 			let ext = null;
 
-			if (it instanceof Extension) {
+			if (!clone && it instanceof Extension) {
 				ext = it;
 			} else if (Array.isArray(it)) {
 				// [name,ext]

@@ -86,11 +86,13 @@ export default class Context extends HookEmitter {
 	 * path.
 	 * @param {Object} [params] - When `cmd` is the command name, then this is the options to pass
 	 * into the `Command` constructor.
+	 * @param {Boolean} [clone] - When `true` and `params` is a `Command` or `CommandMap`, it will
+	 * clone the `Command` instead of set by reference.
 	 * @returns {Context}
 	 * @access public
 	 */
-	command(cmd, params) {
-		const cmds = this.commands.add(cmd, params);
+	command(cmd, params, clone) {
+		const cmds = this.commands.add(cmd, params, clone);
 		for (const cmd of cmds) {
 			log(`Adding command: ${highlight(cmd.name)} ${note(`(${this.name})`)}`);
 			this.register(cmd);
@@ -109,11 +111,13 @@ export default class Context extends HookEmitter {
 	 * instance.
 	 * @param {String} [name] - The extension name used for the context name. If not set, it will
 	 * attempt to find a `package.json` with a `cli-kit.name` value.
+	 * @param {Boolean} [clone] - When `true` and `params` is an `Extension` or `ExtensionMap`, it
+	 * will clone the `Extension` instead of set by reference.
 	 * @returns {Context}
 	 * @access public
 	 */
-	extension(ext, name) {
-		const exts = this.extensions.add(ext, name);
+	extension(ext, name, clone) {
+		const exts = this.extensions.add(ext, name, clone);
 		for (const ext of exts) {
 			log(`Adding extension: ${highlight(ext.name)} ${note(`(${this.name})`)}`);
 			this.register(ext);
@@ -132,7 +136,7 @@ export default class Context extends HookEmitter {
 	generateHelp(opts = {}) {
 		return this.hook('generateHelp', results => {
 			const scopes = [];
-			let ctx = this;
+			let { ctx } = results;
 
 			while (ctx) {
 				scopes.push({
@@ -230,10 +234,11 @@ export default class Context extends HookEmitter {
 
 			return results;
 		})({
-			contexts: [],
-			error: undefined,
+			ctx:         this,
+			contexts:    [],
+			error:       undefined,
 			suggestions: [],
-			warnings: undefined
+			warnings:    undefined
 		});
 	}
 
@@ -257,9 +262,12 @@ export default class Context extends HookEmitter {
 	 * Initializes this context with params.
 	 *
 	 * @param {Object|Context} params - Various parameters
+	 * @param {Boolean} [clone] - When `true`, all `Command` and `Extension` objects will be cloned
+	 * instead of set by reference.
+	 * @returns {Context}
 	 * @access private
 	 */
-	init(params) {
+	init(params, clone) {
 		if (!params || typeof params !== 'object' || (params.clikit instanceof Set && !params.clikit.has('Context'))) {
 			throw E.INVALID_ARGUMENT('Expected parameters to be an object or Context', { name: 'params', scope: 'Context.init', value: params });
 		}
@@ -293,9 +301,11 @@ export default class Context extends HookEmitter {
 		this.version                        = params.version;
 
 		params.args       && this.argument(params.args);
-		params.commands   && this.command(params.commands);
-		params.extensions && this.extension(params.extensions);
+		params.commands   && this.command(params.commands, null, clone);
+		params.extensions && this.extension(params.extensions, null, clone);
 		params.options    && this.option(params.options);
+
+		return this;
 	}
 
 	/**

@@ -39,10 +39,12 @@ export default class CommandMap extends Map {
 	 * path.
 	 * @param {Object|Function} [params] - When `cmd` is the command name, then this is the options
 	 * to pass into the `Command` constructor.
+	 * @param {Boolean} [clone] - When `true` and `cmd` is a `Command` or `CommandMap`, it will
+	 * clone the `Command` instead of set by reference.
 	 * @returns {Array.<Command>}
 	 * @access public
 	 */
-	add(cmd, params) {
+	add(cmd, params, clone) {
 		if (!cmd) {
 			throw E.INVALID_ARGUMENT('Invalid command', { name: 'cmd', scope: 'CommandMap.add', value: cmd });
 		}
@@ -51,7 +53,7 @@ export default class CommandMap extends Map {
 			Command = require('./command').default;
 		}
 
-		if (params !== undefined) {
+		if (params !== undefined && params !== null) {
 			if (typeof cmd !== 'string') {
 				throw E.INVALID_ARGUMENT('Command parameters are only allowed when command is a string', { name: 'cmd', scope: 'CommandMap.add', value: { cmd, params } });
 			} else if (typeof params === 'function') {
@@ -70,7 +72,7 @@ export default class CommandMap extends Map {
 		for (let it of commands) {
 			cmd = null;
 
-			if (it instanceof Command) {
+			if (!clone && it instanceof Command) {
 				cmd = it;
 			} else if (typeof it === 'string') {
 				// path

@@ -20,7 +20,7 @@ import { generateKey } from './lib/keys';
 import { WriteStream } from 'tty';
 
 const { error, log, warn } = debug('cli-kit:cli');
-const { highlight }  = debug.styles;
+const { highlight, note }  = debug.styles;
 
 /**
  * Writes data to a websocket.
@@ -310,7 +310,7 @@ export default class CLI extends Context {
 	 * doesn't change any global state by deep cloning the entire context tree every time the
 	 * arguments are parsed and changing the process state. Enabling this only makes sense if the
 	 * `CLI` instance is going to be reused to parse arguments multiple times and if the state of
-	 * thecontext tree is going to be modified during parsing (i.e. via a callback).
+	 * the context tree is going to be modified during parsing (i.e. via a callback).
 	 * @param {Termianl} [opts.terminal] - A terminal instance to override the default CLI terminal
 	 * instance.
 	 * @returns {Promise.<Arguments>}
@@ -356,7 +356,7 @@ export default class CLI extends Context {
 
 		opts.exitCode = code => code === undefined ? exitCode : (exitCode = code || 0);
 
-		const results = {
+		let results = {
 			_:           undefined,
 			_argv,       // the original unparsed arguments
 			__argv,      // the parsed arguments
@@ -394,14 +394,24 @@ export default class CLI extends Context {
 		});
 
 		try {
-			const { _, argv, contexts, unknown } = await parser.parse(__argv, opts.serverMode ? new Context(this) : this);
+			const cli = opts.serverMode ? new Context().init(this, true) : this;
+
+			log(`Parsing ${__argv.length} argument${__argv.length !== 1 ? 's' : ''} ${note(`(server mode: ${!!opts.serverMode})`)}`);
+
+			// parse the command line arguments
+			const {
+				_,
+				argv,
+				contexts,
+				unknown
+			} = await parser.parse(__argv, cli, this);
 
 			log('Parsing complete: ' +
 				`${pluralize('option', Object.keys(argv).length, true)}, ` +
 				`${pluralize('unknown option', Object.keys(unknown).length, true)}, ` +
 				`${pluralize('arg', _.length, true)}, ` +
 				`${pluralize('context', contexts.length, true)} ` +
-				`(exit: ${results.exitCode()})`
+				note(`(exit: ${results.exitCode()})`)
 			);
 
 			const cmd = contexts[0];
@@ -409,6 +419,7 @@ export default class CLI extends Context {
 			results._                  = _;
 			results.argv               = argv;
 			results.cmd                = cmd;
+			results.cli                = cli;
 			results.contexts           = contexts;
 			results.parentContextNames = opts.parentContextNames;
 			results.unknown            = unknown;
@@ -450,19 +461,22 @@ export default class CLI extends Context {
 				// handle the banner
 				await this.emit('banner', { argv, ctx: cmd });
 
-				// execute the command
-				if (results.cmd && typeof results.cmd.action === 'function') {
-					log(`Executing command: ${highlight(results.cmd.name)}`);
-					results.result = await results.cmd.action(results);
-				} else if (results.cmd && results.cmd.action instanceof Command && typeof results.cmd.action.action === 'function') {
-					log(`Executing command: ${highlight(results.cmd.action.name)} (via ${highlight(results.cmd.name)})`);
-					results.result = await results.cmd.action.action(results);
-				} else if (typeof this.defaultCommand  === 'function') {
-					log(`Executing default command: ${highlight(this.defaultCommand.name || 'anonymous')}`);
-					results.result = await this.defaultCommand(results);
-				} else {
-					log('No command to execute, returning parsed arguments');
-				}
+				results = await this.hook('exec', async results => {
+					// execute the command
+					if (results.cmd && typeof results.cmd.action === 'function') {
+						log(`Executing command: ${highlight(results.cmd.name)}`);
+						results.result = await results.cmd.action(results);
+					} else if (results.cmd && results.cmd.action instanceof Command && typeof results.cmd.action.action === 'function') {
+						log(`Executing command: ${highlight(results.cmd.action.name)} (via ${highlight(results.cmd.name)})`);
+						results.result = await results.cmd.action.action(results);
+					} else if (typeof this.defaultCommand  === 'function') {
+						log(`Executing default command: ${highlight(this.defaultCommand.name || 'anonymous')}`);
+						results.result = await this.defaultCommand(results);
+					} else {
+						log('No command to execute, returning parsed arguments');
+					}
+					return results;
+				})(results);
 			}
 
 			if (!opts.serverMode) {
@@ -471,7 +485,7 @@ export default class CLI extends Context {
 
 			return results;
 		} catch (err) {
-			error(err.stack || err.message || err.toString());
+			error(err.stack || (err.message && err.message.toString()) || err.toString());
 
 			await this.emit('banner');
 

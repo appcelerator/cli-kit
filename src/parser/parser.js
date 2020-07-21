@@ -183,11 +183,12 @@ export default class Parser {
 	 *
 	 * @param {Array} args - An array of raw, unparsed arguments.
 	 * @param {Context} ctx - The context to reference for commands, options, and arguments.
+	 * @param {CLI} [cli] - A reference to the CLI object
 	 * @returns {Promise<Parser>}
 	 * @access public
 	 */
-	parse(args, ctx) {
-		return ctx.hook('parse', async args => {
+	parse(args, ctx, cli) {
+		return (cli || ctx).hook('parse', async args => {
 			if (!Array.isArray(args)) {
 				throw E.INVALID_ARGUMENT('Expected args to be an array', { name: 'args', scope: 'Parser.parse', value: args });
 			}
