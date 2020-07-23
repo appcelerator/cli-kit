@@ -148,7 +148,7 @@ export default class CLI extends Context {
 		this.nodeVersion               = params.nodeVersion;
 		this.showBannerForExternalCLIs = params.showBannerForExternalCLIs;
 		this.showHelpOnError           = params.showHelpOnError;
-		this.styles                    = params.styles;
+		this.styles                    = Object.assign({}, debug.styles, params.styles);
 		this.terminal                  = params.terminal || new Terminal();
 		this.version                   = params.version;
 		this.warnings                  = [];
@@ -489,11 +489,13 @@ export default class CLI extends Context {
 
 			return results;
 		} catch (err) {
-			error(err.stack || err.message || err.toString());
+			if (!opts.serverMode) {
+				error(err.stack || err.message || err.toString());
+			}
 
 			await this.emit('banner');
 
-			const help = this.help && this.prop('showHelpOnError') !== false && this.commands.get('help');
+			const help = this.help && this.prop('showHelpOnError') !== false && err.showHelp !== false && this.commands.get('help');
 			if (help) {
 				results.contexts = err.contexts || parser.contexts || [ this ];
 				results.err = err;
@@ -578,6 +580,7 @@ export default class CLI extends Context {
 						ec = exitCode() || 0;
 					} catch (err) {
 						error(err.stack || err.message || err.toString());
+						terminal.stderr.write(`${this.styles.error(err.toString())}\n`);
 					} finally {
 						current = null;
 						log(`Command finished (code ${ec})`);

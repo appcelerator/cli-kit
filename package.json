@@ -1,6 +1,6 @@
 {
   "name": "cli-kit",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Everything you need to create awesome command line interfaces",
   "main": "./dist/index.js",
   "author": "Chris Barber <chris@cb1inc.com> (https://github.com/cb1kenobi)",
@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "argv-split": "^2.0.1",
-    "fast-levenshtein": "^2.0.6",
+    "fastest-levenshtein": "^1.0.9",
     "fs-extra": "^9.0.1",
     "hook-emitter": "^4.1.0",
     "lodash.camelcase": "^4.3.0",

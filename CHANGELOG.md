@@ -1,3 +1,12 @@
+# 1.5.0 (Jul 23, 2020)
+
+ * feat(cli): Added `showHelp` flag on thrown errors to override `showHelpOnError`. Defaults to
+   `true`. This still requires `help` to be enabled.
+ * feat(debug): Added `error` style for help template and server mode error handling.
+ * fix(cli): Removed duplicate error logging when server mode execution throws exception.
+ * fix(help): Allow non-Error objects to be thrown and rendered on the help screen.
+ * chore(dep): Replaced `fast-levenshtein` with `fastest-levenshtein`.
+
 # 1.4.0 (Jul 21, 2020)
 
  * feat(cli): Added support for user-defined in `styles` passed into the `CLI` constructor as well

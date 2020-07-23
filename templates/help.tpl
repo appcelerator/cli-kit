@@ -1,5 +1,5 @@
 if (error) {
-	>> ${style.alert(error.message)}
+	>> ${style.error(error.message)}
 	if (error.code === 'ERR_MISSING_REQUIRED_OPTION') {
 		for (const option of error.meta.required) {
 			>>|  ${style.highlight(option.format)}  ${option.desc || ''}

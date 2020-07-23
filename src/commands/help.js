@@ -65,6 +65,10 @@ export default {
 		exitCode(+!!err); // 0=success, 1=error
 
 		const formatError = err => {
+			if (typeof err === 'string') {
+				return { message: err };
+			}
+
 			const type = err && err.constructor && err.constructor.name || null;
 			return err ? {
 				code:    err.code,
@@ -90,9 +94,9 @@ export default {
 				const unknownCommand = _[0];
 				err = new Error(`Unknown command "${unknownCommand}"`);
 
-				const levenshtein = require('fast-levenshtein');
+				const { distance } = require('fastest-levenshtein');
 				help.suggestions = help.commands.entries
-					.map(cmd => ({ name: cmd.name, desc: cmd.desc, dist: levenshtein.get(unknownCommand, cmd.name) }))
+					.map(cmd => ({ name: cmd.name, desc: cmd.desc, dist: distance(unknownCommand, cmd.name) }))
 					.filter(s => s.dist <= 2)
 					.sort((a, b) => {
 						const r = a.dist - b.dist;

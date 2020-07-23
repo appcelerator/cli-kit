@@ -12,6 +12,7 @@ export const logger = snooplogg
 		minBrightness: 80,
 		theme: 'detailed'
 	})
+	.style('error', s => chalk.red(s))
 	.style('heading', s => String(s).toUpperCase())
 	.style('subheading', s => chalk.gray(s));
 

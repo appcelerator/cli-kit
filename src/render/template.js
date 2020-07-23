@@ -1,4 +1,4 @@
-import debug from '../lib/debug';
+// import debug from '../lib/debug';
 import E from '../lib/errors';
 import fs from 'fs';
 
@@ -99,8 +99,6 @@ export function render(template, data) {
 
 	// log(template);
 	// log(Object.keys(data));
-
-	data.style = Object.assign({}, debug.styles, data.style);
 
 	const vars = Object.keys(data);
 	let body = (vars.length ? `let { ${vars.join(', ')} } = __data;\n\n` : '') +
