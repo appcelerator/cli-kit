@@ -134,9 +134,8 @@ export default class Context extends HookEmitter {
 	 * @access private
 	 */
 	generateHelp(opts = {}) {
-		return this.hook('generateHelp', results => {
+		return this.hook('generateHelp', (ctx, results) => {
 			const scopes = [];
-			let { ctx } = results;
 
 			while (ctx) {
 				scopes.push({
@@ -233,8 +232,7 @@ export default class Context extends HookEmitter {
 			};
 
 			return results;
-		})({
-			ctx:         this,
+		})(this, {
 			contexts:    [],
 			error:       undefined,
 			suggestions: [],

@@ -1,3 +1,8 @@
+# 1.5.1 (Jul 23, 2020)
+
+ * fix(context): Fixed circular reference introduced when fixing the `generateHelp` hook event in
+   v1.3.0 when generated JSON object is stringified.
+
 # 1.5.0 (Jul 23, 2020)
 
  * feat(cli): Added `showHelp` flag on thrown errors to override `showHelpOnError`. Defaults to
