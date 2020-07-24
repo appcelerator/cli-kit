@@ -98,7 +98,7 @@ export default class Terminal extends EventEmitter {
 		}
 		this.promptTimeout = opts.promptTimeout | 0;
 
-		this.on('newListener', (event, listener) => {
+		this.stdin.on('newListener', event => {
 			if (event === 'keypress') {
 				if (!this.rl) {
 					this.rl = readline.createInterface(this.stdin);
@@ -114,24 +114,18 @@ export default class Terminal extends EventEmitter {
 					this.stdin.setRawMode(true);
 					this.stdin.on('keypress', this.sigintHandler);
 				}
-
-				this.stdin.on('keypress', listener);
 			}
 		});
 
-		this.on('removeListener', (event, listener) => {
-			if (event === 'keypress') {
-				this.stdin.removeListener('keypress', listener);
-
-				if (this.stdin.isTTY && !this.listenerCount(event)) {
-					if (--this.rawMode === 0) {
-						this.stdin.setRawMode(false);
-						this.stdin.removeListener('keypress', this.sigintHandler);
-						this.sigintHandler === 'false';
-					}
-					this.rl.close();
-					this.rl = null;
+		this.stdin.on('removeListener', event => {
+			if (event === 'keypress' && this.stdin.isTTY) {
+				if (--this.rawMode === 0) {
+					this.stdin.setRawMode(false);
+					this.stdin.removeListener('keypress', this.sigintHandler);
+					this.sigintHandler === 'false';
 				}
+				this.rl.close();
+				this.rl = null;
 			}
 		});
 
@@ -143,8 +137,6 @@ export default class Terminal extends EventEmitter {
 				});
 			});
 		}
-
-		// process.on('SIGINT', () => this.emit('SIGINT'));
 	}
 
 	beep() {
@@ -165,6 +157,61 @@ export default class Terminal extends EventEmitter {
 
 	get rows() {
 		return this.stdout.rows || this.defaultRows;
+	}
+
+	/**
+	 * A wrapper around `EventEmitter.on()`. If the `event` is `keypress`, then the event is routed
+	 * to the stdin instance.
+	 *
+	 * @param {String|Symbol} event - The event name.
+	 * @param {Function} listener - The event handler function.
+	 * @returns {Terminal}
+	 * @access public
+	 */
+	on(event, listener) {
+		if (event === 'keypress') {
+			this.stdin.on(event, listener);
+		} else {
+			super.on(event, listener);
+		}
+		return this;
+	}
+
+	/**
+	 * A wrapper around `EventEmitter.once()`. If the `event` is `keypress`, then the event is routed
+	 * to the stdin instance.
+	 *
+	 * @param {String|Symbol} event - The event name.
+	 * @param {Function} listener - The event handler function.
+	 * @returns {Terminal}
+	 * @access public
+	 */
+	once(event, listener) {
+		if (event === 'keypress') {
+			this.stdin.once(event, listener);
+		} else {
+			super.once(event, listener);
+		}
+		return this;
+	}
+
+	/**
+	 * A wrapper around `EventEmitter.removeListener()`. If the `event` is `keypress`, then the event is routed
+	 * to the stdin instance.
+	 *
+	 * @param {String|Symbol} event - The event name.
+	 * @param {Function} listener - The event handler function.
+	 * @returns {Terminal}
+	 * @access public
+	 */
+	removeListener(event, listener) {
+		if (event === 'keypress') {
+			this.stdin.removeListener(event, listener);
+		} else {
+			super.removeListener(event, listener);
+		}
+		return this;
+
 	}
 
 	/**

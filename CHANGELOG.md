@@ -1,3 +1,8 @@
+# 1.5.2 (Jul 24, 2020)
+
+ * fix(terminal): Fixed bug where `keypress` event listeners were not properly being wired up to
+   `stdin` resulting in the listener not being removed after being fired once.
+
 # 1.5.1 (Jul 23, 2020)
 
  * fix(context): Fixed circular reference introduced when fixing the `generateHelp` hook event in
