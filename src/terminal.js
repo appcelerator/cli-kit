@@ -98,37 +98,6 @@ export default class Terminal extends EventEmitter {
 		}
 		this.promptTimeout = opts.promptTimeout | 0;
 
-		this.stdin.on('newListener', event => {
-			if (event === 'keypress') {
-				if (!this.rl) {
-					this.rl = readline.createInterface(this.stdin);
-				}
-
-				if (this.stdin.isTTY && ++this.rawMode === 1) {
-					this.sigintHandler = (chunk, key) => {
-						if (key && key.name === 'c' && key.ctrl) {
-							this.emit('SIGINT');
-						}
-					};
-
-					this.stdin.setRawMode(true);
-					this.stdin.on('keypress', this.sigintHandler);
-				}
-			}
-		});
-
-		this.stdin.on('removeListener', event => {
-			if (event === 'keypress' && this.stdin.isTTY) {
-				if (--this.rawMode === 0) {
-					this.stdin.setRawMode(false);
-					this.stdin.removeListener('keypress', this.sigintHandler);
-					this.sigintHandler === 'false';
-				}
-				this.rl.close();
-				this.rl = null;
-			}
-		});
-
 		if (this.stdout.isTTY) {
 			this.stdout.on('resize', () => {
 				this.emit('resize', {
@@ -159,6 +128,36 @@ export default class Terminal extends EventEmitter {
 		return this.stdout.rows || this.defaultRows;
 	}
 
+	onAddKeypress() {
+		if (!this.rl) {
+			this.rl = readline.createInterface(this.stdin);
+		}
+
+		if (this.stdin.isTTY && ++this.rawMode === 1) {
+			this.sigintHandler = (chunk, key) => {
+				if (key && key.name === 'c' && key.ctrl) {
+					this.emit('SIGINT');
+				}
+			};
+
+			this.stdin.setRawMode(true);
+			this.stdin.on('keypress', this.sigintHandler);
+		}
+	}
+
+	onRemoveKeypress() {
+		if (this.stdin.isTTY && --this.rawMode === 0) {
+			this.stdin.setRawMode(false);
+			this.stdin.removeListener('keypress', this.sigintHandler);
+			this.sigintHandler === 'false';
+		}
+
+		if (this.rl) {
+			this.rl.close();
+			this.rl = null;
+		}
+	}
+
 	/**
 	 * A wrapper around `EventEmitter.on()`. If the `event` is `keypress`, then the event is routed
 	 * to the stdin instance.
@@ -171,6 +170,7 @@ export default class Terminal extends EventEmitter {
 	on(event, listener) {
 		if (event === 'keypress') {
 			this.stdin.on(event, listener);
+			this.onAddKeypress();
 		} else {
 			super.on(event, listener);
 		}
@@ -189,6 +189,7 @@ export default class Terminal extends EventEmitter {
 	once(event, listener) {
 		if (event === 'keypress') {
 			this.stdin.once(event, listener);
+			this.onAddKeypress();
 		} else {
 			super.once(event, listener);
 		}
@@ -207,6 +208,7 @@ export default class Terminal extends EventEmitter {
 	removeListener(event, listener) {
 		if (event === 'keypress') {
 			this.stdin.removeListener(event, listener);
+			this.onRemoveKeypress();
 		} else {
 			super.removeListener(event, listener);
 		}

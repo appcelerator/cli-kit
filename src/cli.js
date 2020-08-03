@@ -407,6 +407,7 @@ export default class CLI extends Context {
 				_,
 				argv,
 				contexts,
+				required,
 				unknown
 			} = await parser.parse(__argv, cli, this);
 
@@ -417,6 +418,35 @@ export default class CLI extends Context {
 				`${pluralize('context', contexts.length, true)} ` +
 				note(`(exit: ${results.exitCode()})`)
 			);
+
+			// check for missing arguments and options if help is disabled or is not set
+			if (!this.help || !argv.help) {
+				// `_` already contains all known parsed arguments, but may not contain all required
+				// arguments, thus we must loop over the remaining arguments and check if there are
+				// any missing required arguments.
+				//
+				// note that we stop looping if we find an argument with multiple arguments since
+				// we've already gobbled up all the values
+				let i = _.length;
+				const len = this.args.length;
+				if (i === 0 || (i < len && !this.args[i - 1].multiple)) {
+					for (; i < len; i++) {
+						if (this.args[i].required && (!this.args[i].multiple || !argv[this.args[i].name].length)) {
+							throw E.MISSING_REQUIRED_ARGUMENT(
+								`Missing required argument "${this.args[i].name}"`,
+								{ name: 'args', scope: 'Parser.parse', value: this.args[i] }
+							);
+						}
+					}
+				}
+
+				if (required.size) {
+					throw E.MISSING_REQUIRED_OPTION(
+						`Missing ${required.size} required option${required.size === 1 ? '' : 's'}:`,
+						{ name: 'options', scope: 'Parser.parse', required: required.values() }
+					);
+				}
+			}
 
 			const cmd = contexts[0];
 
@@ -490,7 +520,7 @@ export default class CLI extends Context {
 			return results;
 		} catch (err) {
 			if (!opts.serverMode) {
-				error(err.stack || err.message || err.toString());
+				error(err.stack || err.message || err.toString() || 'Unknown error');
 			}
 
 			await this.emit('banner');
