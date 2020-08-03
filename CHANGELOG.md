@@ -1,3 +1,12 @@
+# 1.6.0 (Aug 3, 2020)
+
+ * feat(help): Added `CLI` instanced styles to help template rendering.
+ * fix(terminal): Only wire up keypress on stdin when added to `Terminal` and not if some other
+   logic listens on stdin.
+ * fix(parser): Moved missing required argument validation from parser to CLI to allow option
+   callbacks such as `--version` to work properly.
+ * chore: Updated dependencies.
+
 # 1.5.2 (Jul 24, 2020)
 
  * fix(terminal): Fixed bug where `keypress` event listeners were not properly being wired up to

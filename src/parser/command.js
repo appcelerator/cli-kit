@@ -247,9 +247,9 @@ export default class Command extends Context {
 	 * @access private
 	 */
 	generateHelp() {
-		this.on('generateHelp', async results => {
+		this.on('generateHelp', async (ctx, results) => {
 			const opts = {
-				style: debug.styles
+				style: Object.assign({}, debug.styles, this.get('styles'))
 			};
 			results.header = typeof this.help.header === 'function' ? await this.help.header.call(this, opts) : this.help.header;
 			results.footer = typeof this.help.footer === 'function' ? await this.help.footer.call(this, opts) : this.help.footer;

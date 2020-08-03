@@ -211,6 +211,7 @@ export default class Parser {
 
 			// gather the default option values and environment variable values
 			const { env, required } = this.applyDefaults();
+			this.required = required;
 
 			// loop over the parsed args and fill in the `argv` and `_`
 			log('Filling argv and _');
@@ -360,29 +361,6 @@ export default class Parser {
 
 			// add the extra items
 			this._.push.apply(this._, extra);
-
-			// check for missing arguments and options if help is not specified
-			if (!this.argv.help) {
-				// note that `index` has been incrementing above for each known argument, however
-				// if the last index was a multi value argument, then it gobbled up all the args
-				// and any remaining args would be starved anyways, so skip the validation
-				const len = ctx.args.length;
-				for (; index < len; index++) {
-					if (ctx.args[index].required && (!ctx.args[index].multiple || !this.argv[ctx.args[index].name].length)) {
-						throw E.MISSING_REQUIRED_ARGUMENT(
-							`Missing required argument "${ctx.args[index].name}"`,
-							{ name: 'args', scope: 'Parser.parse', value: ctx.args[index] }
-						);
-					}
-				}
-
-				if (required.size) {
-					throw E.MISSING_REQUIRED_OPTION(
-						`Missing ${required.size} required option${required.size === 1 ? '' : 's'}:`,
-						{ name: 'options', scope: 'Parser.parse', required: required.values() }
-					);
-				}
-			}
 
 			// process env vars
 			log('Mixing in environment variable values');
