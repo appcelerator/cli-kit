@@ -223,7 +223,7 @@ export default class Context extends HookEmitter {
 			results.commands.count && usage.push('<command>');
 			results.options.count && usage.push('[options]');
 			usage.push.apply(usage, results.arguments.entries.map(arg => {
-				const name = `<${arg.name}${arg.multiple ? '...' : ''}>`;
+				const name = `<${arg.hint}${arg.multiple ? '...' : ''}>`;
 				return arg.required ? name : `[${name}]`;
 			}));
 			results.usage = {

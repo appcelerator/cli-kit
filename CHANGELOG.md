@@ -1,3 +1,9 @@
+# 1.6.1 (Aug 5, 2020)
+
+ * fix(cli): Fixed regression introduced in v1.6.0 that broke missing argument validation.
+ * fix(argument): Added missing argument `callback` and `hint`.
+ * chore: Updated dev dependencies.
+
 # 1.6.0 (Aug 3, 2020)
 
  * feat(help): Added `CLI` instanced styles to help template rendering.

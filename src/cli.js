@@ -419,6 +419,8 @@ export default class CLI extends Context {
 				note(`(exit: ${results.exitCode()})`)
 			);
 
+			const cmd = contexts[0];
+
 			// check for missing arguments and options if help is disabled or is not set
 			if (!this.help || !argv.help) {
 				// `_` already contains all known parsed arguments, but may not contain all required
@@ -428,13 +430,13 @@ export default class CLI extends Context {
 				// note that we stop looping if we find an argument with multiple arguments since
 				// we've already gobbled up all the values
 				let i = _.length;
-				const len = this.args.length;
-				if (i === 0 || (i < len && !this.args[i - 1].multiple)) {
+				const len = cmd.args.length;
+				if (i === 0 || (i < len && !cmd.args[i - 1].multiple)) {
 					for (; i < len; i++) {
-						if (this.args[i].required && (!this.args[i].multiple || !argv[this.args[i].name].length)) {
+						if (cmd.args[i].required && (!cmd.args[i].multiple || !argv[cmd.args[i].name].length)) {
 							throw E.MISSING_REQUIRED_ARGUMENT(
-								`Missing required argument "${this.args[i].name}"`,
-								{ name: 'args', scope: 'Parser.parse', value: this.args[i] }
+								`Missing required argument "${cmd.args[i].name}"`,
+								{ name: 'args', scope: 'Parser.parse', value: cmd.args[i] }
 							);
 						}
 					}
@@ -447,8 +449,6 @@ export default class CLI extends Context {
 					);
 				}
 			}
-
-			const cmd = contexts[0];
 
 			results._                  = _;
 			results.argv               = argv;

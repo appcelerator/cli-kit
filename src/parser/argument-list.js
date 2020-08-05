@@ -51,13 +51,14 @@ export default class ArgumentList extends Array {
 	generateHelp() {
 		const entries = [];
 
-		for (const { desc, hidden, multiple, name, required } of this) {
+		for (const { desc, hidden, hint, multiple, name, required } of this) {
 			if (!hidden) {
 				entries.push({
-					name,
 					desc,
-					required,
-					multiple
+					hint,
+					multiple,
+					name,
+					required
 				});
 			}
 		}

@@ -33,6 +33,7 @@ export default class Argument {
 	 * environment variable is set, it overrides the value parsed from the arguments.
 	 * @param {Boolean} [params.hidden=false] - When `true`, the argument is not displayed on the
 	 * help screen or auto-suggest.
+	 * @param {String} [params.hint] - The hint label if the argument expects a value.
 	 * @param {Number} [params.max] - When `type` is `int`, `number`, or `positiveInt`, the
 	 * validator will assert the value is less than or equal to the specified value.
 	 * @param {Number} [params.min] - When `type` is `int`, `number`, or `positiveInt`, the
@@ -90,10 +91,12 @@ export default class Argument {
 			name = m[1].trim();
 		}
 
+		this.callback  = params.callback;
 		this.camelCase = name ? params.camelCase !== false : false;
 		this.datatype  = checkType(params.type, 'string');
 		this.desc      = params.desc;
 		this.hidden    = !!params.hidden;
+		this.hint      = params.hint || name;
 		this.name      = name;
 		this.max       = typeof params.max === 'number' ? params.max : null;
 		this.min       = typeof params.min === 'number' ? params.max : null;
