@@ -1,3 +1,7 @@
+# 1.6.2 (Aug 11, 2020)
+
+ * fix(cli): Only show help on errors caused by parsing and validation, not command execution.
+
 # 1.6.1 (Aug 5, 2020)
 
  * fix(cli): Fixed regression introduced in v1.6.0 that broke missing argument validation.

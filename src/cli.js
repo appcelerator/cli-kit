@@ -353,6 +353,7 @@ export default class CLI extends Context {
 		}
 
 		let exitCode = undefined;
+		let showHelpOnError = this.prop('showHelpOnError');
 		const parser = new Parser(opts);
 		const __argv = _argv.slice(0);
 
@@ -492,6 +493,11 @@ export default class CLI extends Context {
 					contexts.unshift(results.cmd);
 				}
 
+				// now that we've made it past the parsing and validation, we are going to execute
+				// the command and thus we want to turn off show help on error unless the error
+				// explicitly requests help to be shown
+				showHelpOnError = false;
+
 				// handle the banner
 				await this.emit('banner', { argv, ctx: cmd });
 
@@ -525,7 +531,7 @@ export default class CLI extends Context {
 
 			await this.emit('banner');
 
-			const help = this.help && this.prop('showHelpOnError') !== false && err.showHelp !== false && this.commands.get('help');
+			const help = this.help && (showHelpOnError !== false || err.showHelp) && this.commands.get('help');
 			if (help) {
 				results.contexts = err.contexts || parser.contexts || [ this ];
 				results.err = err;
