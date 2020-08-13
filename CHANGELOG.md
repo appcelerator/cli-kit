@@ -1,3 +1,9 @@
+# 1.7.0 (Aug 13, 2020)
+
+ * feat(ansi): Added `ansi.split()` to break a string up by ANSI escape sequences.
+ * feat(ansi): Added `ansi.toLowerCase()` and `ansi.toUpperCase()`.
+ * chore: Updated dependencies.
+
 # 1.6.2 (Aug 11, 2020)
 
  * fix(cli): Only show help on errors caused by parsing and validation, not command execution.

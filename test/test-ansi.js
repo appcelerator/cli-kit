@@ -1,4 +1,8 @@
+import snooplogg from 'snooplogg';
 import { ansi } from '../dist/index';
+import { expect } from 'chai';
+
+const { chalk } = snooplogg;
 
 describe('ansi', () => {
 	it('should return the correct ansi escape sequences', () => {
@@ -72,5 +76,104 @@ describe('ansi', () => {
 			e2.stack = e.stack;
 			throw e2;
 		}
+	});
+
+	it('should split an empty string', () => {
+		expect(ansi.split('')).to.deep.equal([]);
+	});
+
+	it('should split a string with any ansi escape codes', () => {
+		expect(ansi.split('foo bar')).to.deep.equal([ 'foo bar' ]);
+	});
+
+	it('should split a string with only ansi escape codes', () => {
+		expect(ansi.split('\x1b[S')).to.deep.equal([ '', '\x1b[S' ]);
+	});
+
+	it('should not split a non-string', () => {
+		for (const x of [ 123, null, {} ]) {
+			expect(ansi.split(x)).to.deep.equal(x);
+		}
+	});
+
+	it('should split the kitchen sink', () => {
+		const tokens = [
+			'a',
+			'\x07',
+			'b',
+			'\x1bc',
+			'c',
+			'\x1b7',
+			'd',
+			'\x1b[?25h',
+			'e',
+			'\x1b[?25l',
+			'g',
+			'\x1b[E',
+			'h',
+			'\x1b[F',
+			'i',
+			'\x1b[G',
+			'j',
+			'\x1b[H',
+			'k',
+			'\x1b[J',
+			'l',
+			'\x1b[K',
+			'm',
+			'\x1b[S',
+			'n',
+			'\x1b[T',
+			'o',
+			'\x1b[6n',
+			'p',
+			'\x1b[2K',
+			'q',
+			'\x1b[2J',
+			'r',
+			'\x1b[1K',
+			's',
+			'\x1b[1J',
+			't',
+			'\x1b[1A',
+			'u',
+			'\x1b[12B',
+			'v',
+			'\x1b[123C',
+			'w',
+			'\x1b[1234D',
+			'x',
+			'\x1b[12345G',
+			'y',
+			'\x1b[12;34H',
+			'z',
+			'\x1b]666;Echo=on\x07',
+			'a',
+			'\x1b]666;Echo=off\x07',
+			'b',
+			'\x1b]666;Exec=${encode(command)}\x07',
+			'c',
+			'\x1b]666;Exit=${code}\x07',
+			'd',
+			'\x1b]666;Keypress=${encode(key)}\x07',
+			'e',
+			'\x1b]8;;https://foo.com?a=b\x07',
+			'click here',
+			'\x1b]8;;\x07',
+			'f',
+			'\u001b[31m',
+			'g',
+			'\u001b[39m',
+			'h'
+		];
+		expect(ansi.split(tokens.join(''))).to.deep.equal(tokens);
+	});
+
+	it('should upper case a string', () => {
+		expect(ansi.toUpperCase(`All systems ${chalk.green('go')}!`)).to.equal(`ALL SYSTEMS ${chalk.green('GO')}!`);
+	});
+
+	it('should lower case a string', () => {
+		expect(ansi.toLowerCase(`${chalk.red('Error!')} Something broke!`)).to.equal(`${chalk.red('error!')} something broke!`);
 	});
 });

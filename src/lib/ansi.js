@@ -90,6 +90,35 @@ export function link(text, url) {
 	return `\x1b]8;;${url || text}\x07${text}\x1b]8;;\x07`;
 }
 
+/**
+ * Splits a string into an array where even number indices are plain strings and odd number
+ * indices are ANSI escape sequences.
+ *
+ * @param {String} str - The string to split.
+ * @returns {Array.<String>}
+ */
+export function split(str) {
+	if (typeof str !== 'string') {
+		return str;
+	}
+
+	const results = [];
+	const re = /\x07|\x1b(?:[a-z\d]|\[\?25[hl]|\[[A-Za-z]|\[\d+[A-Za-z]|\[\d+;\d+H|\]\d+[^\x07]+\x07)/;
+	let m;
+
+	while (m = re.exec(str)) {
+		results.push(m.index ? str.substring(0, m.index) : '');
+		results.push(str.substr(m.index, m[0].length));
+		str = str.substring(m.index + m[0].length);
+	}
+
+	if (str) {
+		results.push(str);
+	}
+
+	return results;
+}
+
 const stripRegExp = /\x1b\[(;?\d+)+m/g;
 
 /**
@@ -100,4 +129,24 @@ const stripRegExp = /\x1b\[(;?\d+)+m/g;
  */
 export function strip(str = '') {
 	return String(str).replace(stripRegExp, '');
+}
+
+/**
+ * Converts a string to lower case without tampering with any ANSI escape sequences.
+ *
+ * @param {String} str - The string to lower case.
+ * @returns {String}
+ */
+export function toLowerCase(str) {
+	return split(str).map((s, i) => i % 2 === 0 ? s.toLowerCase() : s).join('');
+}
+
+/**
+ * Converts a string to upper case without tampering with any ANSI escape sequences.
+ *
+ * @param {String} str - The string to upper case.
+ * @returns {String}
+ */
+export function toUpperCase(str) {
+	return split(str).map((s, i) => i % 2 === 0 ? s.toUpperCase() : s).join('');
 }
