@@ -1,11 +1,44 @@
 import argvSplit from 'argv-split';
-import fs from 'fs';
+import fs from 'fs-extra';
 import E from './errors';
 import path from 'path';
 import pkgDir from 'pkg-dir';
+import semver from 'semver';
 import which from 'which';
 
-export { pkgDir };
+/**
+ * The required Node.js version for cli-kit. This is used to assert the Node version at runtime.
+ * If the `CLI` instance is created with a `nodeVersion`, then it assert the greater of the two
+ * Node versions.
+ *
+ * @type {String}
+ */
+const clikitNodeVersion = fs.readJsonSync(path.resolve(__dirname, '..', '..', 'package.json')).engines.node;
+
+/**
+ * Asserts that the current Node.js version meets the requirements of cli-kit as well as the app.
+ *
+ * @param {Object} opts - Various options.
+ * @param {String} [opts.appName] - The name of the app.
+ * @param {String} [opts.nodeVersion] - The required Node.js version.
+ */
+export function assertNodeJSVersion({ appName, nodeVersion }) {
+	const { version: current } = process;
+	let required;
+
+	if (!semver.satisfies(current, clikitNodeVersion)) {
+		required = clikitNodeVersion;
+	} else if (nodeVersion && !semver.satisfies(current, nodeVersion)) {
+		required = nodeVersion;
+	}
+
+	if (required) {
+		throw E.INVALID_NODE_JS(`${appName !== 'program' && appName || 'This program'} requires Node.js version ${required}, currently ${current}`, {
+			current,
+			required
+		});
+	}
+}
 
 /**
  * Adds the name of the class and any base classes to an internal `clikit` property.
@@ -164,6 +197,8 @@ export function isFile(file) {
 	}
 	return false;
 }
+
+export { pkgDir };
 
 /**
  * Splits an argv (argument vector) string.
