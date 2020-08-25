@@ -4,6 +4,7 @@ import Context from './context';
 import debug from '../lib/debug';
 import E from '../lib/errors';
 import Extension from './extension';
+import HookEmitter from 'hook-emitter';
 import ParsedArgument from './parsed-argument';
 import pluralize from 'pluralize';
 
@@ -19,14 +20,23 @@ const optRE = /^(?:--|—)(?:([^=]+)(?:=([\s\S]*))?)$/;
 
 /**
  * A collection of parsed CLI arguments.
+ *
+ * @extends {HookEmitter}
  */
-export default class Parser {
+export default class Parser extends HookEmitter {
 	/**
 	 * An object containing all of the parsed options, flags, and named arguments.
 	 *
 	 * @type {Object}
 	 */
 	argv = {};
+
+	/**
+	 * A list of options and arguments in which their callbacks were fired during parsing so that
+	 * we don't fire the callbacks again when setting the default values.
+	 * @type {Set}
+	 */
+	_fired = new Set();
 
 	/**
 	 * An object containing only unknown parsed options and flags.
@@ -53,36 +63,56 @@ export default class Parser {
 	 * @access public
 	 */
 	constructor(opts = {}) {
+		super();
+
 		Object.defineProperties(this, {
 			/**
 			 * The array of arguments. As arguments are identified, they are replaced with
 			 * `ParsedArgument` instances and in the case of options with values and extra options,
 			 * the array is shortened.
-			 *
 			 * @type {Array.<String|ParsedArgument>}
 			 */
 			args: {
-				value: [],
+				value: null,
 				writable: true
 			},
 
 			/**
 			 * A stack of contexts applied to the arguments. The first element is the most specific
 			 * context, usually a command. The last element is typically the root `CLI` instance.
-			 *
 			 * @type {Array.<Context>}
 			 */
 			contexts: {
-				value: []
+				value: null,
+				writable: true
+			},
+
+			/**
+			 * A map of option and argument environment variable values derived from all options
+			 * and arguments found across all contexts.
+			 * @type {Object}
+			 */
+			env: {
+				value: null,
+				writable: true
 			},
 
 			/**
 			 * Options possibly containing a `data` payload, `exitCode`, and `terminal` instance.
-			 *
 			 * @type {Object}
 			 */
 			opts: {
 				value: opts
+			},
+
+			/**
+			 * A list of all required arguments and options that were missing. The caller (e.g.
+			 * the `CLI` instance) is responsible for enforcing missing arguments.
+			 * @type {Set}
+			 */
+			required: {
+				value: null,
+				writable: true
 			}
 		});
 
@@ -93,19 +123,20 @@ export default class Parser {
 	 * Loops over the contexts in reverse from the top-level to the most specific context and
 	 * gathers the option defaults as well as any options specified as environment variables.
 	 *
-	 * @returns {Object} A map of option names to values derived from environment variables.
+	 * @returns {Promise}
 	 * @access private
 	 */
-	applyDefaults() {
-		const env = {};
-		const len = this.contexts.length;
-		log(`Processing default options and environment variables for ${highlight(len)} ${pluralize('context', len)}`);
-
+	async applyDefaults() {
 		const requiredOptions = {
 			long: {},
 			short: {}
 		};
+		const len = this.contexts.length;
+		log(`Processing default options and environment variables for ${highlight(len)} ${pluralize('context', len)}`);
 
+		this.env = {};
+
+		// loop through every context
 		for (let i = len; i; i--) {
 			const ctx = this.contexts[i - 1];
 
@@ -115,20 +146,42 @@ export default class Parser {
 					if (option.name) {
 						const name = option.camelCase || ctx.get('camelCase') ? camelCase(option.name) : option.name;
 
-						if (option.default !== undefined) {
-							this.argv[name] = option.default;
-						} else if (option.datatype === 'bool') {
-							this.argv[name] = !!option.negate;
-						} else if (option.type === 'count') {
-							this.argv[name] = 0;
-						}
+						if (this.argv[name] === undefined) {
+							let value = option.default;
 
-						if (option.multiple && !Array.isArray(this.argv[name])) {
-							this.argv[name] = this.argv[name] !== undefined ? [ this.argv[name] ] : [];
+							if (option.datatype === 'bool') {
+								value = !!option.negate;
+							} else if (option.type === 'count') {
+								value = 0;
+							}
+
+							if (option.multiple && !Array.isArray(value)) {
+								value = value !== undefined ? [ value ] : [];
+							}
+
+							if (!this._fired.has(option) && typeof option.callback === 'function') {
+								const newValue = await option.callback({
+									ctx,
+									data: this.opts.data,
+									exitCode: this.opts.exitCode,
+									input: [ value ],
+									name,
+									async next() {},
+									opts: this.opts,
+									option,
+									parser: this,
+									value
+								});
+								if (newValue !== undefined) {
+									value = newValue;
+								}
+							}
+
+							this.argv[name] = value;
 						}
 
 						if (option.env && process.env[option.env] !== undefined) {
-							env[name] = option.transform(process.env[option.env]);
+							this.env[name] = option.transform(process.env[option.env]);
 						}
 					}
 
@@ -155,40 +208,228 @@ export default class Parser {
 				if (arg.name) {
 					const name = arg.camelCase || ctx.get('camelCase') ? camelCase(arg.name) : arg.name;
 
-					if (arg.default !== undefined) {
-						this.argv[name] = arg.default;
-					}
+					if (this.argv[name] === undefined) {
+						let value = arg.default;
 
-					if (arg.multiple && !Array.isArray(this.argv[name])) {
-						this.argv[name] = this.argv[name] !== undefined ? [ this.argv[name] ] : [];
+						if (arg.multiple && !Array.isArray(value)) {
+							value = value !== undefined ? [ value ] : [];
+						}
+
+						if (!this._fired.has(arg) && typeof arg.callback === 'function') {
+							const newValue = await arg.callback({
+								arg,
+								ctx,
+								data: this.opts.data,
+								exitCode: this.opts.exitCode,
+								name,
+								opts: this.opts,
+								parser: this,
+								value
+							});
+							if (newValue !== undefined) {
+								value = newValue;
+							}
+						}
+
+						this.argv[name] = value;
 					}
 
 					if (arg.env && process.env[arg.env] !== undefined) {
-						env[name] = arg.transform(process.env[arg.env]);
+						this.env[name] = arg.transform(process.env[arg.env]);
 					}
 				}
 			}
 		}
 
-		const required = new Set(Object.values(requiredOptions.long));
+		this.required = new Set(Object.values(requiredOptions.long));
 		for (const option of Object.values(requiredOptions.short)) {
-			required.add(option);
+			this.required.add(option);
+		}
+	}
+
+	/**
+	 * Loops over the parsed arguments and populates the `argv` and `_` properties.
+	 *
+	 * @returns {Promise}
+	 * @access private
+	 */
+	async fillArgv() {
+		// from here, we want to deal with the most specific context
+		const ctx = this.contexts[0];
+
+		// loop over the parsed args and fill in the `argv` and `_`
+		log('Filling argv and _');
+
+		// combine parsed args that are options with multiple flag set
+		for (let k = 0; k < this.args.length; k++) {
+			let current = this.args[k];
+			if (current instanceof ParsedArgument && current.type === 'option' && current.option.multiple) {
+				for (let j = k + 1; j < this.args.length; j++) {
+					let next = this.args[j];
+					if (next instanceof ParsedArgument && next.type === 'option' && next.option === current.option) {
+						if (!Array.isArray(current.value)) {
+							current.value = [ current.value ];
+						}
+						if (next.value !== undefined) {
+							current.value = [].concat(current.value, next.value);
+						}
+						this.args.splice(j--, 1);
+					}
+				}
+			}
 		}
 
-		return { env, required };
+		let index = 0;
+		let extra = [];
+
+		const setArg = async (idx, value) => {
+			const arg = ctx.args[idx];
+			if (arg) {
+				const name = arg.camelCase || ctx.get('camelCase') ? camelCase(arg.name) : arg.name;
+				value = arg.transform(value);
+
+				if (typeof arg.callback === 'function') {
+					const newValue = await arg.callback({
+						arg,
+						ctx,
+						data: this.opts.data,
+						exitCode: this.opts.exitCode,
+						name,
+						opts: this.opts,
+						parser: this,
+						value
+					});
+					if (newValue !== undefined) {
+						value = newValue;
+					}
+					this._fired.add(arg);
+				}
+
+				if (arg.multiple) {
+					// if this arg gobbles up multiple parsed args, then we decrement `i` so
+					// that we never increment it and no further arguments will be applied
+					index--;
+					if (Array.isArray(this.argv[name])) {
+						this.argv[name].push(value);
+					} else {
+						this.argv[name] = [ value ];
+					}
+				} else {
+					this.argv[name] = value;
+				}
+			}
+
+			this._.push(value);
+		};
+
+		// loop over the parsed args and assign the values to _ and argv
+		for (const parsedArg of this.args) {
+			let name;
+			const isParsed = parsedArg instanceof ParsedArgument;
+
+			if (!isParsed || parsedArg.type === 'argument') {
+				await setArg(index++, isParsed ? parsedArg.input[0] : parsedArg);
+				continue;
+			}
+
+			switch (parsedArg.type) {
+				case 'argument':
+					// already handled above
+					break;
+
+				case 'extra':
+					extra = parsedArg.args;
+					break;
+
+				case 'option':
+					{
+						const { option } = parsedArg;
+						name = option.camelCase || ctx.get('camelCase') ? camelCase(option.name) : option.name;
+
+						let { value } = parsedArg;
+						if (option.type === 'count') {
+							value = (this.argv[name] || 0) + 1;
+						}
+
+						// non-multiple option callbacks have already been fired, now we need
+						// to do it just for multiple value options
+						if (typeof option.callback === 'function' && option.multiple) {
+							log(`Firing option ${highlight(option.format)} callback ${note(`(${option.parent.name})`)}`);
+							const newValue = await option.callback({
+								ctx,
+								data: this.opts.data,
+								exitCode: this.opts.exitCode,
+								input: [ value ],
+								name,
+								async next() {},
+								opts: this.opts,
+								option,
+								parser: this,
+								value
+							});
+							if (newValue !== undefined) {
+								value = newValue;
+							}
+							this._fired.add(option);
+						}
+
+						if (value !== undefined) {
+							// set the parsed value (overwrites the default value)
+							this.argv[name] = value;
+						}
+
+						// argv[name] either has the new value or the default value, but either way we must re-check it
+						if (this.argv[name] !== undefined && (!option.multiple || this.argv[name].length)) {
+							this.required.delete(option);
+						}
+
+						// if argv[name] has no value and no default, at least set it to an empty string
+						// note: this must be done after the required check above
+						if (this.argv[name] === undefined && option.datatype === 'string') {
+							this.argv[name] = option.transform('');
+						}
+					}
+					break;
+
+				case 'unknown':
+					// since this is an unknown option, we try to guess it's type and if it's
+					// a bool, we will honor the negate (e.g. --no-<name>)
+					let { value } = parsedArg;
+					value = value === undefined ? true : transformValue(value);
+					if (typeof value === 'boolean' && parsedArg.negated) {
+						value = !value;
+					}
+
+					// clean up the name
+					name = ctx.get('camelCase') ? camelCase(parsedArg.name) : parsedArg.name;
+					this.argv[name] = this.unknown[name] = value;
+
+					if (ctx.get('treatUnknownOptionsAsArguments')) {
+						this._.push(parsedArg.input[0]);
+					}
+					break;
+			}
+		}
+
+		// add the extra items
+		this._.push.apply(this._, extra);
+
+		// process env vars
+		log('Mixing in environment variable values');
+		Object.assign(this.argv, this.env);
 	}
 
 	/**
 	 * Parses the command line arguments.
 	 *
-	 * @param {Array} args - An array of raw, unparsed arguments.
-	 * @param {Context} ctx - The context to reference for commands, options, and arguments.
-	 * @param {CLI} [cli] - A reference to the CLI object
+	 * @param {Object} opts - Various options.
+	 * @param {Array} opts.args - An array of raw, unparsed arguments.
+	 * @param {Context} opts.ctx - The context to reference for commands, options, and arguments.
 	 * @returns {Promise<Parser>}
 	 * @access public
 	 */
-	parse(args, ctx, cli) {
-		return (cli || ctx).hook('parse', async args => {
+	async parse(opts) {
+		const fn = this.hook('parse', async ({ args, ctx }) => {
 			if (!Array.isArray(args)) {
 				throw E.INVALID_ARGUMENT('Expected args to be an array', { name: 'args', scope: 'Parser.parse', value: args });
 			}
@@ -198,179 +439,26 @@ export default class Parser {
 			}
 
 			this.args = args;
-			log(`Processing ${pluralize('argument', args.length, true)}: ${highlight(this.args.join(', '))}`);
+			this.contexts = [ ctx ];
 
-			// add the context to the stack
-			this.contexts.unshift(ctx);
+			log(`Processing ${pluralize('argument', args.length, true)}: ${highlight(this.args.join(', '))}`);
 
 			// process the arguments against the context
 			await this.parseWithContext(ctx);
 
-			// from here, we want to deal with the most specific context
-			ctx = this.contexts[0];
-
-			// gather the default option values and environment variable values
-			const { env, required } = this.applyDefaults();
-			this.required = required;
-
-			// loop over the parsed args and fill in the `argv` and `_`
-			log('Filling argv and _');
-
-			// combine parsed args that are options with multiple flag set
-			for (let k = 0; k < this.args.length; k++) {
-				let current = this.args[k];
-				if (current instanceof ParsedArgument && current.type === 'option' && current.option.multiple) {
-					for (let j = k + 1; j < this.args.length; j++) {
-						let next = this.args[j];
-						if (next instanceof ParsedArgument && next.type === 'option' && next.option === current.option) {
-							if (!Array.isArray(current.value)) {
-								current.value = [ current.value ];
-							}
-							if (next.value !== undefined) {
-								current.value = [].concat(current.value, next.value);
-							}
-							this.args.splice(j--, 1);
-						}
-					}
-				}
-			}
-
-			let index = 0;
-			let extra = [];
-
-			const setArg = async (idx, value) => {
-				const arg = ctx.args[idx];
-				if (arg) {
-					const name = arg.camelCase || ctx.get('camelCase') ? camelCase(arg.name) : arg.name;
-					value = arg.transform(value);
-
-					if (typeof arg.callback === 'function') {
-						const newValue = await arg.callback({
-							arg,
-							ctx,
-							exitCode: this.opts.exitCode,
-							opts: this.opts,
-							value
-						});
-						if (newValue !== undefined) {
-							value = newValue;
-						}
-					}
-
-					if (arg.multiple) {
-						// if this arg gobbles up multiple parsed args, then we decrement `i` so
-						// that we never increment it and no further arguments will be applied
-						index--;
-						if (Array.isArray(this.argv[name])) {
-							this.argv[name].push(value);
-						} else {
-							this.argv[name] = [ value ];
-						}
-					} else {
-						this.argv[name] = value;
-					}
-				}
-
-				this._.push(value);
-			};
-
-			// loop over the parsed args and assign the values to _ and argv
-			for (const parsedArg of this.args) {
-				let name;
-				const isParsed = parsedArg instanceof ParsedArgument;
-
-				if (!isParsed || parsedArg.type === 'argument') {
-					await setArg(index++, isParsed ? parsedArg.input[0] : parsedArg);
-					continue;
-				}
-
-				switch (parsedArg.type) {
-					case 'argument':
-						// already handled above
-						break;
-
-					case 'extra':
-						extra = parsedArg.args;
-						break;
-
-					case 'option':
-						{
-							const { option } = parsedArg;
-							name = option.camelCase || ctx.get('camelCase') ? camelCase(option.name) : option.name;
-
-							let { value } = parsedArg;
-							if (option.type === 'count') {
-								value = (this.argv[name] || 0) + 1;
-							}
-
-							// non-multiple option callbacks have already been fired, now we need
-							// to do it just for multiple value options
-							if (typeof option.callback === 'function' && option.multiple) {
-								log(`Firing option ${highlight(option.format)} callback ${note(`(${option.parent.name})`)}`);
-								const newValue = await option.callback({
-									ctx,
-									exitCode: this.opts.exitCode,
-									input: [ value ],
-									async next() {},
-									opts: this.opts,
-									option,
-									value
-								});
-								if (newValue !== undefined) {
-									value = newValue;
-								}
-							}
-
-							if (value !== undefined) {
-								// set the parsed value (overwrites the default value)
-								this.argv[name] = value;
-							}
-
-							// argv[name] either has the new value or the default value, but either way we must re-check it
-							if (this.argv[name] !== undefined && (!option.multiple || this.argv[name].length)) {
-								required.delete(option);
-							}
-
-							// if argv[name] has no value and no default, at least set it to an empty string
-							// note: this must be done after the required check above
-							if (this.argv[name] === undefined && option.datatype === 'string') {
-								this.argv[name] = option.transform('');
-							}
-						}
-						break;
-
-					case 'unknown':
-						// since this is an unknown option, we try to guess it's type and if it's
-						// a bool, we will honor the negate (e.g. --no-<name>)
-						let { value } = parsedArg;
-						value = value === undefined ? true : transformValue(value);
-						if (typeof value === 'boolean' && parsedArg.negated) {
-							value = !value;
-						}
-
-						// clean up the name
-						name = ctx.get('camelCase') ? camelCase(parsedArg.name) : parsedArg.name;
-						this.argv[name] = this.unknown[name] = value;
-
-						if (ctx.get('treatUnknownOptionsAsArguments')) {
-							this._.push(parsedArg.input[0]);
-						}
-						break;
-				}
-			}
-
-			// add the extra items
-			this._.push.apply(this._, extra);
-
-			// process env vars
-			log('Mixing in environment variable values');
-			Object.assign(this.argv, env);
-
 			return this;
-		})(args).catch(err => {
+		});
+
+		try {
+			return await fn({
+				...opts,
+				data: this.opts.data,
+				parser: this
+			});
+		} catch (err) {
 			err.contexts = this.contexts;
 			throw err;
-		});
+		}
 	}
 
 	/**
@@ -406,7 +494,16 @@ export default class Parser {
 			return;
 		}
 
-		if (to === undefined && i >= this.args.length) {
+		let { rev } = ctx;
+		let { length } = this.args;
+		const checkRev = async (ctx, to = length - 1) => {
+			if (ctx.rev > rev) {
+				log(`Rev changed from ${highlight(rev)} to ${highlight(ctx.rev)}, reparsing ${highlight(0)} through ${highlight(to)}`);
+				await this.parseArg(ctx, 0, to);
+			}
+		};
+
+		if (to === undefined && i >= length) {
 			let cmd = this.contexts[0];
 
 			// if there are no more contexts to descend, check if the top-most context is actually
@@ -422,22 +519,33 @@ export default class Parser {
 				return this.parseWithContext(cmd);
 			}
 
+			await this.hook('finalize', async () => {
+				await checkRev(ctx); // check if pre-finalize changed the rev
+				await this.applyDefaults();
+				await checkRev(ctx); // check if applyDefaults changed the rev
+				await this.fillArgv();
+			})({ ctx, data: this.opts.data, parser: this });
+			await checkRev(ctx); // check if post-finalize or fillArgv changed the rev
+
 			log('End of the line');
 			return;
 		}
 
-		let { rev } = ctx;
-		let { length } = this.args;
-
 		// create a ParsedArgument object for the next argument
 		const arg = await this.createParsedArgument(ctx, i);
 
+		// if the length was shortened, then decrement `to`
 		if (to !== undefined && this.args.length < length) {
 			to -= (length - this.args.length);
+			log(`Argument list was shortened from ${length} to ${this.args.length} (to=${to})`);
 		}
 
 		if (arg) {
 			const { type } = arg;
+
+			// check if the context changed (e.g. we found a command/extension) so that we continue
+			// to process arguments against the current context before we descend into the newly
+			// discovered command/extension context
 			const sameContext = this.contexts[0] === ctx;
 
 			if ((type !== 'command' && type !== 'extension') || sameContext) {
@@ -447,6 +555,15 @@ export default class Parser {
 			if ((type === 'command' || type === 'extension') && sameContext) {
 				// link the context hook emitters
 				arg[type].link(ctx);
+
+				const cmd = type === 'command' ? arg.command : arg.extension;
+				if (typeof cmd.callback === 'function') {
+					await cmd.callback({
+						command: arg.command,
+						data: this.opts.data,
+						parser: this
+					});
+				}
 
 				// add the context to the stack
 				this.contexts.unshift(arg[type]);
@@ -465,8 +582,10 @@ export default class Parser {
 				try {
 					const value = await option.callback({
 						ctx,
+						data: this.opts.data,
 						exitCode: this.opts.exitCode,
 						input: arg.input,
+						name: option.camelCase || ctx.get('camelCase') ? camelCase(option.name) : option.name,
 						next: async () => {
 							if (fired) {
 								log('next() already fired');
@@ -476,19 +595,13 @@ export default class Parser {
 							fired = true;
 
 							log(`Option ${highlight(option.format)} called next(), processing next arg`);
-
-							// check if the option callback added any new commands, options, or arguments
-							if (ctx.rev > rev) {
-								log(`Rev changed from ${highlight(rev)} to ${highlight(ctx.rev)}, reparsing ${highlight(0)} through ${highlight(i - 1)}`);
-								await this.parseArg(ctx, 0, i);
-							}
-
+							await checkRev(ctx, i);
 							await this.parseArg(ctx, i + 1, to);
-
 							return this.args[i].value;
 						},
 						opts: this.opts,
 						option,
+						parser: this,
 						value: arg.value
 					});
 
@@ -498,6 +611,8 @@ export default class Parser {
 						log(`Option ${highlight(option.format)} callback changed value ${highlight(arg.value)} to ${highlight(value)}`);
 						arg.value = value;
 					}
+
+					this._fired.add(option);
 
 					if (fired) {
 						return;
@@ -516,11 +631,7 @@ export default class Parser {
 			}
 		}
 
-		if (ctx.rev > rev) {
-			log(`Rev changed from ${highlight(rev)} to ${highlight(ctx.rev)}, reparsing ${highlight(0)} through ${highlight(i - 1)}`);
-			await this.parseArg(ctx, 0, i);
-		}
-
+		await checkRev(ctx, i);
 		await this.parseArg(ctx, i + 1, to);
 	}
 

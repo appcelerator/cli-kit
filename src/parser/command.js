@@ -31,6 +31,7 @@ export default class Command extends Context {
 	 * @param {Function|Command} [params.action] - A function to call when the command is found.
 	 * @param {Set.<String>|Array.<String>|String|Object} [params.aliases] - An array of command
 	 * aliases.
+	 * @param {Function} [params.callback] - A function to call when the command has been parsed.
 	 * @param {String|Function} [params.defaultCommand] - The default command to execute when this
 	 * command has no `action`. When value is a `String`, it looks up the subcommand and calls it.
 	 * If value is a `Function`, it simply invokes it.
@@ -87,6 +88,10 @@ export default class Command extends Context {
 
 		if (!params || (typeof params !== 'object' || Array.isArray(params))) {
 			throw E.INVALID_ARGUMENT('Expected command parameters to be an object', { name: 'params', scope: 'Command.constructor', value: params });
+		}
+
+		if (params.callback && typeof params.callback !== 'function') {
+			throw E.INVALID_ARGUMENT('Expected command callback to be a function', { name: 'callback', scop: 'Command.constructor', value: params.callback });
 		}
 
 		if (params.defaultCommand !== undefined && (!params.defaultCommand || (typeof params.defaultCommand !== 'string' && typeof params.defaultCommand !== 'function'))) {
@@ -171,6 +176,7 @@ export default class Command extends Context {
 
 		// mix aliases Set with params.aliases
 		this._aliases       = this.createAliases(aliases, params.aliases);
+		this.callback       = params.callback;
 		this.clikitHelp     = params.clikitHelp;
 		this.help           = help;
 		this.defaultCommand = params.defaultCommand;

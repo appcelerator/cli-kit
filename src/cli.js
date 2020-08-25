@@ -3,18 +3,15 @@ import Context from './parser/context';
 import debug from './lib/debug';
 import E from './lib/errors';
 import Extension from './parser/extension';
-import fs from 'fs-extra';
 import helpCommand, { renderHelp } from './commands/help';
 import Parser from './parser/parser';
-import path from 'path';
 import pluralize from 'pluralize';
-import semver from 'semver';
 import Terminal from './terminal';
 import WebSocket, { Server as WebSocketServer } from 'ws';
 
 import * as ansi from './lib/ansi';
 
-import { declareCLIKitClass, decode, split } from './lib/util';
+import { declareCLIKitClass, decode, split, assertNodeJSVersion } from './lib/util';
 import { EventEmitter } from 'events';
 import { generateKey } from './lib/keys';
 import { WriteStream } from 'tty';
@@ -35,15 +32,6 @@ class OutputSocket extends WriteStream {
 		this.ws.send(chunk.replace(/(?<!\r)\n/g, '\r\n'));
 	}
 }
-
-/**
- * The required Node.js version for cli-kit. This is used to assert the Node version at runtime.
- * If the `CLI` instance is created with a `nodeVersion`, then it assert the greater of the two
- * Node versions.
- *
- * @type {String}
- */
-const clikitNodeVersion = fs.readJsonSync(path.resolve(__dirname, '..', 'package.json')).engines.node;
 
 /**
  * Defines a CLI context and is responsible for parsing the command line arguments.
@@ -319,16 +307,7 @@ export default class CLI extends Context {
 	 * @access public
 	 */
 	async exec(_argv, opts = {}) {
-		const { version } = process;
-		let required = this.nodeVersion;
-		if ((required && !semver.satisfies(version, required)) || !semver.satisfies(version, required = clikitNodeVersion)) {
-			throw E.INVALID_NODE_JS(`${this.appName !== 'program' && this.appName || 'This program'} requires Node.js version ${required}, currently ${version}`, {
-				name: 'nodeVersion',
-				scope: 'CLI.exec',
-				current: version,
-				required
-			});
-		}
+		assertNodeJSVersion(this);
 
 		if (!_argv) {
 			_argv = process.argv.slice(2);
@@ -354,7 +333,7 @@ export default class CLI extends Context {
 
 		let exitCode = undefined;
 		let showHelpOnError = this.prop('showHelpOnError');
-		const parser = new Parser(opts);
+		const parser = new Parser(opts).link(this);
 		const __argv = _argv.slice(0);
 
 		opts.exitCode = code => code === undefined ? exitCode : (exitCode = code || 0);
@@ -410,7 +389,11 @@ export default class CLI extends Context {
 				contexts,
 				required,
 				unknown
-			} = await parser.parse(__argv, cli, this);
+			} = await parser.parse({
+				args: __argv,
+				ctx:  cli,
+				data: results.data
+			});
 
 			log('Parsing complete: ' +
 				`${pluralize('option', Object.keys(argv).length, true)}, ` +

@@ -1,3 +1,22 @@
+# 1.8.0 (Aug 25, 2020)
+
+ * feat(parser): Added `finalize` event hook that is emitted before applying defaults and filling
+   `argv` and `_`.
+ * feat(parser): Added `data` and `parser` to `parse` event payload and all argument and option
+   callbacks.
+ * feat(parser): Fire argument and option callbacks for every argument and option across all
+   contexts even if they're not discovered. This allows programs to dynamically resolve default
+   values or alter the context tree.
+ * feat(command): Added `callback` parameter that is fired as soon as the parser finds the command.
+ * refactor(parser): `Parser` now extends a `HookEmitter` and is linked to the `CLI` instance to
+   decouple the `CLI` from the `Parser`.
+ * refactor(parser): Moved default value initialization and populating `argv` and `_` to end of
+   parser chain so that option callbacks have the ability to modify the contexts and continue
+   parsing.
+ * fix(keys): Fixed `generateKey()` to support multiple sequential escape sequences.
+ * chore: Updated dependencies.
+ * test(keys): Added unit tests for `generateKey()`.
+
 # 1.7.0 (Aug 13, 2020)
 
  * feat(ansi): Added `ansi.split()` to break a string up by ANSI escape sequences.

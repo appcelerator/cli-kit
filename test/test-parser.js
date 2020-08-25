@@ -1,8 +1,67 @@
 import CLI, { ansi, Terminal } from '../dist/index';
-
+import path from 'path';
+import { spawnSync } from 'child_process';
 import { WritableStream } from 'memory-streams';
+import { expect } from 'chai';
 
 describe('Parser', () => {
+	describe('Error Handling', () => {
+		it('should error if args is not an array', async () => {
+			const cli = new CLI();
+			await expect(cli.exec('foo')).to.be.rejectedWith(TypeError, 'Expected arguments to be an array');
+		});
+	});
+
+	describe('Data Type Coercion', () => {
+		it('should coerce bool type', async () => {
+			let results = await new CLI({
+				options: {
+					'--foo <value>': {
+						type: 'bool'
+					}
+				}
+			}).exec([ '--foo', 'true' ]);
+			expect(results.argv.foo).to.equal(true);
+
+			results = await new CLI({
+				options: {
+					'--foo <value>': {
+						type: 'bool'
+					}
+				}
+			}).exec([ '--foo', 'false' ]);
+			expect(results.argv.foo).to.equal(false);
+
+			results = await new CLI({
+				options: {
+					'--foo <value>': {}
+				}
+			}).exec([ '--foo', 'true' ]);
+			expect(results.argv.foo).to.equal('true');
+
+			results = await new CLI({
+				options: {
+					'--foo': {}
+				}
+			}).exec([ '--foo' ]);
+			expect(results.argv.foo).to.equal(true);
+		});
+	});
+
+	describe('Version', () => {
+		it('should output the version', function () {
+			this.slow(9000);
+			this.timeout(10000);
+
+			const env = Object.assign({}, process.env);
+			delete env.SNOOPLOGG;
+
+			const { status, stdout } = spawnSync(process.execPath, [ path.join(__dirname, 'examples', 'version-test', 'ver.js'), '--version' ], { env });
+			expect(status).to.equal(0);
+			expect(stdout.toString()).to.equal('1.2.3\n');
+		});
+	});
+
 	describe('Options', () => {
 		it('should parse negated multi-word options', async () => {
 			const cli = new CLI({
@@ -162,6 +221,23 @@ describe('Parser', () => {
 				'  -h, --help  Displays the help screen',
 				''
 			].join('\n'));
+		});
+	});
+
+	describe('Callback', () => {
+		it('should re-parse if default option callback changes options', async () => {
+			const cli = new CLI({
+				options: {
+					'--foo [value]': {
+						callback({ ctx }) {
+							ctx.option('--bar [value]');
+						}
+					}
+				}
+			});
+
+			const { argv } = await cli.exec([ '--bar', 'baz' ]);
+			expect(argv.bar).to.equal('baz');
 		});
 	});
 });

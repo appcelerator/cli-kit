@@ -5,15 +5,21 @@
  * @returns {Object}
  */
 export function generateKey(ch) {
-	let escaped = ch === '\x1b';
-
 	const key = {
 		ctrl: false,
 		meta: false,
 		name: undefined,
-		sequence: null,
+		sequence: typeof ch === 'string' ? ch : null,
 		shift: false
 	};
+
+	let escaped = typeof ch === 'string' && ch.startsWith('\x1b');
+	if (escaped) {
+		ch = ch.substring(1);
+		if (ch.startsWith('\x1b')) {
+			ch = ch.substring(1);
+		}
+	}
 
 	if (escaped && (ch === 'O' || ch === '[')) {
 		// unsupported
@@ -23,7 +29,7 @@ export function generateKey(ch) {
 		key.name = 'return';
 	} else if (ch === '\b' || ch === '\x7f') {
 		key.name = 'backspace';
-	} else if (escaped) {
+	} else if (ch === '\x1b') {
 		key.meta = escaped;
 		key.name = 'escape';
 	} else if (ch === ' ') {
@@ -40,9 +46,6 @@ export function generateKey(ch) {
 		key.meta = true;
 		key.name = ch.length ? undefined : 'escape';
 	}
-
-	// we don't support real sequences
-	key.sequence = ch;
 
 	return key;
 }
