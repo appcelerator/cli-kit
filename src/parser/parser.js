@@ -496,8 +496,12 @@ export default class Parser extends HookEmitter {
 
 		let { rev } = ctx;
 		let { length } = this.args;
-		const checkRev = async (ctx, to = length - 1) => {
+		const checkRev = async (ctx, to) => {
 			if (ctx.rev > rev) {
+				// we always need a `to`
+				if (to === undefined) {
+					to = this.args.length;
+				}
 				log(`Rev changed from ${highlight(rev)} to ${highlight(ctx.rev)}, reparsing ${highlight(0)} through ${highlight(to)}`);
 				await this.parseArg(ctx, 0, to);
 			}

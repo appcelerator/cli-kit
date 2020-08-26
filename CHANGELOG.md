@@ -1,3 +1,8 @@
+# 1.8.1 (Aug 26, 2020)
+
+ * fix(parser): Fixed bug where if the context tree changed, the last argument would never be
+   re-parsed.
+
 # 1.8.0 (Aug 25, 2020)
 
  * feat(parser): Added `finalize` event hook that is emitted before applying defaults and filling
