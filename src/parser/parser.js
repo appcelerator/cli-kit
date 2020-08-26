@@ -503,6 +503,7 @@ export default class Parser extends HookEmitter {
 					to = this.args.length;
 				}
 				log(`Rev changed from ${highlight(rev)} to ${highlight(ctx.rev)}, reparsing ${highlight(0)} through ${highlight(to)}`);
+				rev = ctx.rev;
 				await this.parseArg(ctx, 0, to);
 			}
 		};

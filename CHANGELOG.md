@@ -1,3 +1,8 @@
+# 1.8.2 (Aug 26, 2020)
+
+ * fix(parser): Fixed bug where context tree rev change was not updating the local rev before
+   re-parsing causing unnecessary nested re-parses.
+
 # 1.8.1 (Aug 26, 2020)
 
  * fix(parser): Fixed bug where if the context tree changed, the last argument would never be
