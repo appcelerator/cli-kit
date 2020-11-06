@@ -183,7 +183,7 @@ describe('CLI', () => {
 				'',
 				'GLOBAL OPTIONS:',
 				'  --no-banner  Suppress the banner',
-				'  -h, --help  Displays the help screen',
+				'  -h, --help   Displays the help screen',
 				''
 			].join('\n'));
 		});
@@ -249,11 +249,11 @@ describe('CLI', () => {
 				'USAGE: test-cli [options] <foo>',
 				'',
 				'ARGUMENTS:',
-				'  foo',
+				'  foo        ',
 				'',
 				'GLOBAL OPTIONS:',
 				'  --no-banner  Suppress the banner',
-				'  -h, --help  Displays the help screen',
+				'  -h, --help   Displays the help screen',
 				''
 			].join('\n'));
 		});

@@ -1,3 +1,10 @@
+# 1.8.3 (Nov 6, 2020)
+
+ * fix(cli): Unify arguments to the banner event handler.
+ * style(help): Align descriptions based on longest command, argument, and option label.
+ * style(help): Removed `=` between option label and value.
+ * chore: Updated dependencies.
+
 # 1.8.2 (Aug 26, 2020)
 
  * fix(parser): Fixed bug where context tree rev change was not updating the local rev before

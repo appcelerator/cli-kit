@@ -120,6 +120,10 @@ export default class OptionMap extends Map {
 			const group = groups[groupName] = [];
 			for (const opt of options.sort(sortFn)) {
 				if (!opt.hidden) {
+					const label = `${opt.short ? `-${opt.short}, ` : ''}` +
+						`--${opt.negate ? 'no-' : ''}${opt.long}` +
+						`${opt.isFlag ? '' : ` ${opt.required ? '<' : '['}${opt.hint || 'value'}${opt.required ? '>' : ']'}`}`;
+
 					group.push({
 						aliases:  Object.keys(opt.aliases).filter(a => opt.aliases[a]),
 						datatype: opt.datatype,
@@ -127,6 +131,7 @@ export default class OptionMap extends Map {
 						desc:     opt.desc,
 						hint:     opt.hint,
 						isFlag:   opt.isFlag,
+						label,
 						long:     opt.long,
 						max:      opt.max,
 						min:      opt.min,

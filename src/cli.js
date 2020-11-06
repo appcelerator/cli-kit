@@ -359,10 +359,10 @@ export default class CLI extends Context {
 			warnings:    this.warnings
 		};
 
-		this.once('banner', ({ argv, ctx = this }) => {
+		this.once('banner', ({ argv, cmd = this }) => {
 			if (this.autoHideBanner) {
 				opts.terminal.onOutput(() => {
-					let banner = ctx.prop('banner');
+					let banner = cmd.prop('banner');
 					if (banner && this.bannerEnabled) {
 						banner = String(typeof banner === 'function' ? banner(opts) : banner).trim();
 						opts.terminal.stdout.write(`${banner}\n\n`);
@@ -370,10 +370,10 @@ export default class CLI extends Context {
 				});
 			}
 
-			if ((argv && !argv.banner) || (ctx instanceof Extension && !ctx.isCLIKitExtension && !ctx.get('showBannerForExternalCLIs'))) {
+			if ((argv && !argv.banner) || (cmd instanceof Extension && !cmd.isCLIKitExtension && !cmd.get('showBannerForExternalCLIs'))) {
 				this.bannerEnabled = false;
-			} else if (ctx.banner) {
-				this.banner = ctx.banner;
+			} else if (cmd.banner) {
+				this.banner = cmd.banner;
 			}
 		});
 
@@ -482,7 +482,7 @@ export default class CLI extends Context {
 				showHelpOnError = false;
 
 				// handle the banner
-				await this.emit('banner', { argv, ctx: cmd });
+				await this.emit('banner', results);
 
 				results = await this.hook('exec', async results => {
 					// execute the command
@@ -512,7 +512,7 @@ export default class CLI extends Context {
 				error(err.stack || err.message || err.toString() || 'Unknown error');
 			}
 
-			await this.emit('banner');
+			await this.emit('banner', results);
 
 			const help = this.help && (showHelpOnError !== false || err.showHelp) && this.commands.get('help');
 			if (help) {

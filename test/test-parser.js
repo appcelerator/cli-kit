@@ -215,7 +215,7 @@ describe('Parser', () => {
 				'USAGE: test-cli [options] <foo>',
 				'',
 				'ARGUMENTS:',
-				'  foo',
+				'  foo       ',
 				'',
 				'GLOBAL OPTIONS:',
 				'  -h, --help  Displays the help screen',

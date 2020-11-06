@@ -32,10 +32,15 @@ if (usage) {
 	>>> ${style.heading(usage.title)}: ${style.highlight(usage.text)}
 }
 
+const maxcmd = commands.entries.reduce((p, cmd) => Math.max(p, cmd.label.length), 0);
+const maxarg = arguments.entries.reduce((p, arg) => Math.max(p, arg.name.length + (arg.multiple ? 3 : 0)), 0);
+const maxopt = options.scopes.reduce((p, scope) => Math.max(p, Object.values(scope.groups).reduce((p, opts) => Math.max(p, opts.reduce((p, opt) => Math.max(p, opt.label.length), 0)), 0)), 0);
+const maxlen = Math.max(maxcmd, maxarg, maxopt);
+
 if (commands.count) {
 	>> ${style.heading(commands.title)}:
 	for (const cmd of commands.entries) {
-		>>|  ${style.highlight(cmd.label)}  ${cmd.desc || ''}
+		>>|  ${style.highlight(cmd.label.padEnd(maxlen))}  ${cmd.desc || ''}
 	}
 	>>
 }
@@ -43,7 +48,7 @@ if (commands.count) {
 if (arguments.count) {
 	>> ${style.heading(arguments.title)}:
 	for (const arg of arguments.entries) {
-		>>|  ${style.highlight(arg.name)}${arg.multiple ? style.highlight('...') : ''}  ${arg.desc || ''}
+		>>|  ${style.highlight(`${arg.name}${arg.multiple ? '...' : ''}`.padEnd(maxlen))}  ${arg.desc || ''}
 	}
 	>>
 }
@@ -52,17 +57,13 @@ if (options.count) {
 	for (const scope of options.scopes) {
 		if (scope.count) {
 			>>|${style.heading(`${scope.title}:`)}
+
 			for (const [ group, options ] of Object.entries(scope.groups)) {
 				if (group) {
 					>>|${style.subheading(`${group}:`)}
 				}
 				for (const option of options) {
-					let s = '';
-					if (option.short) {
-						s += `-${option.short}, `;
-					}
-					s += `--${option.negate ? 'no-' : ''}${option.long}${option.isFlag ? '' : `=${option.required ? '<' : '['}${option.hint || 'value'}${option.required ? '>' : ']'}`}`;
-					>>|  ${style.highlight(s)}  ${option.desc || ''}
+					>>|  ${style.highlight(option.label.padEnd(maxlen))}  ${option.desc || ''}
 				}
 			}
 			>>

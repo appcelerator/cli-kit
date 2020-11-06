@@ -119,7 +119,7 @@ describe('Extension', () => {
 				'  cli-kit-extension',
 				'',
 				'GLOBAL OPTIONS:',
-				'  -h, --help  Displays the help screen',
+				'  -h, --help         Displays the help screen',
 				''
 			].join('\n'));
 
@@ -131,21 +131,21 @@ describe('Extension', () => {
 				'USAGE: test-cli cli-kit-extension <command> [options] [<foo>] [<bar>]',
 				'',
 				'CLI-KIT-EXTENSION COMMANDS:',
-				'  stuff  perform magic',
+				'  stuff          perform magic',
 				'',
 				'CLI-KIT-EXTENSION ARGUMENTS:',
-				'  foo  the first arg',
-				'  bar',
+				'  foo            the first arg',
+				'  bar          ',
 				'',
 				'CLI-KIT-EXTENSION OPTIONS:',
 				'Group 1:',
-				'  --baz=<value>  set baz',
+				'  --baz <value>  set baz',
 				'Group 2:',
-				'  -a, --append',
-				'  --no-color  Disable colors',
+				'  -a, --append ',
+				'  --no-color     Disable colors',
 				'',
 				'GLOBAL OPTIONS:',
-				'  -h, --help  Displays the help screen',
+				'  -h, --help     Displays the help screen',
 				''
 			].join('\n'));
 		});
