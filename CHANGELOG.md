@@ -1,3 +1,10 @@
+# 1.8.4 (Nov 10, 2020)
+
+ * fix(cli): Fixed rendering of banner if `autoHideBanner` is disabled.
+ * refactor(cli): Switched the banner event to a hook to allow banner event handlers to tie into
+   the banner event before and after the banner is rendered.
+ * chore: Updated dependencies.
+
 # 1.8.3 (Nov 6, 2020)
 
  * fix(cli): Unify arguments to the banner event handler.
