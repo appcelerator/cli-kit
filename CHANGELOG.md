@@ -1,3 +1,11 @@
+# 1.8.5 (Nov 11, 2020)
+
+ * fix(extension): Removed node-pty support since it has never worked properly. On Windows, it
+   would clear the screen and cause the parent to never exit. On macOS, it would not allow
+   child processes to prompt for input.
+ * fix(extension): Switched non-cli-kit based extensions to be `required()`'d instead of spawned.
+ * chore: Updated dependencies.
+
 # 1.8.4 (Nov 10, 2020)
 
  * fix(cli): Fixed rendering of banner if `autoHideBanner` is disabled.

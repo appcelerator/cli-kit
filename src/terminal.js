@@ -260,10 +260,12 @@ export default class Terminal extends EventEmitter {
 
 			if (self.outputFired === undefined && (!encoding || encodings.has(encoding)) && !(self.outputFired = dataRegExp.test(chunk))) {
 				self.outputResolution = { chunk, encoding };
-				for (const cb of self.outputCallbacks) {
-					cb(self.outputResolution);
+				if (self.outputCallbacks) {
+					for (const cb of self.outputCallbacks) {
+						cb(self.outputResolution);
+					}
+					self.outputCallbacks = null;
 				}
-				self.outputCallbacks = [];
 			}
 
 			return origWrite.call(stream, chunk, encoding, cb);
