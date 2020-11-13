@@ -1,3 +1,7 @@
+# 1.8.6
+
+ * fix(cli): Fixed banner from being displayed more than once.
+
 # 1.8.5 (Nov 11, 2020)
 
  * fix(extension): Removed node-pty support since it has never worked properly. On Windows, it

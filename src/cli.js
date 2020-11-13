@@ -339,23 +339,24 @@ export default class CLI extends Context {
 		opts.styles = Object.assign({}, this.styles, opts.styles);
 
 		let results = {
-			_:           undefined,
-			_argv,       // the original unparsed arguments
-			__argv,      // the parsed arguments
-			argv:        undefined,
-			cli:         this,
-			cmd:         undefined,
-			console:     opts.terminal.console,
-			contexts:    undefined,
-			data:        opts.data,
-			exitCode:    opts.exitCode,
-			help:        () => renderHelp(results.cmd, opts),
-			result:      undefined,
-			setExitCode: opts.exitCode,
-			styles:      opts.styles,
-			terminal:    opts.terminal,
-			unknown:     undefined,
-			warnings:    this.warnings
+			_:              undefined,
+			_argv,          // the original unparsed arguments
+			__argv,         // the parsed arguments
+			argv:           undefined,
+			bannerRendered: false,
+			cli:            this,
+			cmd:            undefined,
+			console:        opts.terminal.console,
+			contexts:       undefined,
+			data:           opts.data,
+			exitCode:       opts.exitCode,
+			help:           () => renderHelp(results.cmd, opts),
+			result:         undefined,
+			setExitCode:    opts.exitCode,
+			styles:         opts.styles,
+			terminal:       opts.terminal,
+			unknown:        undefined,
+			warnings:       this.warnings
 		};
 
 		const renderBanner = this.hook('banner', async (state) => {
@@ -364,7 +365,7 @@ export default class CLI extends Context {
 			// if --no-banner, then return
 			// or if we're running an extension that is not a cli-kit extension, then return and
 			// let the extension CLI render its own banner
-			if ((argv && !argv.banner) || (cmd instanceof Extension && !cmd.isCLIKitExtension && !cmd.get('showBannerForExternalCLIs'))) {
+			if (state.bannerRendered || (argv && !argv.banner) || (cmd instanceof Extension && !cmd.isCLIKitExtension && !cmd.get('showBannerForExternalCLIs'))) {
 				return;
 			}
 
@@ -381,10 +382,14 @@ export default class CLI extends Context {
 
 			if (cmd.prop('autoHideBanner')) {
 				// wait to show banner
-				terminal.onOutput(() => terminal.stdout.write(`${banner}\n\n`));
+				terminal.onOutput(() => {
+					terminal.stdout.write(`${banner}\n\n`);
+					state.bannerRendered = true;
+				});
 			} else {
 				// show banner now
 				terminal.stdout.write(`${banner}\n\n`);
+				state.bannerRendered = true;
 			}
 		});
 
