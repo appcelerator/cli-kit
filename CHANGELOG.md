@@ -1,4 +1,4 @@
-# 1.8.6
+# 1.8.6 (Nov 13, 2020)
 
  * fix(cli): Fixed banner from being displayed more than once.
 
