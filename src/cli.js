@@ -343,6 +343,7 @@ export default class CLI extends Context {
 			_argv,          // the original unparsed arguments
 			__argv,         // the parsed arguments
 			argv:           undefined,
+			bannerFired:    false,
 			bannerRendered: false,
 			cli:            this,
 			cmd:            undefined,
@@ -359,17 +360,22 @@ export default class CLI extends Context {
 			warnings:       this.warnings
 		};
 
-		const bannerHook = this.hook('banner', async (state) => {
+		const renderBanner = async (state) => {
 			const { argv, cli, cmd = cli, terminal } = state;
 
 			// if --no-banner, then return
 			// or if we're running an extension that is not a cli-kit extension, then return and
 			// let the extension CLI render its own banner
-			if ((argv && !argv.banner) || (cmd instanceof Extension && !cmd.isCLIKitExtension && !cmd.get('showBannerForExternalCLIs'))) {
+			if (state.bannerRendered || (argv && !argv.banner) || (cmd instanceof Extension && !cmd.isCLIKitExtension && !cmd.get('showBannerForExternalCLIs'))) {
 				return;
 			}
 
-			let banner = cmd.prop('banner');
+			let { banner } = cmd;
+			for (let p = cmd.parent; banner === undefined && p; p = p.parent) {
+				if (!(state.bannerFired instanceof Error) || p.banner) {
+					banner = p.banner;
+				}
+			}
 			if (typeof banner === 'function') {
 				banner = await banner(state);
 			}
@@ -382,16 +388,26 @@ export default class CLI extends Context {
 
 			if (cmd.prop('autoHideBanner')) {
 				// wait to show banner
-				terminal.onOutput(() => terminal.stdout.write(`${banner}\n\n`));
+				terminal.onOutput(() => {
+					terminal.stdout.write(`${banner}\n\n`);
+					state.bannerRendered = true;
+				});
 			} else {
 				// show banner now
 				terminal.stdout.write(`${banner}\n\n`);
-			}
-		});
-		const renderBanner = async state => {
-			if (!state.bannerRendered) {
 				state.bannerRendered = true;
-				await bannerHook(state);
+			}
+		};
+
+		const bannerHook = async state => {
+			if (!state.bannerFired) {
+				state.bannerFired = true;
+				try {
+					await this.hook('banner', renderBanner)(state);
+				} catch (err) {
+					state.bannerFired = err;
+					throw err;
+				}
 			}
 		};
 
@@ -500,7 +516,7 @@ export default class CLI extends Context {
 				showHelpOnError = false;
 
 				// handle the banner
-				await renderBanner(results);
+				await bannerHook(results);
 
 				results = await this.hook('exec', async results => {
 					// execute the command
@@ -530,6 +546,7 @@ export default class CLI extends Context {
 				error(err.stack || err.message || err.toString() || 'Unknown error');
 			}
 
+			// the banner rendered during an error does not fire the hook
 			await renderBanner(results);
 
 			const help = this.help && (showHelpOnError !== false || err.showHelp) && this.commands.get('help');

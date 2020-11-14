@@ -1,3 +1,8 @@
+# 1.8.8 (Nov 14, 2020)
+
+ * fix(cli): Force banner to be rendered on error.
+ * fix(cli): Render banner, but don't fire the banner hook on error.
+
 # 1.8.7 (Nov 14, 2020)
 
  * fix(cli): Fixed banner hook from being fired more than once.
