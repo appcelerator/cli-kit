@@ -1,3 +1,7 @@
+# 1.8.7 (Nov 14, 2020)
+
+ * fix(cli): Fixed banner hook from being fired more than once.
+
 # 1.8.6 (Nov 13, 2020)
 
  * fix(cli): Fixed banner from being displayed more than once.

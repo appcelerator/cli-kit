@@ -359,13 +359,13 @@ export default class CLI extends Context {
 			warnings:       this.warnings
 		};
 
-		const renderBanner = this.hook('banner', async (state) => {
+		const bannerHook = this.hook('banner', async (state) => {
 			const { argv, cli, cmd = cli, terminal } = state;
 
 			// if --no-banner, then return
 			// or if we're running an extension that is not a cli-kit extension, then return and
 			// let the extension CLI render its own banner
-			if (state.bannerRendered || (argv && !argv.banner) || (cmd instanceof Extension && !cmd.isCLIKitExtension && !cmd.get('showBannerForExternalCLIs'))) {
+			if ((argv && !argv.banner) || (cmd instanceof Extension && !cmd.isCLIKitExtension && !cmd.get('showBannerForExternalCLIs'))) {
 				return;
 			}
 
@@ -382,16 +382,18 @@ export default class CLI extends Context {
 
 			if (cmd.prop('autoHideBanner')) {
 				// wait to show banner
-				terminal.onOutput(() => {
-					terminal.stdout.write(`${banner}\n\n`);
-					state.bannerRendered = true;
-				});
+				terminal.onOutput(() => terminal.stdout.write(`${banner}\n\n`));
 			} else {
 				// show banner now
 				terminal.stdout.write(`${banner}\n\n`);
-				state.bannerRendered = true;
 			}
 		});
+		const renderBanner = async state => {
+			if (!state.bannerRendered) {
+				state.bannerRendered = true;
+				await bannerHook(state);
+			}
+		};
 
 		try {
 			const cli = opts.serverMode ? new Context().init(this, true) : this;
