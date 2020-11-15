@@ -370,6 +370,8 @@ export default class CLI extends Context {
 				return;
 			}
 
+			state.bannerRendered = true;
+
 			let { banner } = cmd;
 			for (let p = cmd.parent; banner === undefined && p; p = p.parent) {
 				if (!(state.bannerFired instanceof Error) || p.banner) {
@@ -388,14 +390,10 @@ export default class CLI extends Context {
 
 			if (cmd.prop('autoHideBanner')) {
 				// wait to show banner
-				terminal.onOutput(() => {
-					terminal.stdout.write(`${banner}\n\n`);
-					state.bannerRendered = true;
-				});
+				terminal.onOutput(() => terminal.stdout.write(`${banner}\n\n`));
 			} else {
 				// show banner now
 				terminal.stdout.write(`${banner}\n\n`);
-				state.bannerRendered = true;
 			}
 		};
 

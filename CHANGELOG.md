@@ -1,3 +1,8 @@
+# 1.8.9 (Nov 15, 2020)
+
+ * fix(cli): Fixed bug where banner was rendered twice if `autoHideBanner` is enabled and an the
+   executed command throws an error.
+
 # 1.8.8 (Nov 14, 2020)
 
  * fix(cli): Force banner to be rendered on error.
