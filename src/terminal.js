@@ -188,7 +188,10 @@ export default class Terminal extends EventEmitter {
 	 */
 	once(event, listener) {
 		if (event === 'keypress') {
-			this.stdin.once(event, listener);
+			this.stdin.once(event, (...args) => {
+				this.onRemoveKeypress();
+				listener(...args);
+			});
 			this.onAddKeypress();
 		} else {
 			super.once(event, listener);

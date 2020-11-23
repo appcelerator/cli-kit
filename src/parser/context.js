@@ -6,10 +6,11 @@ import ExtensionMap from './extension-map';
 import HookEmitter from 'hook-emitter';
 import Lookup from './lookup';
 import OptionMap from './option-map';
+import path from 'path';
 
 import { declareCLIKitClass } from '../lib/util';
 
-const { log } = debug('cli-kit:context');
+const { error, log } = debug('cli-kit:context');
 const { highlight, note } = debug.styles;
 
 /**
@@ -99,6 +100,59 @@ export default class Context extends HookEmitter {
 		}
 		this.rev++;
 		return this;
+	}
+
+	/**
+	 * Finds the top most context, then emits the event on it and its extensions.
+	 *
+	 * @param {String} event - The event name.
+	 * @param {Object} [data] - Optional event data.
+	 * @returns {Promise}
+	 */
+	async emitAction(event, data) {
+		// find top-most context
+		let ctx = this;
+		while (ctx.parent) {
+			await this.emit(event, data);
+			ctx = ctx.parent;
+		}
+
+		log(`Emitting action: ${highlight(event)}`);
+		await ctx.emit(event, data);
+
+		for (const ext of ctx.extensions.values()) {
+			const actions = ext.pkg?.json?.actions;
+			let file = actions && typeof actions === 'object' && actions[event];
+			if (!file) {
+				continue;
+			}
+
+			if (!path.isAbsolute(file)) {
+				file = path.resolve(ext.path, file);
+			}
+
+			log(`Loading extension action: ${highlight(file)}`);
+
+			try {
+				let fn = require(file);
+				if (fn.__esModule) {
+					fn = fn.default;
+				}
+
+				if (typeof fn === 'function') {
+					await fn({
+						ctx,
+						console: ctx.terminal.console,
+						data,
+						event
+					});
+				}
+			} catch (err) {
+				error(`Error emitting action "${event}" to extension "${ext.name}":`);
+				error(`Extension action: ${file}`);
+				error(err.stack.split(/\r\n|\n/).filter(Boolean).join('\n'));
+			}
+		}
 	}
 
 	/**

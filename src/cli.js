@@ -67,6 +67,12 @@ export default class CLI extends Context {
 	 * @param {String} [params.name] - The name of the program. If not set, defaults to `"program"`
 	 * in the help outut and `"This application"` in the Node version assertion.
 	 * @param {String} [params.nodeVersion] - The required Node.js version to run the app.
+	 * @param {Boolean} [opts.serverMode=false] - When `true`, makes things such that `exec()`
+	 * doesn't change any global state by deep cloning the entire context tree every time the
+	 * arguments are parsed and changing the process state. Enabling this only makes sense if the
+	 * `CLI` instance is going to be reused to parse arguments multiple times and if the state of
+	 * the context tree is going to be modified during parsing (i.e. via a callback). It also
+	 * prevents ctrl-c (SIGINT) and does not set an exit code.
 	 * @param {Boolean} [params.showBannerForExternalCLIs=false] - If `true`, shows the `CLI`
 	 * banner, assuming banner is enabled, for non-cli-kit enabled CLIs.
 	 * @param {Boolean} [params.showHelpOnError=true] - If an error occurs and `help` is enabled,
@@ -133,12 +139,18 @@ export default class CLI extends Context {
 		this.hideNoBannerOption        = params.hideNoBannerOption;
 		this.hideNoColorOption         = params.hideNoColorOption;
 		this.nodeVersion               = params.nodeVersion;
+		this.serverMode                = params.serverMode;
 		this.showBannerForExternalCLIs = params.showBannerForExternalCLIs;
 		this.showHelpOnError           = params.showHelpOnError;
 		this.styles                    = Object.assign({}, debug.styles, params.styles);
 		this.terminal                  = params.terminal || new Terminal();
 		this.version                   = params.version;
 		this.warnings                  = [];
+
+		// if we're not in server mode, wire up the SIGINT handler
+		if (!this.serverMode) {
+			this.terminal.on('SIGINT', () => process.kill(process.pid, 'SIGINT'));
+		}
 
 		// add the built-in help
 		if (this.help) {
@@ -295,11 +307,6 @@ export default class CLI extends Context {
 	 * @param {Array.<String>} [params.parentContextNames] - An array of parent context names.
 	 * @param {Boolean} [opts.remoteHelp=false] - When `true`, don't execute the built-in help
 	 * command. This is set when a request comes from a remote connection.
-	 * @param {Boolean} [opts.serverMode=false] - When `true`, makes things such that `exec()`
-	 * doesn't change any global state by deep cloning the entire context tree every time the
-	 * arguments are parsed and changing the process state. Enabling this only makes sense if the
-	 * `CLI` instance is going to be reused to parse arguments multiple times and if the state of
-	 * the context tree is going to be modified during parsing (i.e. via a callback).
 	 * @param {Termianl} [opts.terminal] - A terminal instance to override the default CLI terminal
 	 * instance.
 	 * @returns {Promise.<Arguments>}
@@ -410,9 +417,9 @@ export default class CLI extends Context {
 		};
 
 		try {
-			const cli = opts.serverMode ? new Context().init(this, true) : this;
+			const cli = this.serverMode ? new Context().init(this, true) : this;
 
-			log(`Parsing ${__argv.length} argument${__argv.length !== 1 ? 's' : ''} ${note(`(server mode: ${!!opts.serverMode})`)}`);
+			log(`Parsing ${__argv.length} argument${__argv.length !== 1 ? 's' : ''} ${note(`(server mode: ${!!this.serverMode})`)}`);
 
 			// parse the command line arguments
 			const {
@@ -534,13 +541,13 @@ export default class CLI extends Context {
 				})(results);
 			}
 
-			if (!opts.serverMode) {
+			if (!this.serverMode) {
 				process.exitCode = results.exitCode();
 			}
 
 			return results;
 		} catch (err) {
-			if (!opts.serverMode) {
+			if (!this.serverMode) {
 				error(err.stack || err.message || err.toString() || 'Unknown error');
 			}
 
@@ -580,6 +587,11 @@ export default class CLI extends Context {
 
 		log(`Starting WebSocketServer${opts.port ? `on port ${highlight(opts.port)}` : ''}...`);
 
+		if (!this.serverMode) {
+			log('Enabling server mode');
+			this.serverMode = true;
+		}
+
 		return new Promise((resolve, reject) => {
 			this.server = new WebSocketServer(opts, () => resolve(this.server));
 
@@ -617,7 +629,6 @@ export default class CLI extends Context {
 							userAgent: headers['user-agent'] || undefined
 						},
 						parentContextNames: decode(headers['clikit-parents']),
-						serverMode: true,
 						terminal
 					});
 

@@ -244,7 +244,7 @@ describe('CLI', () => {
 				'My Amazing CLI, version 1.2.3',
 				'Copyright (c) 2018, Me',
 				'',
-				'Error: Missing required argument "foo"',
+				`${process.platform === 'win32' ? 'x' : '✖'} Error: Missing required argument "foo"`,
 				'',
 				'USAGE: test-cli [options] <foo>',
 				'',
