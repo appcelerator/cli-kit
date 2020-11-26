@@ -1,9 +1,8 @@
 import CLI, { Terminal } from '../dist/index';
-import fs from 'fs';
 import path from 'path';
 import { WritableStream } from 'memory-streams';
 
-describe('CLI', () => {
+describe('Actions', () => {
 	it('should emit an action to extensions', async function () {
 		this.slow(4000);
 		this.timeout(5000);
@@ -52,20 +51,5 @@ describe('CLI', () => {
 		await cli.emitAction('test-action', { foo: 'bar' });
 
 		expect(out.toString().trim()).to.equal('');
-	});
-
-	const appcdPath = `${require('os').homedir()}/appc/appcd/appc-daemon/packages/appcd`;
-	const _it = fs.existsSync(appcdPath) ? it : it.skip;
-	_it('should install appcd default plugins', async function () {
-		this.slow(4000);
-		this.timeout(60000);
-
-		const cli = new CLI({
-			extensions: [
-				appcdPath
-			]
-		});
-
-		await cli.emitAction('axway:pm:install', { path: appcdPath });
 	});
 });
