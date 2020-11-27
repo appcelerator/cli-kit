@@ -210,7 +210,7 @@ describe('Parser', () => {
 			await cli.exec([]);
 
 			expect(ansi.strip(out.toString())).to.equal([
-				'Error: Missing required argument "foo"',
+				`${process.platform === 'win32' ? 'x' : '✖'} Error: Missing required argument "foo"`,
 				'',
 				'USAGE: test-cli [options] <foo>',
 				'',

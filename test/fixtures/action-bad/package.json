@@ -1,0 +1,9 @@
+{
+  "name": "action-good",
+  "main": "./main",
+  "cli-kit": {
+    "actions": {
+      "test-action": "action.js"
+    }
+  }
+}

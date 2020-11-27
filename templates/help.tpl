@@ -1,5 +1,6 @@
 if (error) {
-	>> ${style.error(error.message)}
+	const x = process.platform === 'win32' ? 'x' : '✖';
+	>> ${style.error(`${x} ${error.message}`)}
 	if (error.code === 'ERR_MISSING_REQUIRED_OPTION') {
 		for (const option of error.meta.required) {
 			>>|  ${style.highlight(option.format)}  ${option.desc || ''}
