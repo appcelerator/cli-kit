@@ -1,8 +1,10 @@
-# 1.9.0
+# 1.9.0 (Nov 27, 2020)
 
  * feat(extension): Added support actions.
  * fix(terminal): One time keypress listener was not removing sigint handler after firing causing
    programs to appear hung.
+ * refactor(cli): Moved `serverMode` option from `exec()` to the constructor.
+ * style(help): Prefix the error with an 'x' symbol.
  * chore: Updated dependencies.
 
 # 1.8.9 (Nov 15, 2020)
