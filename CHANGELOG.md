@@ -1,3 +1,7 @@
+# 1.9.1 (Nov 30, 2020)
+
+ * chore: Updated dependencies.
+
 # 1.9.0 (Nov 27, 2020)
 
  * feat(extension): Added support actions.
