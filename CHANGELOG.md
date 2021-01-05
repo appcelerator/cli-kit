@@ -1,3 +1,7 @@
+# 1.9.2 (Jan 5, 2021)
+
+ * chore: Updated dependencies.
+
 # 1.9.1 (Nov 30, 2020)
 
  * chore: Updated dependencies.

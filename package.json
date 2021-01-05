@@ -1,6 +1,6 @@
 {
   "name": "cli-kit",
-  "version": "1.9.1",
+  "version": "1.9.2",
   "description": "Everything you need to create awesome command line interfaces",
   "main": "./dist/index.js",
   "author": "Chris Barber <chris@cb1inc.com> (https://github.com/cb1kenobi)",
@@ -46,18 +46,18 @@
     "lodash.camelcase": "^4.3.0",
     "pkg-dir": "^5.0.0",
     "pluralize": "^8.0.0",
-    "semver": "^7.3.2",
+    "semver": "^7.3.4",
     "snooplogg": "^3.0.1",
     "source-map-support": "^0.5.19",
     "which": "^2.0.2",
-    "ws": "^7.4.0"
+    "ws": "^7.4.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.12.9",
+    "@babel/core": "^7.12.10",
     "@babel/plugin-proposal-class-properties": "^7.12.1",
     "@babel/plugin-proposal-optional-chaining": "^7.12.7",
     "@babel/plugin-transform-modules-commonjs": "^7.12.1",
-    "@babel/register": "^7.12.1",
+    "@babel/register": "^7.12.10",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.2.2",
     "babel-plugin-istanbul": "^6.0.0",
@@ -67,7 +67,7 @@
     "esdoc": "^1.1.0",
     "esdoc-ecmascript-proposal-plugin": "^1.0.0",
     "esdoc-standard-plugin": "^1.0.0",
-    "eslint": "^7.14.0",
+    "eslint": "^7.17.0",
     "eslint-plugin-chai-expect": "^2.2.0",
     "eslint-plugin-mocha": "^8.0.0",
     "eslint-plugin-promise": "^4.2.1",
@@ -82,7 +82,7 @@
     "memory-streams": "^0.1.3",
     "mocha": "^8.2.1",
     "nyc": "^15.1.0",
-    "sinon": "^9.2.1",
+    "sinon": "^9.2.2",
     "sinon-chai": "^3.5.0",
     "tmp": "^0.2.1"
   },
