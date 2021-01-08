@@ -9,6 +9,8 @@ import { spawn } from 'child_process';
 const { log, warn } = debug('cli-kit:extension');
 const { highlight } = debug.styles;
 
+const nameRegExp = /^(?:(@\w+)\/)?(.*)$/;
+
 /**
  * Defines a namespace that wraps an external program or script.
  *
@@ -95,6 +97,14 @@ export default class Extension extends Command {
 
 				// init the aliases with any aliases from the package.json
 				params.aliases = Array.isArray(pkg.json.aliases) ? pkg.json.aliases : [];
+
+				// if the package name contains a scope, add the scoped package name as a hidden
+				// alias and strip the scope from the name
+				const m = name.match(nameRegExp);
+				if (m) {
+					params.aliases.push(`!${name}`);
+					name = m[2];
+				}
 
 				// if the name is different than the one in the package.json, add it to the aliases
 				if (params.name && params.name !== pkg.json.name && !params.aliases.includes(params.name)) {

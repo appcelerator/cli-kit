@@ -1,3 +1,9 @@
+# 1.9.3 (Jan 8, 2021)
+
+ * fix(extension): Strip the package scope name from an extension name, but still add it as a
+   hidden alias.
+ * chore: Updated dependencies.
+
 # 1.9.2 (Jan 5, 2021)
 
  * chore: Updated dependencies.
