@@ -427,7 +427,9 @@ export default class Context extends HookEmitter {
 	prop(name, defaultValue) {
 		let value = this[name];
 		for (let p = this.parent; value === undefined && p; p = p.parent) {
-			value = p.prop(name, value);
+			if (p instanceof Context) {
+				value = p.prop(name, value);
+			}
 		}
 		return value !== undefined ? value : defaultValue;
 	}

@@ -84,7 +84,9 @@ export default class ExtensionMap extends Map {
 			}
 
 			if (ext) {
-				this.set(ext.name, ext);
+				for (const ctxName of Object.keys(ext.contexts)) {
+					this.set(ctxName, ext);
+				}
 				results.push(ext);
 			} else {
 				throw E.INVALID_ARGUMENT(`Invalid extension "${it}", expected a valid path or an object`, { name: 'extension', scope: 'ExtensionMap.add', value: it });
@@ -113,8 +115,8 @@ export default class ExtensionMap extends Map {
 	generateHelp() {
 		const entries = [];
 
-		for (const cmd of Array.from(this.keys())) {
-			const { aliases, clikitHelp, desc, hidden, name } = this.get(cmd);
+		for (const ctxName of Array.from(this.keys())) {
+			const { aliases, clikitHelp, desc, hidden, name } = this.get(ctxName).contexts[ctxName];
 			if (!hidden && !clikitHelp) {
 				const labels = new Set([ name ]);
 
