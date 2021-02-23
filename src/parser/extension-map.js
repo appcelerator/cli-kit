@@ -84,7 +84,7 @@ export default class ExtensionMap extends Map {
 			}
 
 			if (ext) {
-				for (const ctxName of Object.keys(ext.contexts)) {
+				for (const ctxName of Object.keys(ext.exports)) {
 					this.set(ctxName, ext);
 				}
 				results.push(ext);
@@ -116,7 +116,7 @@ export default class ExtensionMap extends Map {
 		const entries = [];
 
 		for (const ctxName of Array.from(this.keys())) {
-			const { aliases, clikitHelp, desc, hidden, name } = this.get(ctxName).contexts[ctxName];
+			const { aliases, clikitHelp, desc, hidden, name } = this.get(ctxName).exports[ctxName];
 			if (!hidden && !clikitHelp) {
 				const labels = new Set([ name ]);
 

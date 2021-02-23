@@ -192,12 +192,14 @@ export default class Context extends HookEmitter {
 			const scopes = [];
 
 			while (ctx) {
-				scopes.push({
-					title: `${ctx.title} options`,
-					name: ctx.name,
-					...ctx.options.generateHelp()
-				});
-				results.contexts.unshift(ctx.name);
+				if (ctx instanceof Context) {
+					scopes.push({
+						title: `${ctx.title} options`,
+						name: ctx.name,
+						...ctx.options.generateHelp()
+					});
+					results.contexts.unshift(ctx.name);
+				}
 				ctx = ctx.parent;
 			}
 
@@ -273,7 +275,7 @@ export default class Context extends HookEmitter {
 			if (Array.isArray(opts.parentContextNames)) {
 				usage.push.apply(usage, opts.parentContextNames);
 			}
-			usage.push.apply(usage, results.contexts.slice());
+			usage.push.apply(usage, results.contexts);
 			results.commands.count && usage.push('<command>');
 			results.options.count && usage.push('[options]');
 			usage.push.apply(usage, results.arguments.entries.map(arg => {
@@ -305,7 +307,9 @@ export default class Context extends HookEmitter {
 	get(name, defaultValue) {
 		let value = this[name];
 		for (let p = this.parent; p; p = p.parent) {
-			value = p.get(name, value);
+			if (p instanceof Context) {
+				value = p.get(name, value);
+			}
 		}
 		return value !== undefined ? value : defaultValue;
 	}
@@ -441,24 +445,30 @@ export default class Context extends HookEmitter {
 	 * @access private
 	 */
 	register(it) {
+		let cmds;
 		let dest;
 		if (it.clikit.has('Extension')) {
+			cmds = Object.values(it.exports);
 			dest = 'extensions';
 		} else if (it.clikit.has('Command')) {
+			cmds = [ it ];
 			dest = 'commands';
 		}
 
-		if (!dest) {
+		if (!cmds) {
 			return;
 		}
 
 		it.parent = this;
-		this.lookup[dest][it.name] = it;
 
-		if (it.aliases) {
-			for (const alias of Object.keys(it.aliases)) {
-				if (!this[dest].has(alias)) {
-					this.lookup[dest][alias] = it;
+		for (const cmd of cmds) {
+			this.lookup[dest][cmd.name] = cmd;
+
+			if (cmd.aliases) {
+				for (const alias of Object.keys(cmd.aliases)) {
+					if (!cmd[dest].has(alias)) {
+						cmd.lookup[dest][alias] = cmd;
+					}
 				}
 			}
 		}

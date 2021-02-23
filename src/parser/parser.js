@@ -768,7 +768,7 @@ export default class Parser extends HookEmitter {
 
 		// check if the argument is a command
 		if (type === 'command' || type === 'extension') {
-			log(`Skipping known ${type}: ${highlight(arg[type].name)}`);
+			log(`Skipping known ${type}: ${highlight(arg.command.name)}`);
 			return;
 		}
 
@@ -785,10 +785,11 @@ export default class Parser extends HookEmitter {
 		const ext = lookup.extensions[subject];
 		if (ext) {
 			log(`Found extension: ${highlight(ext.name)}`);
-			await ext.load(subject); // note: "executable" extensions are already "loaded"
+			if (typeof ext.load === 'function') {
+				await ext.load(subject);
+			}
 			return new ParsedArgument('extension', {
-				command: ext.contexts[subject],
-				extension: ext,
+				command: ext,
 				input: [ arg ]
 			});
 		}
