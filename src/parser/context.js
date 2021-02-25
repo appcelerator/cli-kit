@@ -466,8 +466,8 @@ export default class Context extends HookEmitter {
 
 			if (cmd.aliases) {
 				for (const alias of Object.keys(cmd.aliases)) {
-					if (!cmd[dest].has(alias)) {
-						cmd.lookup[dest][alias] = cmd;
+					if (!this[dest].has(alias)) {
+						this.lookup[dest][alias] = cmd;
 					}
 				}
 			}
