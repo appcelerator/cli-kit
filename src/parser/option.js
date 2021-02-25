@@ -6,7 +6,7 @@ import { declareCLIKitClass } from '../lib/util';
 const formatRegExp = /^(?:-(\w)(?:[ ,|]+)?)?(?:--([^\s=]+))?(?:[\s=]+(.+))?$/;
 const valueRegExp = /^(\[(?=.+\]$)|<(?=.+>$))(.+)[\]>]$/;
 const negateRegExp = /^no-(.+)$/;
-const aliasRegExp = /^(!)?(?:-(.)|--(.+))$/;
+const aliasRegExp = /^(!)?(?:-(.)|--(no-)?(.+))$/;
 const numberRegExp = /^\d+(\.\d*)?$/;
 
 /**
@@ -255,10 +255,12 @@ function processAliases(aliases) {
 				throw E.INVALID_ALIAS(`Invalid alias format "${alias}"`, { name: 'aliases', scope: 'Option.constructor', value: alias });
 			}
 
+			// note: m[3] contains the negate sequence, but we ignore since it's handled during parsing
+
 			if (m[2]) {
 				result.short[m[2]] = !m[1];
-			} else if (m[3]) {
-				result.long[m[3]] = !m[1];
+			} else if (m[4]) {
+				result.long[m[4]] = !m[1];
 			}
 		}
 	}

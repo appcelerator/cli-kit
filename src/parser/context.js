@@ -121,36 +121,38 @@ export default class Context extends HookEmitter {
 		await ctx.emit(event, data);
 
 		for (const ext of ctx.extensions.values()) {
-			const actions = ext.pkg?.json?.actions;
-			let file = actions && typeof actions === 'object' && actions[event];
-			if (!file) {
-				continue;
-			}
-
-			if (!path.isAbsolute(file)) {
-				file = path.resolve(ext.path, file);
-			}
-
-			log(`Loading extension action: ${highlight(file)}`);
-
-			try {
-				let fn = require(file);
-				if (fn.__esModule) {
-					fn = fn.default;
+			for (const cmd of Object.values(ext.exports)) {
+				const actions = cmd.pkg?.json?.actions;
+				let file = actions && typeof actions === 'object' && actions[event];
+				if (!file) {
+					continue;
 				}
 
-				if (typeof fn === 'function') {
-					await fn({
-						ctx,
-						console: ctx.terminal.console,
-						data,
-						event
-					});
+				if (!path.isAbsolute(file)) {
+					file = path.resolve(ext.path, file);
 				}
-			} catch (err) {
-				error(`Error emitting action "${event}" to extension "${ext.name}":`);
-				error(`Extension action: ${file}`);
-				error(err.stack.split(/\r\n|\n/).filter(Boolean).join('\n'));
+
+				log(`Loading extension action: ${highlight(file)}`);
+
+				try {
+					let fn = require(file);
+					if (fn.__esModule) {
+						fn = fn.default;
+					}
+
+					if (typeof fn === 'function') {
+						await fn({
+							ctx,
+							console: ctx.terminal.console,
+							data,
+							event
+						});
+					}
+				} catch (err) {
+					error(`Error emitting action "${event}" to extension "${ext.name}:${cmd.name}":`);
+					error(`Extension action: ${file}`);
+					error(err.stack.split(/\r\n|\n/).filter(Boolean).join('\n'));
+				}
 			}
 		}
 	}

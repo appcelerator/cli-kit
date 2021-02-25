@@ -216,10 +216,10 @@ describe('Option', () => {
 
 			expect(opt.aliases).to.deep.equal({
 				long: {
-					fooo: true,
+					fooo:  true,
 					foooo: true,
-					bar: false,
-					barr: false
+					bar:   false,
+					barr:  false
 				},
 				short: {
 					a: true,
@@ -237,10 +237,10 @@ describe('Option', () => {
 
 			expect(opt.aliases).to.deep.equal({
 				long: {
-					fooo: true,
+					fooo:  true,
 					foooo: true,
-					bar: false,
-					barr: false
+					bar:   false,
+					barr:  false
 				},
 				short: {
 					a: true,
@@ -248,6 +248,23 @@ describe('Option', () => {
 					c: true,
 					d: false
 				}
+			});
+		});
+
+		it('should parse negated aliased option', () => {
+			const opt = new Option('--no-prompt', {
+				aliases: [ '!--no-input' ]
+			});
+
+			expect(opt.name).to.equal('prompt');
+			expect(opt.long).to.equal('prompt');
+			expect(opt.negate).to.be.true;
+
+			expect(opt.aliases).to.deep.equal({
+				long: {
+					input: false
+				},
+				short: {}
 			});
 		});
 	});

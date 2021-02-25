@@ -42,10 +42,6 @@ export default class Extension {
 			({ path } = params = pathOrParams);
 		}
 
-		this.exports = params.exports || {};
-		this.name = params.name;
-		this.path = path;
-
 		if (!path || typeof path !== 'string') {
 			throw E.INVALID_ARGUMENT('Expected an extension path or params object', { name: 'pathOrParams', scope: 'Extension.constructor', value: pathOrParams });
 		}
@@ -53,6 +49,10 @@ export default class Extension {
 		if (typeof params !== 'object') {
 			throw E.INVALID_ARGUMENT('Expected extension params to be an object or Context', { name: 'params', scope: 'Extension.constructor', value: params });
 		}
+
+		this.exports = params.exports || {};
+		this.name = params.name;
+		this.path = path;
 
 		if (typeof this.exports !== 'object') {
 			throw E.INVALID_ARGUMENT('Expected extension exports to be an object', { name: 'params.exports', scope: 'Extension.constructor', value: params.exports });
@@ -107,6 +107,10 @@ export default class Extension {
 					this.name = pkg.json.name;
 				}
 
+				if (!this.name) {
+					this.name = filename(path);
+				}
+
 				if (!pkg.json.exports && pkg.main) {
 					// legacy Node.js extension
 					let { name } = this;
@@ -143,7 +147,7 @@ export default class Extension {
 								pkg.main
 							];
 
-							const p = __argv.findIndex(arg => arg && arg.type === 'extension' && arg.extension === cmd);
+							const p = __argv.findIndex(arg => arg && arg.type === 'extension' && arg.command === cmd);
 							if (p !== -1) {
 								for (let i = p + 1, len = __argv.length; i < len; i++) {
 									process.argv.push.apply(process.argv, __argv[i].input);
@@ -151,6 +155,7 @@ export default class Extension {
 							}
 
 							log(`Requiring ${highlight(pkg.main)}`);
+							log(`Args: ${highlight(process.argv.join(' '))}`);
 							require(pkg.main);
 						},
 						aliases,
@@ -180,24 +185,26 @@ export default class Extension {
 				}
 			} catch (e) {
 				this.err = e;
-				warn(e.message);
+				warn(e);
 				warn('Found bad extension, creating error action');
 
-				// params.action = () => {
-				// 	const { stderr } = this.get('terminal');
-				// 	if (err) {
-				// 		let { stack } = err;
-				// 		const p = stack.indexOf('\n\n');
-				// 		if (p !== -1) {
-				// 			stack = stack.substring(0, p).trim();
-				// 		}
-				// 		for (const line of stack.split('\n')) {
-				// 			stderr.write(`  ${line}\n`);
-				// 		}
-				// 	} else {
-				// 		stderr.write(`Invalid extension: ${pkg.json.name}\n`);
-				// 	}
-				// };
+				this.registerExtension(this.name, {}, {
+					action: ({ terminal }) => {
+						const { stderr } = terminal;
+						if (this.err) {
+							let { stack } = e;
+							const p = stack.indexOf('\n\n');
+							if (p !== -1) {
+								stack = stack.substring(0, p).trim();
+							}
+							for (const line of stack.split('\n')) {
+								stderr.write(`  ${line}\n`);
+							}
+						} else {
+							stderr.write(`Invalid extension: ${this.name}\n`);
+						}
+					}
+				});
 			}
 		}
 
