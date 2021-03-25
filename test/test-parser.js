@@ -69,9 +69,9 @@ describe('Parser', () => {
 				]
 			}).exec([ '2021-03-04' ]);
 			expect(results.argv.foo).to.be.instanceOf(Date);
-			expect(results.argv.foo.getFullYear()).to.equal(2021);
-			expect(results.argv.foo.getMonth()).to.equal(2);
-			expect(results.argv.foo.getDate()).to.equal(3);
+			expect(results.argv.foo.getUTCFullYear()).to.equal(2021);
+			expect(results.argv.foo.getUTCMonth()).to.equal(2);
+			expect(results.argv.foo.getUTCDate()).to.equal(4);
 		});
 	});
 
