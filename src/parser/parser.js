@@ -559,9 +559,8 @@ export default class Parser extends HookEmitter {
 
 			if ((type === 'command' || type === 'extension') && sameContext) {
 				// link the context hook emitters
-				arg[type].link(ctx);
-
-				const cmd = type === 'command' ? arg.command : arg.extension;
+				const cmd = arg.command;
+				cmd.link(ctx);
 				if (typeof cmd.callback === 'function') {
 					await cmd.callback({
 						command: arg.command,
@@ -571,7 +570,7 @@ export default class Parser extends HookEmitter {
 				}
 
 				// add the context to the stack
-				this.contexts.unshift(arg[type]);
+				this.contexts.unshift(cmd);
 
 			} else if (type === 'option' && !sameContext && this.contexts[0] instanceof Extension && !this.contexts[0].isCLIKitExtension) {
 				log(`Forcing option ${highlight(arg.option.format)} to be an argument because we found a non-cli-kit extension ${highlight(this.contexts[0].name)}`);
@@ -769,7 +768,7 @@ export default class Parser extends HookEmitter {
 
 		// check if the argument is a command
 		if (type === 'command' || type === 'extension') {
-			log(`Skipping known ${type}: ${highlight(arg[type].name)}`);
+			log(`Skipping known ${type}: ${highlight(arg.command.name)}`);
 			return;
 		}
 
@@ -785,10 +784,12 @@ export default class Parser extends HookEmitter {
 
 		const ext = lookup.extensions[subject];
 		if (ext) {
-			await ext.load();
 			log(`Found extension: ${highlight(ext.name)}`);
+			if (typeof ext.load === 'function') {
+				await ext.load(subject);
+			}
 			return new ParsedArgument('extension', {
-				extension: ext,
+				command: ext,
 				input: [ arg ]
 			});
 		}

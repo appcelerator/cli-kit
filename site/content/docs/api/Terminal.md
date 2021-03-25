@@ -1,5 +1,0 @@
----
-title: "Terminal"
----
-
-foo

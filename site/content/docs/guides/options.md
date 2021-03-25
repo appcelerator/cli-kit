@@ -1,5 +1,0 @@
----
-title: "Options"
----
-
-foo

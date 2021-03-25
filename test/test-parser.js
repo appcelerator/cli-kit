@@ -184,6 +184,34 @@ describe('Parser', () => {
 			expect(result.argv).to.have.property('bar');
 			expect(result.argv.bar).to.deep.equal([ 'a', 'b' ]);
 		});
+
+		it('should parse negated aliased options', async () => {
+			const cli = new CLI({
+				options: {
+					'--no-prompt': { aliases: [ '--no-input' ] }
+				}
+			});
+
+			const result = await cli.exec([ '--no-input' ]);
+			expect(result.argv.prompt).to.equal(false);
+
+			const result2 = await cli.exec([ '--input' ]);
+			expect(result2.argv.prompt).to.equal(true);
+		});
+
+		it('should parse negated flipped aliased options', async () => {
+			const cli = new CLI({
+				options: {
+					'--no-prompt': { aliases: [ '--do-prompt' ] }
+				}
+			});
+
+			const result = await cli.exec([]);
+			expect(result.argv.prompt).to.equal(true);
+
+			const result2 = await cli.exec([ '--do-prompt' ]);
+			expect(result2.argv.prompt).to.equal(true);
+		});
 	});
 
 	describe('Validation', () => {

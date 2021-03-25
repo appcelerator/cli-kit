@@ -1,9 +1,13 @@
 import Context from './context';
 import debug from '../lib/debug';
 import E from '../lib/errors';
+import fs from 'fs';
 import helpCommand from '../commands/help';
 
 import { declareCLIKitClass } from '../lib/util';
+
+const { log } = debug('cli-kit:command');
+const { highlight } = debug.styles;
 
 const formatRegExp = /^([@! ]*[\w-_]+(?:\s*,\s*[@! ]*[\w-_]+)*)((?:\s*[<[][\w-_]+[>\]])*)?$/;
 const nameRegExp = /^([@! ]*)([\w-_]+)\s*$/;
@@ -25,7 +29,7 @@ export default class Command extends Context {
 	/**
 	 * Constructs a command instance.
 	 *
-	 * @param {String} name - The command name.
+	 * @param {String} name - The command name or path to a file.
 	 * @param {Object|CLI|Command|Context|Function} [params] - Command parameters or an action
 	 * function.
 	 * @param {Function|Command} [params.action] - A function to call when the command is found.
@@ -50,6 +54,31 @@ export default class Command extends Context {
 	 *   new Command(new Command('foo'))
 	 */
 	constructor(name, params = {}) {
+		if (name && typeof name === 'string' && fs.existsSync(name)) {
+			let ctx;
+			try {
+				log(`Requiring ${highlight(name)}`);
+				ctx = require(name);
+				if (!ctx || typeof ctx !== 'object') {
+					throw new Error('Command must export an object');
+				}
+
+				// if this is an ES6 module, grab the default export
+				if (ctx.__esModule) {
+					ctx = ctx.default;
+				}
+
+				if (!ctx || typeof ctx !== 'object') {
+					throw new Error('Command must export an object');
+				}
+
+				name = ctx.name;
+				params = ctx;
+			} catch (err) {
+				throw E.INVALID_COMMAND(`Bad command "${name}": ${err.message}`, { name: name, scope: 'Command.constructor', value: err });
+			}
+		}
+
 		if (!name || typeof name !== 'string') {
 			throw E.INVALID_ARGUMENT('Expected command name to be a non-empty string', { name: 'name', scope: 'Command.constructor', value: name });
 		}

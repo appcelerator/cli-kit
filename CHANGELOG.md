@@ -1,3 +1,10 @@
+# 1.10.0
+
+ * feat(command): Support command name to be a path to command file.
+ * feat(extension): Added support for defining extension contexts.
+ * fix(option): Allow aliases to be negated.
+ * chore: Updated dependencies.
+
 # 1.9.3 (Jan 8, 2021)
 
  * fix(extension): Strip the package scope name from an extension name, but still add it as a

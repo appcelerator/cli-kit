@@ -483,7 +483,7 @@ export default class CLI extends Context {
 
 			if (results.exitCode() === undefined) {
 				// determine the command to run
-				if (this.help && argv.help && (!(cmd instanceof Extension) || cmd.isCLIKitExtension)) {
+				if (this.help && argv.help && (!cmd.isExtension || cmd.isCLIKitExtension)) {
 					// disable the built-in help if the help is to be rendered remotely
 					// note: the current `cmd` could be a command under an extension, so we call
 					// `cmd.prop()` to scan the command's parents to see if this command is
