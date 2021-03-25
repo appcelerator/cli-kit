@@ -1,4 +1,4 @@
-# 1.10.0
+# 1.10.0 (Mar 25, 2021)
 
  * feat(command): Support command name to be a path to command file.
  * feat(extension): Added support for defining extension contexts.
