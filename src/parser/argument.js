@@ -130,9 +130,9 @@ export default class Argument {
 	 * @access public
 	 */
 	transform(value) {
-		value = transformValue(value, this.type);
+		value = transformValue(value, this.datatype);
 
-		switch (this.type) {
+		switch (this.datatype) {
 			case 'positiveInt':
 			case 'int':
 			case 'number':

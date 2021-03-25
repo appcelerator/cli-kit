@@ -3,6 +3,7 @@
  * feat(command): Support command name to be a path to command file.
  * feat(extension): Added support for defining extension contexts.
  * fix(option): Allow aliases to be negated.
+ * fix(argument): Use correct `datatype` property when transforming argument value.
  * chore: Updated dependencies.
 
 # 1.9.3 (Jan 8, 2021)

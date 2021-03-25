@@ -46,6 +46,33 @@ describe('Parser', () => {
 			}).exec([ '--foo' ]);
 			expect(results.argv.foo).to.equal(true);
 		});
+
+		it('should coerce string type', async () => {
+			let results = await new CLI({
+				args: [
+					{
+						name: 'foo',
+						type: 'string'
+					}
+				]
+			}).exec([ '2021-03-04' ]);
+			expect(results.argv.foo).to.equal('2021-03-04');
+		});
+
+		it('should coerce date type', async () => {
+			let results = await new CLI({
+				args: [
+					{
+						name: 'foo',
+						type: 'date'
+					}
+				]
+			}).exec([ '2021-03-04' ]);
+			expect(results.argv.foo).to.be.instanceOf(Date);
+			expect(results.argv.foo.getFullYear()).to.equal(2021);
+			expect(results.argv.foo.getMonth()).to.equal(2);
+			expect(results.argv.foo.getDate()).to.equal(3);
+		});
 	});
 
 	describe('Version', () => {
