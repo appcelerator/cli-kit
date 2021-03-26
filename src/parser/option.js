@@ -142,6 +142,13 @@ export default class Option {
 		this.default = params.default !== undefined ? params.default : (this.datatype === 'bool' && this.negate ? true : undefined);
 
 		declareCLIKitClass(this, 'Option');
+
+		// mix in any other custom props
+		for (const [ key, value ] of Object.entries(params)) {
+			if (!Object.prototype.hasOwnProperty.call(this, key)) {
+				this[key] = value;
+			}
+		}
 	}
 
 	/**

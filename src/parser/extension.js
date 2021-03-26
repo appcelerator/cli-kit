@@ -209,6 +209,13 @@ export default class Extension {
 		}
 
 		declareCLIKitClass(this, 'Extension');
+
+		// mix in any other custom props
+		for (const [ key, value ] of Object.entries(params)) {
+			if (!Object.prototype.hasOwnProperty.call(this, key)) {
+				this[key] = value;
+			}
+		}
 	}
 
 	/**
@@ -297,10 +304,10 @@ export default class Extension {
 						if (this.defaultCommand !== 'help' || !this.get('help')) {
 							const defcmd = this.defaultCommand && this.commands[this.defaultCommand];
 							if (defcmd) {
-								return await defcmd.action(parser);
+								return await defcmd.action.call(defcmd, parser);
 							}
 						}
-						return await helpCommand.action(parser);
+						return await helpCommand.action.call(helpCommand, parser);
 					};
 				}
 			}.bind(cmd);

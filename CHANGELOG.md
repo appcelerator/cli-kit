@@ -1,3 +1,9 @@
+# 1.11.0
+
+ * feat: Mix custom command, argument, option, and extension constructor parameters into each
+   instance. Only works for non-existing properties.
+ * fix: Execute command actions using command's context.
+
 # 1.10.0 (Mar 25, 2021)
 
  * feat(command): Support command name to be a path to command file.

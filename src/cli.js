@@ -527,13 +527,13 @@ export default class CLI extends Context {
 					// execute the command
 					if (results.cmd && typeof results.cmd.action === 'function') {
 						log(`Executing command: ${highlight(results.cmd.name)}`);
-						results.result = await results.cmd.action(results);
+						results.result = await results.cmd.action.call(results.cmd, results);
 					} else if (results.cmd && results.cmd.action instanceof Command && typeof results.cmd.action.action === 'function') {
 						log(`Executing command: ${highlight(results.cmd.action.name)} (via ${highlight(results.cmd.name)})`);
-						results.result = await results.cmd.action.action(results);
+						results.result = await results.cmd.action.action.call(results.cmd.action, results);
 					} else if (typeof this.defaultCommand  === 'function') {
 						log(`Executing default command: ${highlight(this.defaultCommand.name || 'anonymous')}`);
-						results.result = await this.defaultCommand(results);
+						results.result = await this.defaultCommand.call(this.defaultCommand, results);
 					} else {
 						log('No command to execute, returning parsed arguments');
 					}

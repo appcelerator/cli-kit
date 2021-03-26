@@ -105,6 +105,13 @@ export default class Argument {
 		this.regex     = params.type instanceof RegExp ? params.type : null;
 
 		declareCLIKitClass(this, 'Argument');
+
+		// mix in any other custom props
+		for (const [ key, value ] of Object.entries(params)) {
+			if (!Object.prototype.hasOwnProperty.call(this, key)) {
+				this[key] = value;
+			}
+		}
 	}
 
 	/**

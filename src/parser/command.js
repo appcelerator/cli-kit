@@ -147,7 +147,7 @@ export default class Command extends Context {
 					} else {
 						const cmd = defaultCommand && this.commands[defaultCommand];
 						if (cmd) {
-							return cmd.action(parser);
+							return cmd.action.call(cmd, parser);
 						}
 					}
 				};
@@ -210,6 +210,13 @@ export default class Command extends Context {
 		this.help           = help;
 		this.defaultCommand = params.defaultCommand;
 		this.hidden         = !!params.hidden;
+
+		// mix in any other custom props
+		for (const [ key, value ] of Object.entries(params)) {
+			if (!Object.prototype.hasOwnProperty.call(this, key)) {
+				this[key] = value;
+			}
+		}
 	}
 
 	/**
