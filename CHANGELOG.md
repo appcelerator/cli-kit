@@ -1,4 +1,4 @@
-# 1.11.0
+# 1.11.0 (Mar 26, 2021)
 
  * feat: Mix custom command, argument, option, and extension constructor parameters into each
    instance. Only works for non-existing properties.
