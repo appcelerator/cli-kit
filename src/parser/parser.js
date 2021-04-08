@@ -149,7 +149,7 @@ export default class Parser extends HookEmitter {
 						if (this.argv[name] === undefined) {
 							let value = option.default;
 
-							if (option.datatype === 'bool') {
+							if (option.datatype === 'bool' && typeof value !== 'boolean') {
 								value = !!option.negate;
 							} else if (option.type === 'count') {
 								value = 0;

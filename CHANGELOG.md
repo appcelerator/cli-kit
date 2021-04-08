@@ -1,3 +1,8 @@
+# 1.11.1
+
+ * fix: Don't override default value for boolean options.
+ * chore: Updated dev dependencies.
+
 # 1.11.0 (Mar 26, 2021)
 
  * feat: Mix custom command, argument, option, and extension constructor parameters into each

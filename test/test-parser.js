@@ -239,6 +239,23 @@ describe('Parser', () => {
 			const result2 = await cli.exec([ '--do-prompt' ]);
 			expect(result2.argv.prompt).to.equal(true);
 		});
+
+		it('should parse defaulted negated flipped options', async () => {
+			const cli = new CLI({
+				options: {
+					'--prompt': { default: true }
+				}
+			});
+
+			let result = await cli.exec([]);
+			expect(result.argv.prompt).to.equal(true);
+
+			result = await cli.exec([ '--target' ]);
+			expect(result.argv.prompt).to.equal(true);
+
+			result = await cli.exec([ '--no-prompt' ]);
+			expect(result.argv.prompt).to.equal(false);
+		});
 	});
 
 	describe('Validation', () => {
