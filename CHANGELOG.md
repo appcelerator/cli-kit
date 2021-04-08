@@ -1,4 +1,4 @@
-# 1.11.1
+# 1.11.1 (Apr 8, 2021)
 
  * fix: Don't override default value for boolean options.
  * chore: Updated dev dependencies.
