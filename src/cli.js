@@ -529,6 +529,7 @@ export default class CLI extends Context {
 						log(`Executing command: ${highlight(results.cmd.name)}`);
 						results.result = await results.cmd.action.call(results.cmd, results);
 					} else if (results.cmd && results.cmd.action instanceof Command && typeof results.cmd.action.action === 'function') {
+						// I think this is related to the legacy extension stuff...
 						log(`Executing command: ${highlight(results.cmd.action.name)} (via ${highlight(results.cmd.name)})`);
 						results.result = await results.cmd.action.action.call(results.cmd.action, results);
 					} else if (typeof this.defaultCommand  === 'function') {
@@ -551,8 +552,12 @@ export default class CLI extends Context {
 				error(err.stack || err.message || err.toString() || 'Unknown error');
 			}
 
-			// the banner rendered during an error does not fire the hook
-			await renderBanner(results);
+			if (err.json === undefined && results.cmd?.prop('jsonMode')) {
+				err.json = true;
+			} else {
+				// the banner rendered during an error does not fire the hook
+				await renderBanner(results);
+			}
 
 			const help = this.help && (showHelpOnError !== false || err.showHelp) && this.commands.get('help');
 			if (help) {

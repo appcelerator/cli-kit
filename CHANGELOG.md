@@ -1,3 +1,9 @@
+# 1.11.2 (Apr 13, 2021)
+
+ * fix(cli): Set `json` flag on errors when the executing context or its parent contexts has a
+   `jsonMode` flag set.
+ * chore: Updated dev dependencies.
+
 # 1.11.1 (Apr 8, 2021)
 
  * fix: Don't override default value for boolean options.
