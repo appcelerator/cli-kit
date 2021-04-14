@@ -1,3 +1,7 @@
+# 1.11.3 (Apr 14, 2021)
+
+ * fix(command): Only consider command name to be a file if it is an absolute path.
+
 # 1.11.2 (Apr 13, 2021)
 
  * fix(cli): Set `json` flag on errors when the executing context or its parent contexts has a
