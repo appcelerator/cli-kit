@@ -28,6 +28,14 @@ export default class Command extends Context {
 	_aliases = {};
 
 	/**
+	 * Custom help header and footer content.
+	 *
+	 * @type {Object}
+	 * @access private
+	 */
+	_help = {};
+
+	/**
 	 * Constructs a command instance.
 	 *
 	 * @param {String} name - The command name or absolute path to a file.
@@ -162,30 +170,6 @@ export default class Command extends Context {
 			throw E.INVALID_ARGUMENT('Expected command action to be a function or Command instance', { name: 'action', scope: 'Command.constructor', value: params.action });
 		}
 
-		const help = {};
-		if (params.help) {
-			if (typeof params.help === 'string' || typeof params.help === 'function') {
-				help.header = params.help;
-			} else if (typeof params.help === 'object') {
-				if (params.help.header) {
-					if (typeof params.help.header === 'string' || typeof params.help.header === 'function') {
-						help.header = params.help.header;
-					} else {
-						throw E.INVALID_ARGUMENT('Expected help content header to be a string or function');
-					}
-				}
-				if (params.help.footer) {
-					if (typeof params.help.footer === 'string' || typeof params.help.footer === 'function') {
-						help.footer = params.help.footer;
-					} else {
-						throw E.INVALID_ARGUMENT('Expected help content footer to be a string or function');
-					}
-				}
-			} else {
-				throw E.INVALID_ARGUMENT('Expected help content to be a string, function, or object containing a header or footer');
-			}
-		}
-
 		params.name = name;
 
 		const args = m[2] && m[2].trim().split(/\s+/);
@@ -208,7 +192,7 @@ export default class Command extends Context {
 		this._aliases       = this.createAliases(aliases, params.aliases);
 		this.callback       = params.callback;
 		this.clikitHelp     = params.clikitHelp;
-		this.help           = help;
+		this.help           = params.help || {};
 		this.defaultCommand = params.defaultCommand;
 		this.hidden         = !!params.hidden;
 
@@ -299,6 +283,41 @@ export default class Command extends Context {
 		});
 
 		return super.generateHelp();
+	}
+
+	/**
+	 * Custom help header and footer content. A string, function, or object with `header` and
+	 * `footer` properties may be used to set the `help` property, but the internal value will
+	 * always be an object with `header` and `footer` properties.
+	 *
+	 * @type {Object}
+	 * @access public
+	 */
+	get help() {
+		return this._help;
+	}
+
+	set help(value) {
+		if (typeof value === 'string' || typeof value === 'function') {
+			this._help.header = value;
+		} else if (typeof value === 'object') {
+			if (value.header) {
+				if (typeof value.header === 'string' || typeof value.header === 'function') {
+					this._help.header = value.header;
+				} else {
+					throw E.INVALID_ARGUMENT('Expected help content header to be a string or function');
+				}
+			}
+			if (value.footer) {
+				if (typeof value.footer === 'string' || typeof value.footer === 'function') {
+					this._help.footer = value.footer;
+				} else {
+					throw E.INVALID_ARGUMENT('Expected help content footer to be a string or function');
+				}
+			}
+		} else {
+			throw E.INVALID_ARGUMENT('Expected help content to be a string, function, or object containing a header or footer');
+		}
 	}
 
 	/**

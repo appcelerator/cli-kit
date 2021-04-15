@@ -1,3 +1,7 @@
+# 1.11.4 (Apr 15, 2021)
+
+ * fix(command): Fixed custom help content for extensions.
+
 # 1.11.3 (Apr 14, 2021)
 
  * fix(command): Only consider command name to be a file if it is an absolute path.

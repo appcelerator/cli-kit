@@ -266,6 +266,7 @@ export default class Extension {
 				this.aliases                        = ctx.aliases;
 				this.camelCase                      = ctx.camelCase;
 				this.defaultCommand                 = ctx.defaultCommand;
+				this.help                           = ctx.help || {};
 				this.remoteHelp                     = ctx.remoteHelp;
 				this.treatUnknownOptionsAsArguments = ctx.treatUnknownOptionsAsArguments;
 				this.version                        = ctx.version;
