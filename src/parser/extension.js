@@ -164,7 +164,10 @@ export default class Extension {
 				} else if (typeof pkg.json.exports !== 'object') {
 					throw E.INVALID_EXTENSION('Invalid extension: Expected exports to be an object', { name: 'pkg.json.exports', scope: 'Extension.constructor', value: pkg.json.exports });
 				} else {
-					for (const [ name, params ] of Object.entries(pkg.json.exports)) {
+					for (let [ name, params ] of Object.entries(pkg.json.exports)) {
+						if (typeof params === 'string') {
+							params = { main: params };
+						}
 						if (params.main && !_path.isAbsolute(params.main)) {
 							params.main = _path.resolve(pkg.root, params.main);
 						}
@@ -266,7 +269,7 @@ export default class Extension {
 				this.aliases                        = ctx.aliases;
 				this.camelCase                      = ctx.camelCase;
 				this.defaultCommand                 = ctx.defaultCommand;
-				this.help                           = ctx.help || {};
+				this.help                           = ctx.help;
 				this.remoteHelp                     = ctx.remoteHelp;
 				this.treatUnknownOptionsAsArguments = ctx.treatUnknownOptionsAsArguments;
 				this.version                        = ctx.version;
@@ -275,7 +278,7 @@ export default class Extension {
 					args:       ctx.args,
 					banner:     ctx.banner,
 					commands:   ctx.commands,
-					desc:       this.desc || ctx.desc,
+					desc:       ctx.desc || this.desc,
 					extensions: ctx.extensions,
 					name:       this.name || ctx.name,
 					options:    ctx.options,

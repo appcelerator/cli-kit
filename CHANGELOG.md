@@ -1,3 +1,8 @@
+# 1.12.0 (Apr 15, 2021)
+
+ * feat(extension): Allow extension exports values in its `package.json` to be the `main` path.
+ * fix(command): Fixed regression introduced when fixing the custom help content for extensions.
+
 # 1.11.4 (Apr 15, 2021)
 
  * fix(command): Fixed custom help content for extensions.

@@ -316,7 +316,7 @@ export default class Command extends Context {
 				}
 			}
 		} else {
-			throw E.INVALID_ARGUMENT('Expected help content to be a string, function, or object containing a header or footer');
+			this._help = {};
 		}
 	}
 
