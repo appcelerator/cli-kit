@@ -128,7 +128,7 @@ describe('Extension', () => {
 			// console.log(output);
 
 			expect(ansi.strip(output)).to.equal([
-				'USAGE: test-cli cli-kit-extension <command> [options] [<foo>] [<bar>]',
+				'USAGE: test-cli cli-kit-extension <command> --baz <value> [options] [<foo>] [<bar>]',
 				'',
 				'CLI-KIT-EXTENSION COMMANDS:',
 				'  stuff          perform magic',

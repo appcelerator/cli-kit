@@ -205,14 +205,15 @@ export default class Context extends HookEmitter {
 				ctx = ctx.parent;
 			}
 
-			// remove duplicate options
+			// remove duplicate options and determine required options
 			const longs = new Set();
 			const shorts = new Set();
+			const reqOpts = [];
 			let j = scopes.length;
 			while (j--) {
 				for (const options of Object.values(scopes[j].groups)) {
 					for (let i = 0; i < options.length; i++) {
-						const { long, short } = options[i];
+						const { hint, isFlag, long, required, short } = options[i];
 						let nuke = false;
 						if (long !== null) {
 							if (longs.has(long)) {
@@ -231,6 +232,12 @@ export default class Context extends HookEmitter {
 						if (nuke) {
 							scopes[j].count--;
 							options.splice(i--, 1);
+						} else if (required && !isFlag) {
+							if (long) {
+								reqOpts.push(`--${long} <${hint}>`);
+							} else if (short) {
+								reqOpts.push(`-${short} <${hint}>`);
+							}
 						}
 					}
 				}
@@ -274,16 +281,32 @@ export default class Context extends HookEmitter {
 
 			// set the usage line
 			const usage = [];
+			// add parent context names
 			if (Array.isArray(opts.parentContextNames)) {
 				usage.push.apply(usage, opts.parentContextNames);
 			}
+			// add context names
 			usage.push.apply(usage, results.contexts);
+			// if there are subcommands, add command placeholder
 			results.commands.count && usage.push('<command>');
-			results.options.count && usage.push('[options]');
-			usage.push.apply(usage, results.arguments.entries.map(arg => {
-				const name = `<${arg.hint}${arg.multiple ? '...' : ''}>`;
-				return arg.required ? name : `[${name}]`;
-			}));
+			// add required arguments
+			for (const arg of results.arguments.entries) {
+				if (arg.required) {
+					usage.push(`<${arg.hint}${arg.multiple ? '...' : ''}>`);
+				}
+			}
+			// add required options
+			usage.push.apply(usage, reqOpts);
+			// if there are options, add options placeholder
+			if (results.options.count > reqOpts.length) {
+				usage.push('[options]');
+			}
+			// add optional arguments
+			for (const arg of results.arguments.entries) {
+				if (!arg.required) {
+					usage.push(`[<${arg.hint}${arg.multiple ? '...' : ''}>]`);
+				}
+			}
 			results.usage = {
 				title: 'Usage',
 				text: usage.join(' ')

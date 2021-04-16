@@ -246,7 +246,7 @@ describe('CLI', () => {
 				'',
 				`${process.platform === 'win32' ? 'x' : '✖'} Error: Missing required argument "foo"`,
 				'',
-				'USAGE: test-cli [options] <foo>',
+				'USAGE: test-cli <foo> [options]',
 				'',
 				'ARGUMENTS:',
 				'  foo        ',

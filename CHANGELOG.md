@@ -1,3 +1,9 @@
+# 1.13.0
+
+ * feat(help): Added required options to usage on help screen.
+ * fix(help): Pass styles as well as header and footer content when rendering help template on
+   demand via `help()`.
+
 # 1.12.0 (Apr 15, 2021)
 
  * feat(extension): Allow extension exports values in its `package.json` to be the `main` path.

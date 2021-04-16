@@ -15,10 +15,14 @@ const { highlight } = debug.styles;
  * @param {Object} [opts] - Various options to pass into `generateHelp()`.
  * @returns {String}
  */
-export async function renderHelp(ctx, opts) {
+export async function renderHelp(ctx, opts = {}) {
 	const file = ctx.get('helpTemplateFile', path.resolve(__dirname, '..', '..', 'templates', 'help.tpl'));
 	log(`Rendering help template: ${highlight(file)}`);
-	return renderFile(file, await ctx.generateHelp(opts));
+	return renderFile(file, Object.assign({
+		style: opts?.styles || {},
+		header: null,
+		footer: null
+	}, await ctx.generateHelp(opts))).trim();
 }
 
 /**
@@ -117,13 +121,16 @@ export default {
 				const file = ctx.get('helpTemplateFile', path.resolve(__dirname, '..', '..', 'templates', 'help.tpl'));
 				log(`Rendering help template: ${highlight(file)}`);
 
-				// determine the output stream
-				(err ? _stderr : _stdout).write(renderFile(file, {
+				const buf = renderFile(file, {
 					style: styles,
 					header: null,
 					footer: null,
 					...help
-				}));
+				}).trim();
+
+				// determine the output stream
+				(err ? _stderr : _stdout).write(buf);
+				(err ? _stderr : _stdout).write('\n');
 			}
 
 			// set the exit code
