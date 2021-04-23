@@ -48,11 +48,6 @@ export default class Command extends Context {
 	 * @param {String|Function} [params.defaultCommand] - The default command to execute when this
 	 * command has no `action`. When value is a `String`, it looks up the subcommand and calls it.
 	 * If value is a `Function`, it simply invokes it.
-	 * @param {String|Function|Object} [params.help] - Additional help content to display on the
-	 * help screen. When may be an object with the properties `header` and `footer` which values
-	 * that are either a string or an async function that resolves a string. When value is a string
-	 * or function, it is trasnformed into a object with the value being used as the header. Note
-	 * that the command description is not displayed when a header message has been defined.
 	 * @param {Boolean} [params.hidden=false] - When `true`, the option is not displayed on the
 	 * help screen or auto-suggest.
 	 * @access public
@@ -265,24 +260,6 @@ export default class Command extends Context {
 		}
 
 		return result;
-	}
-
-	/**
-	 * Renders the help screen for this context including the parent contexts.
-	 *
-	 * @returns {Promise<Object>}
-	 * @access private
-	 */
-	generateHelp() {
-		this.on('generateHelp', async (ctx, results) => {
-			const opts = {
-				style: Object.assign({}, debug.styles, this.get('styles'))
-			};
-			results.header = typeof this.help.header === 'function' ? await this.help.header.call(this, opts) : this.help.header;
-			results.footer = typeof this.help.footer === 'function' ? await this.help.footer.call(this, opts) : this.help.footer;
-		});
-
-		return super.generateHelp();
 	}
 
 	/**

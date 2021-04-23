@@ -55,7 +55,11 @@ export default class CLI extends Context {
 	 * @param {Boolean} [params.errorIfUnknownCommand=true] - When `true`, `help` is enabled, and
 	 * the parser didn't find a command, but it did find an unknown argument, it will show the help
 	 * screen with an unknown command error.
-	 * @param {Boolean} [params.help=false] - When `true`, enables the built-in help command.
+	 * @param {String|Function|Object} [params.help] - Additional help content to display on the
+	 * help screen. When may be an object with the properties `header` and `footer` which values
+	 * that are either a string or an async function that resolves a string. When value is a string
+	 * or function, it is trasnformed into a object with the value being used as the header. Note
+	 * that the command description is not displayed when a header message has been defined.
 	 * @param {Number} [params.helpExitCode] - The exit code to return when the help command is
 	 * finished.
 	 * @param {String} [params.helpTemplateFile] - Path to a template to render for the help
@@ -133,7 +137,7 @@ export default class CLI extends Context {
 		this.colors                    = params.colors !== false;
 		this.defaultCommand            = params.defaultCommand;
 		this.errorIfUnknownCommand     = params.errorIfUnknownCommand !== false;
-		this.help                      = !!params.help;
+		this.help                      = params.help;
 		this.helpExitCode              = params.helpExitCode;
 		this.helpTemplateFile          = params.helpTemplateFile;
 		this.hideNoBannerOption        = params.hideNoBannerOption;

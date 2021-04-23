@@ -42,6 +42,11 @@ export default class Context extends HookEmitter {
 	 * `Extension` instance, or an array of those types. An extension path may be a directory
 	 * containing a Node.js module, a path to a `.js` file, or the name of a executable. May also
 	 * be an `ExtensionMap` instance.
+	 * @param {String|Function|Object} [params.help] - Additional help content to display on the
+	 * help screen. When may be an object with the properties `header` and `footer` which values
+	 * that are either a string or an async function that resolves a string. When value is a string
+	 * or function, it is trasnformed into a object with the value being used as the header. Note
+	 * that the command description is not displayed when a header message has been defined.
 	 * @param {String} [params.name] - The name of the context such as the program or the command
 	 * name.
 	 * @param {Object|Option|OptionMap|Array<Object|Option|String>} [params.options] - An object of
@@ -190,7 +195,7 @@ export default class Context extends HookEmitter {
 	 * @access private
 	 */
 	generateHelp(opts = {}) {
-		return this.hook('generateHelp', (ctx, results) => {
+		return this.hook('generateHelp', async (ctx, results) => {
 			const scopes = [];
 
 			while (ctx) {
@@ -278,6 +283,13 @@ export default class Context extends HookEmitter {
 				count: scopes.reduce((p, c) => p + c.count, 0),
 				scopes
 			};
+
+			// set the help
+			const helpOpts = {
+				style: Object.assign({}, debug.styles, this.get('styles'))
+			};
+			results.header = typeof this.help.header === 'function' ? await this.help.header.call(this, helpOpts) : this.help.header;
+			results.footer = typeof this.help.footer === 'function' ? await this.help.footer.call(this, helpOpts) : this.help.footer;
 
 			// set the usage line
 			const usage = [];

@@ -30,6 +30,8 @@ exports.clean = parallel(cleanCoverage, cleanDist, cleanDocs, cleanTest);
  */
 function lint(pattern) {
 	return gulp.src(pattern)
+		.pipe($.plumber())
+		.pipe($.debug({ title: 'lint' }))
 		.pipe($.eslint())
 		.pipe($.eslint.format())
 		.pipe($.eslint.failAfterError());
@@ -38,7 +40,10 @@ function lintSrc() { return lint('src/**/*.js'); }
 function lintTest() { return lint('test/**/test-*.js'); }
 exports['lint-src'] = lintSrc;
 exports['lint-test'] = lintTest;
-exports.lint = parallel(lintSrc, lintTest);
+exports.lint = series(
+	async function lintSrcWrapper() { return lintSrc(); },
+	async function lintTestWrapper() { return lintTest(); }
+);
 
 /*
  * build tasks
@@ -193,14 +198,20 @@ exports['test-only']     = series(lintTest,                       async function
 exports.coverage         = series(cleanCoverage, lintTest, build, async function test() { return runTests(true); });
 exports['coverage-only'] = series(cleanCoverage, lintTest,        async function test() { return runTests(true); });
 
-exports.watch = series(build, async function watch() {
+exports.watch = function watch() {
 	return new Promise(resolve => {
-		const watcher = gulp.watch(`${process.cwd()}/src/**/*.js`, build);
+		const watcher = gulp.watch(`${process.cwd()}/src/**/*.js`, {
+			ignoreInitial: false
+		}, done => {
+			// this is basically a hack because if build() fails, for some reason the callback
+			// is never fired, so just call done() immediately
+			build();
+			done();
+		});
+		process.on('uncaughtException', () => {});
 		process.on('SIGINT', () => {
 			watcher.close();
 			resolve();
 		});
 	});
-});
-
-process.on('uncaughtException', () => {});
+};

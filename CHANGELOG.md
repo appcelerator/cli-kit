@@ -3,6 +3,9 @@
  * feat(help): Added required options to usage on help screen.
  * fix(help): Pass styles as well as header and footer content when rendering help template on
    demand via `help()`.
+ * fix(cli): Moved `help` parameter from `Command` to `Context` so that `CLI` can render custom
+   help content.
+ * build: Improved `watch` task to not hang on a lint or build error.
 
 # 1.12.0 (Apr 15, 2021)
 
