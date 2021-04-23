@@ -150,3 +150,22 @@ export function toLowerCase(str) {
 export function toUpperCase(str) {
 	return split(str).map((s, i) => i % 2 === 0 ? s.toUpperCase() : s).join('');
 }
+
+export function trim(str) {
+	return trimStart(trimEnd(str));
+}
+
+export function trimStart(str) {
+	if (str !== undefined && str !== null) {
+		str = String(str).replace(/^\s*(\x07|\x1b(?:[a-z\d]|\[\?25[hl]|\[[A-Za-z]|\[\d+[A-Za-z]|\[\d+;\d+H|\]\d+[^\x07]+\x07))?\s*/, '$1');
+	}
+	return str;
+}
+
+export function trimEnd(str) {
+	if (str !== undefined && str !== null) {
+		// '\u001b[' + b + 'm'
+		str = String(str).replace(/\s*(\x07|\x1b(?:[a-z\d]|\[\?25[hl]|\[[A-Za-z]|\[\d+[A-Za-z]|\[\d+;\d+H|\]\d+[^\x07]+\x07))?\s*$/, '$1');
+	}
+	return str;
+}

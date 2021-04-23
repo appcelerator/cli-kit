@@ -37,7 +37,6 @@ const maxcmd = commands.entries.reduce((p, cmd) => Math.max(p, cmd.label.length)
 const maxarg = arguments.entries.reduce((p, arg) => Math.max(p, arg.name.length + (arg.multiple ? 3 : 0)), 0);
 const maxopt = options.scopes.reduce((p, scope) => Math.max(p, Object.values(scope.groups).reduce((p, opts) => Math.max(p, opts.reduce((p, opt) => Math.max(p, opt.label.length), 0)), 0)), 0);
 const maxlen = Math.max(maxcmd, maxarg, maxopt);
-console.log(maxcmd, maxarg, maxopt, maxlen);
 
 if (commands.count) {
 	>> ${style.heading(commands.title)}:

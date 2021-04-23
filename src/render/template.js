@@ -1,6 +1,7 @@
 // import debug from '../lib/debug';
 import E from '../lib/errors';
 import fs from 'fs';
+import { trim, trimEnd } from '../lib/ansi';
 
 // const logger = debug('cli-kit:template:in');
 // const { log } = logger;
@@ -115,7 +116,7 @@ export function render(template, data) {
 	let output = '';
 
 	fn(data, (str, linebreaks, flags) => {
-		str = flags?.includes('|') ? String(str).replace(/\s*$/g, '') : String(str).trim();
+		str = flags?.includes('|') ? trimEnd(str) : trim(str);
 		if (!flags?.includes('?') || str) {
 			output += `${str}${linebreaks ? '\n'.repeat(linebreaks) : ''}`;
 		}

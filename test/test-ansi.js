@@ -176,4 +176,22 @@ describe('ansi', () => {
 	it('should lower case a string', () => {
 		expect(ansi.toLowerCase(`${chalk.red('Error!')} Something broke!`)).to.equal(`${chalk.red('error!')} something broke!`);
 	});
+
+	it('should trim the start of a string', () => {
+		expect(ansi.trimStart('  foo  ')).to.equal('foo  ');
+		expect(ansi.trimStart(chalk.green('  foo  '))).to.equal(chalk.green('foo  '));
+		expect(ansi.trimStart('  ' + chalk.green('  foo  ') + '  ')).to.equal(chalk.green('foo  ') + '  ');
+	});
+
+	it('should trim the end of a string', () => {
+		expect(ansi.trimEnd('  foo  ')).to.equal('  foo');
+		expect(ansi.trimEnd(chalk.green('  foo  '))).to.equal(chalk.green('  foo'));
+		expect(ansi.trimEnd('  ' + chalk.green('  foo  ') + '  ')).to.equal('  ' + chalk.green('  foo'));
+	});
+
+	it('should trim the start and end of a string', () => {
+		expect(ansi.trim('  foo  ')).to.equal('foo');
+		expect(ansi.trim(chalk.green('  foo  '))).to.equal(chalk.green('foo'));
+		expect(ansi.trim('  ' + chalk.green('  foo  ') + '  ')).to.equal(chalk.green('foo'));
+	});
 });

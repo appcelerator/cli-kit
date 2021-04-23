@@ -1,6 +1,7 @@
 # 1.13.0
 
  * feat(help): Added required options to usage on help screen.
+ * feat(ansi): Added `trim()`, `trimStart()`, and `trimEnd()` functions.
  * fix(help): Pass styles as well as header and footer content when rendering help template on
    demand via `help()`.
  * fix(cli): Moved `help` parameter from `Command` to `Context` so that `CLI` can render custom
