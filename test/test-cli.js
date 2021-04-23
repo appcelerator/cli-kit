@@ -249,7 +249,7 @@ describe('CLI', () => {
 				'USAGE: test-cli <foo> [options]',
 				'',
 				'ARGUMENTS:',
-				'  foo        !',
+				'  foo          ',
 				'',
 				'GLOBAL OPTIONS:',
 				'  --no-banner  Suppress the banner',
