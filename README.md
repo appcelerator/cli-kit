@@ -4,9 +4,7 @@ A command line application toolkit for Node.js.
 
 [![NPM Version][npm-image]][npm-url]
 [![NPM Downloads][downloads-image]][downloads-url]
-[![Travis CI Build][travis-image]][travis-url]
-[![Appveyor CI Build][appveyor-image]][appveyor-url]
-[![Test Coverage][coveralls-image]][coveralls-url]
+[![Build][build-image]][build-url]
 [![Deps][david-image]][david-url]
 [![Dev Deps][david-dev-image]][david-dev-url]
 
@@ -282,12 +280,8 @@ MIT
 [npm-url]: https://npmjs.org/package/cli-kit
 [downloads-image]: https://img.shields.io/npm/dm/cli-kit.svg
 [downloads-url]: https://npmjs.org/package/cli-kit
-[travis-image]: https://travis-ci.org/cb1kenobi/cli-kit.svg?branch=master
-[travis-url]: https://travis-ci.org/cb1kenobi/cli-kit
-[appveyor-image]: https://ci.appveyor.com/api/projects/status/nhbqpsx6jc10xnjw?svg=true
-[appveyor-url]: https://ci.appveyor.com/project/cb1kenobi/cli-kit
-[coveralls-image]: https://img.shields.io/coveralls/cb1kenobi/cli-kit/master.svg
-[coveralls-url]: https://coveralls.io/r/cb1kenobi/cli-kit
+[build-image]: https://github.com/cb1kenobi/cli-kit/actions/workflows/build.yml/badge.svg
+[build-url]: https://github.com/cb1kenobi/cli-kit/actions/workflows/build.yml
 [david-image]: https://img.shields.io/david/cb1kenobi/cli-kit.svg
 [david-url]: https://david-dm.org/cb1kenobi/cli-kit
 [david-dev-image]: https://img.shields.io/david/dev/cb1kenobi/cli-kit.svg
