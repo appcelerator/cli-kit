@@ -50,7 +50,7 @@ if (commands.count) {
 if (arguments.count) {
 	>> ${style.heading(arguments.title)}:
 	for (const arg of arguments.entries) {
-		>>|  ${style.highlight(`${arg.name}${arg.multiple ? '...' : ''}`.padEnd(maxlen))}  ${arg.desc || ''}
+		>>|  ${style.highlight(`${arg.name}${arg.multiple ? '...' : ''}`.padEnd(maxlen))}  !${arg.desc || ''}
 	}
 	>>
 }

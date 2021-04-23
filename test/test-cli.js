@@ -217,7 +217,7 @@ describe('CLI', () => {
 			].join('\n'));
 		});
 
-		it('should display a banner when a validation error occurs', async () => {
+		it.only('should display a banner when a validation error occurs', async () => {
 			const banner = 'My Amazing CLI, version 1.2.3\nCopyright (c) 2018, Me';
 			const out = new WritableStream();
 			const terminal = new Terminal({
@@ -249,7 +249,7 @@ describe('CLI', () => {
 				'USAGE: test-cli <foo> [options]',
 				'',
 				'ARGUMENTS:',
-				'  foo        ',
+				'  foo        !',
 				'',
 				'GLOBAL OPTIONS:',
 				'  --no-banner  Suppress the banner',
