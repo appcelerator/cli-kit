@@ -55,10 +55,12 @@ describe('Extension', () => {
 
 			const { status, stdout, stderr } = spawnSync(process.execPath, [
 				path.join(__dirname, 'examples', 'external-binary', 'extbin.js'),
-				'ping'
+				'node',
+				'-e',
+				'console.log(\'foo\');'
 			], { env });
 			expect(status).to.equal(0);
-			expect(stdout.toString().trim() + stderr.toString().trim()).to.match(/usage: ping/im);
+			expect(stdout.toString().trim() + stderr.toString().trim()).to.match(/foo/im);
 		});
 
 		it('should curry args to a native binary', function () {

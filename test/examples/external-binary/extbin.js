@@ -1,5 +1,5 @@
 const CLI = require('../../../dist/index').default;
 
 new CLI({
-	extensions: [ 'ping' ]
+	extensions: [ 'node' ]
 }).exec();
