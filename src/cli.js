@@ -742,7 +742,7 @@ export default class CLI extends Context {
 								try {
 									terminal.stdin.write(str);
 								} catch (err) {
-									warn(`Failed to write to stdin`);
+									warn('Failed to write to stdin');
 									warn(err);
 								}
 							});
