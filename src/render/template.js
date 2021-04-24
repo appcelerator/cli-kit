@@ -112,8 +112,6 @@ export function render(template, data) {
 
 	// log2(body);
 
-	console.log(body);
-
 	const fn = new Function('__data', '__print', body);
 	let output = '';
 
