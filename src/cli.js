@@ -739,11 +739,13 @@ export default class CLI extends Context {
 							const str = buffer.substring(p + 2);
 							buffer = '';
 							await exec(command, () => {
-								try {
-									terminal.stdin.write(str);
-								} catch (err) {
-									warn('Failed to write to stdin');
-									warn(err);
+								if (str.length) {
+									try {
+										terminal.stdin.write(str);
+									} catch (err) {
+										warn('Failed to write to stdin');
+										warn(err);
+									}
 								}
 							});
 						}
