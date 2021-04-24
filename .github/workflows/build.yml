@@ -25,8 +25,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        nodeVersion: [ '10.24.1', '12.22.1', '14.16.1', '16.0.0' ]
-        os: [ macos-latest, ubuntu-latest, windows-latest ]
+        # nodeVersion: [ '10.24.1', '12.22.1', '14.16.1', '16.0.0' ]
+        # os: [ macos-latest, ubuntu-latest, windows-latest ]
+        nodeVersion: [ '14.16.1' ]
+        os: [ windows-latest ]
     steps:
       - uses: actions/checkout@v2
         with:
