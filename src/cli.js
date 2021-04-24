@@ -594,7 +594,7 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected port to be a number between 1 and 65535', { name: 'opts.port', scope: 'CLI.listen', value: opts.port });
 		}
 
-		log(`Starting WebSocketServer${opts.port ? `on port ${highlight(opts.port)}` : ''}...`);
+		log(`Starting WebSocketServer${opts.port ? ` on port ${highlight(opts.port)}` : ''}...`);
 
 		if (!this.serverMode) {
 			log('Enabling server mode');
@@ -738,7 +738,14 @@ export default class CLI extends Context {
 							const command = buffer.substring(0, p);
 							const str = buffer.substring(p + 2);
 							buffer = '';
-							await exec(command, () => terminal.stdin.write(str));
+							await exec(command, () => {
+								try {
+									terminal.stdin.write(str);
+								} catch (err) {
+									warn(`Failed to write to stdin`);
+									warn(err);
+								}
+							});
 						}
 					} finally {
 						if (m) {

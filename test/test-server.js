@@ -19,7 +19,7 @@ describe('Server', () => {
 	});
 
 	it.only('should connect and run a command', async function () {
-		this.timeout(4000);
+		this.timeout(10000);
 		this.slow(3000);
 
 		const cli = new CLI({
