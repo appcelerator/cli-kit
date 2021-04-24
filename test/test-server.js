@@ -18,7 +18,7 @@ describe('Server', () => {
 		}
 	});
 
-	it('should connect and run a command', async function () {
+	it.only('should connect and run a command', async function () {
 		this.timeout(4000);
 		this.slow(3000);
 
