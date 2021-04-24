@@ -149,7 +149,7 @@ describe('Template', () => {
 		});
 	});
 
-	describe('renderFile()', () => {
+	describe.only('renderFile()', () => {
 		it('should error if file is not found', () => {
 			const file = path.join(__dirname, 'does_not_exist');
 			expect(() => {
