@@ -39,4 +39,4 @@ jobs:
       - name: Run tests
         run: yarn run test
         env:
-          SNOOPLOGG: *
+          SNOOPLOGG: '*'
