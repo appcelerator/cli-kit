@@ -51,7 +51,7 @@ describe('Server', () => {
 		expect(out.toString().replace(/^\u001b7\u001b\[999C\u001b\[999B\u001b8/, '')).to.equal('abc\r\nbar!\r\n');
 	});
 
-	it('should connect and run an extension by stdin', async function () {
+	(process.stdin.isTTY ? it : it.skip)('should connect and run an extension by stdin', async function () {
 		this.timeout(4000);
 		this.slow(3000);
 
@@ -82,7 +82,7 @@ describe('Server', () => {
 		expect(out.toString().replace(/^\u001b7\u001b\[999C\u001b\[999B\u001b8/, '')).to.equal('foo there\r\nhi there\r\n');
 	});
 
-	it('should connect and run an extension by exec', async function () {
+	(process.stdin.isTTY ? it : it.skip)('should connect and run an extension by exec', async function () {
 		this.timeout(4000);
 		this.slow(3000);
 
