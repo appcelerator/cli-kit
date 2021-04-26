@@ -22,7 +22,8 @@ describe('Server', () => {
 		this.timeout(10000);
 		this.slow(3000);
 
-		console.log('isTTY?', process.stdout.isTTY());
+		console.log('stdin isTTY?', process.stdin.isTTY);
+		console.log('stdout isTTY?', process.stdout.isTTY);
 
 		const cli = new CLI({
 			help: true,
