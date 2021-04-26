@@ -18,12 +18,9 @@ describe('Server', () => {
 		}
 	});
 
-	it.only('should connect and run a command', async function () {
+	(process.stdin.isTTY ? it : it.skip)('should connect and run a command', async function () {
 		this.timeout(10000);
 		this.slow(3000);
-
-		console.log('stdin isTTY?', process.stdin.isTTY);
-		console.log('stdout isTTY?', process.stdout.isTTY);
 
 		const cli = new CLI({
 			help: true,
