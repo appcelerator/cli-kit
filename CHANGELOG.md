@@ -1,4 +1,4 @@
-# 1.13.0
+# 1.13.0 (Apr 26, 2021)
 
  * feat(help): Added required options to usage on help screen.
  * feat(ansi): Added `trim()`, `trimStart()`, and `trimEnd()` functions.
@@ -7,6 +7,7 @@
  * fix(cli): Moved `help` parameter from `Command` to `Context` so that `CLI` can render custom
    help content.
  * build: Improved `watch` task to not hang on a lint or build error.
+ * chore: Updated dev dependencies.
 
 # 1.12.0 (Apr 15, 2021)
 
