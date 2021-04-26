@@ -4,8 +4,22 @@ import { PassThrough } from 'stream';
 import { WritableStream } from 'memory-streams';
 
 describe('Server', () => {
-	it('should connect and run a command', async function () {
-		this.timeout(4000);
+	afterEach(async function () {
+		this.timeout(10000);
+
+		if (this.server) {
+			await new Promise(resolve => this.server.close(resolve));
+			this.server = null;
+		}
+
+		if (this.server2) {
+			await new Promise(resolve => this.server2.close(resolve));
+			this.server2 = null;
+		}
+	});
+
+	(process.stdin.isTTY ? it : it.skip)('should connect and run a command', async function () {
+		this.timeout(10000);
 		this.slow(3000);
 
 		const cli = new CLI({
@@ -17,30 +31,27 @@ describe('Server', () => {
 			}
 		});
 
-		const server = await cli.listen({ port: 1337 });
-		try {
-			const out = new WritableStream();
-			const stdin = new PassThrough();
-			const terminal = new Terminal({
-				stdout: out,
-				stderr: out,
-				stdin
-			});
+		this.server = await cli.listen({ port: 1337 });
 
-			const { send } = await CLI.connect('ws://localhost:1337', { terminal });
-			send(ansi.custom.echo(true));
+		const out = new WritableStream();
+		const stdin = new PassThrough();
+		const terminal = new Terminal({
+			stdout: out,
+			stderr: out,
+			stdin
+		});
 
-			stdin.write('abc\n');
+		const { send } = await CLI.connect('ws://localhost:1337', { terminal });
+		send(ansi.custom.echo(true));
 
-			await new Promise(resolve => setTimeout(resolve, 500));
+		stdin.write('abc\n');
 
-			expect(out.toString().replace(/^\u001b7\u001b\[999C\u001b\[999B\u001b8/, '')).to.equal('abc\r\nbar!\r\n');
-		} finally {
-			await new Promise(resolve => server.close(resolve));
-		}
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		expect(out.toString().replace(/^\u001b7\u001b\[999C\u001b\[999B\u001b8/, '')).to.equal('abc\r\nbar!\r\n');
 	});
 
-	it('should connect and run an extension by stdin', async function () {
+	(process.stdin.isTTY ? it : it.skip)('should connect and run an extension by stdin', async function () {
 		this.timeout(4000);
 		this.slow(3000);
 
@@ -51,30 +62,27 @@ describe('Server', () => {
 			}
 		});
 
-		const server = await cli.listen({ port: 1337 });
-		try {
-			const out = new WritableStream();
-			const stdin = new PassThrough();
-			const terminal = new Terminal({
-				stdout: out,
-				stderr: out,
-				stdin
-			});
+		this.server = await cli.listen({ port: 1337 });
 
-			const { send } = await CLI.connect('ws://localhost:1337', { terminal });
-			send(ansi.custom.echo(true));
+		const out = new WritableStream();
+		const stdin = new PassThrough();
+		const terminal = new Terminal({
+			stdout: out,
+			stderr: out,
+			stdin
+		});
 
-			stdin.write('foo there\n');
+		const { send } = await CLI.connect('ws://localhost:1337', { terminal });
+		send(ansi.custom.echo(true));
 
-			await new Promise(resolve => setTimeout(resolve, 500));
+		stdin.write('foo there\n');
 
-			expect(out.toString().replace(/^\u001b7\u001b\[999C\u001b\[999B\u001b8/, '')).to.equal('foo there\r\nhi there\r\n');
-		} finally {
-			await new Promise(resolve => server.close(resolve));
-		}
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		expect(out.toString().replace(/^\u001b7\u001b\[999C\u001b\[999B\u001b8/, '')).to.equal('foo there\r\nhi there\r\n');
 	});
 
-	it('should connect and run an extension by exec', async function () {
+	(process.stdin.isTTY ? it : it.skip)('should connect and run an extension by exec', async function () {
 		this.timeout(4000);
 		this.slow(3000);
 
@@ -85,27 +93,24 @@ describe('Server', () => {
 			}
 		});
 
-		const server = await cli.listen({ port: 1337 });
-		try {
-			const out = new WritableStream();
-			const stdin = new PassThrough();
-			const terminal = new Terminal({
-				stdout: out,
-				stderr: out,
-				stdin
-			});
+		this.server = await cli.listen({ port: 1337 });
 
-			const { send } = await CLI.connect('ws://localhost:1337', { terminal });
-			send(ansi.custom.echo(true));
+		const out = new WritableStream();
+		const stdin = new PassThrough();
+		const terminal = new Terminal({
+			stdout: out,
+			stderr: out,
+			stdin
+		});
 
-			send(ansi.custom.exec('foo there'));
+		const { send } = await CLI.connect('ws://localhost:1337', { terminal });
+		send(ansi.custom.echo(true));
 
-			await new Promise(resolve => setTimeout(resolve, 500));
+		send(ansi.custom.exec('foo there'));
 
-			expect(out.toString().replace(/^\u001b7\u001b\[999C\u001b\[999B\u001b8/, '')).to.equal('hi there\r\n');
-		} finally {
-			await new Promise(resolve => server.close(resolve));
-		}
+		await new Promise(resolve => setTimeout(resolve, 500));
+
+		expect(out.toString().replace(/^\u001b7\u001b\[999C\u001b\[999B\u001b8/, '')).to.equal('hi there\r\n');
 	});
 
 	it('should error if connect url is invalid', async () => {
@@ -143,20 +148,14 @@ describe('Server', () => {
 
 		const cli = new CLI();
 
-		const server1 = await cli.listen({ port: 1337 });
-		let server2;
+		this.server = await cli.listen({ port: 1337 });
 
 		try {
-			server2 = await cli.listen({ port: 1337 });
+			this.server2 = await cli.listen({ port: 1337 });
 		} catch (e) {
 			expect(e).to.be.instanceof(Error);
 			expect(e.code).to.equal('EADDRINUSE');
 			return;
-		} finally {
-			await new Promise(resolve => server1.close(resolve));
-			if (server2) {
-				await new Promise(resolve => server2.close(resolve));
-			}
 		}
 
 		throw new Error('Expected error');

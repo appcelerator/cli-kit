@@ -15,7 +15,7 @@ describe('util', () => {
 				file:  path.join(dir, 'package.json'),
 				name:  'package.json.bad',
 				scope: 'util.findPackage',
-				value: '{{{{{{{{{{\n'
+				value: /{{{{{{{{{{\r?\n/
 			});
 		});
 

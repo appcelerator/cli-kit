@@ -36,7 +36,11 @@ global.expectThrow = function expectThrow(fn, meta) {
 
 		for (const key of Object.keys(meta)) {
 			if (!/^(type|code|msg)$/.test(key)) {
-				expect(e.meta[key]).to.equal(meta[key]);
+				if (meta[key] instanceof RegExp) {
+					expect(e.meta[key]).to.match(meta[key]);
+				} else {
+					expect(e.meta[key]).to.equal(meta[key]);
+				}
 			}
 		}
 
