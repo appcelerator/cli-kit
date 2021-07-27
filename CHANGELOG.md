@@ -1,4 +1,4 @@
-# 1.14.0
+# 1.14.0 (Jul 27, 2021)
 
  * feat: Added `redact` flag to arguments and options so advanced implementations can know if an
    argument/option may contain sensitive information. Redact flag is `true` by default, but can
