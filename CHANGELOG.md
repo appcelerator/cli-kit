@@ -10,6 +10,7 @@
  * fix(parser): Fixed incomplete `input` for parsed "extra" arguments, commands, extensions, and
    arguments.
  * style(help): Render warnings using yellow.
+ * chore: Updated dependencies.
 
 # 1.13.0 (Apr 26, 2021)
 
