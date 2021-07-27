@@ -124,6 +124,7 @@ export default class Option {
 		}
 		this.camelCase = this.name ? params.camelCase !== false : false;
 		this.isFlag    = !hint;
+		this.redact    = params.redact === undefined ? !this.isFlag : params.redact !== false;
 
 		// determine the datatype
 		if (this.isFlag) {

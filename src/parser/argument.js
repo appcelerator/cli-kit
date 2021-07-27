@@ -82,6 +82,12 @@ export default class Argument {
 			name = (m[1] || m[2]).trim() + (m[3] || '');
 		}
 
+		let redact = true;
+		if (name.startsWith('~')) {
+			name = name.substring(1);
+			redact = false;
+		}
+
 		// check if the name contains a multiple sequence
 		m = name.match(multipleRegExp);
 		if (m) {
@@ -101,6 +107,7 @@ export default class Argument {
 		this.max       = typeof params.max === 'number' ? params.max : null;
 		this.min       = typeof params.min === 'number' ? params.max : null;
 		this.multiple  = !!multiple;
+		this.redact    = redact;
 		this.required  = !!required;
 		this.regex     = params.type instanceof RegExp ? params.type : null;
 

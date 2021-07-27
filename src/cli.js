@@ -206,7 +206,7 @@ export default class CLI extends Context {
 				try {
 					this.extension.apply(this, Array.isArray(ext) ? [ ext[1], ext[0] ] : [ ext ]);
 				} catch (e) {
-					this.warnings.push(e);
+					this.warnings.push(`Error loading extension "${ext}"`);
 					warn(e);
 				}
 			}

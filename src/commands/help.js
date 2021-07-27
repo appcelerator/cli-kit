@@ -65,7 +65,9 @@ export default {
 	 * @param {Array.<Error>} [params.warnings] - A list of warnings (error objects).
 	 * @returns {Promise}
 	 */
-	async action({ _ = [], argv = {}, console, contexts, err, exitCode, parentContextNames, styles, warnings } = {}) {
+	async action(params = {}) {
+		let { _ = [], argv = {}, console, contexts, err, exitCode, parentContextNames, styles, warnings } = params;
+
 		exitCode(+!!err); // 0=success, 1=error
 
 		const formatError = err => {
@@ -96,7 +98,7 @@ export default {
 			// check if we should error if passed an invalid command
 			if (!err && _.length && (ctx.get('errorIfUnknownCommand') || argv.help)) {
 				const unknownCommand = _[0];
-				err = new Error(`Unknown command "${unknownCommand}"`);
+				err = params.err = new Error(`Unknown command "${unknownCommand}"`);
 
 				const { distance } = require('fastest-levenshtein');
 				help.suggestions = help.commands.entries

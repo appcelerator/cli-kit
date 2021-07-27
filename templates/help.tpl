@@ -19,8 +19,9 @@ if (suggestions.length) {
 
 if (Array.isArray(warnings) && warnings.length) {
 	for (const warning of warnings) {
-		>>> ${warning.message}
+		>> ${style.warn(warning.message)}
 	}
+	>>
 }
 
 if (header) {

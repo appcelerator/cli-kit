@@ -1,3 +1,16 @@
+# 1.14.0
+
+ * feat: Added `redact` flag to arguments and options so advanced implementations can know if an
+   argument/option may contain sensitive information. Redact flag is `true` by default, but can
+   be set to false in the paramters or prefixing the name with a `~` such as `"<~myoption>"`.
+   Note that option flags (those without a value) default to `false` since the value is boolean.
+ * fix(cli): Added better error when failed to load extension on CLI construction.
+ * fix(help): Added error to exec state when help command is invoked with unknown command.
+ * fix(parser): Added argument reference to parsed argument.
+ * fix(parser): Fixed incomplete `input` for parsed "extra" arguments, commands, extensions, and
+   arguments.
+ * style(help): Render warnings using yellow.
+
 # 1.13.0 (Apr 26, 2021)
 
  * feat(help): Added required options to usage on help screen.

@@ -10,7 +10,7 @@ import { declareCLIKitClass } from '../lib/util';
 const { log } = debug('cli-kit:command');
 const { highlight } = debug.styles;
 
-const formatRegExp = /^([@! ]*[\w-_]+(?:\s*,\s*[@! ]*[\w-_]+)*)((?:\s*[<[][\w-_]+[>\]])*)?$/;
+const formatRegExp = /^([@! ]*[\w-_]+(?:\s*,\s*[@! ]*[\w-_]+)*)((?:\s*[<[]~?[\w-_]+[>\]])*)?$/;
 const nameRegExp = /^([@! ]*)([\w-_]+)\s*$/;
 
 /**

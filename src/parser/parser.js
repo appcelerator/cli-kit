@@ -284,6 +284,13 @@ export default class Parser extends HookEmitter {
 
 		const setArg = async (idx, value) => {
 			const arg = ctx.args[idx];
+
+			// extract the parsed arg value
+			if (value instanceof ParsedArgument) {
+				value.arg = arg;
+				value = value.input[0];
+			}
+
 			if (arg) {
 				const name = arg.camelCase || ctx.get('camelCase') ? camelCase(arg.name) : arg.name;
 				value = arg.transform(value);
@@ -328,7 +335,7 @@ export default class Parser extends HookEmitter {
 			const isParsed = parsedArg instanceof ParsedArgument;
 
 			if (!isParsed || parsedArg.type === 'argument') {
-				await setArg(index++, isParsed ? parsedArg.input[0] : parsedArg);
+				await setArg(index++, parsedArg);
 				continue;
 			}
 
@@ -662,8 +669,10 @@ export default class Parser extends HookEmitter {
 
 		// check if the argument is a the `--` extra arguments sequence
 		if (arg === '--') {
+			const extra = args.splice(i + 1, args.length);
 			return new ParsedArgument('extra', {
-				args: args.splice(i + 1, args.length)
+				args: extra,
+				input: [ arg, ...extra ]
 			});
 		}
 
@@ -722,7 +731,7 @@ export default class Parser extends HookEmitter {
 					const nextArg = args[i + 1];
 					if (nextArg instanceof ParsedArgument) {
 						if (nextArg.type === 'argument') {
-							input.push(nextArg);
+							input.push(...nextArg.input);
 							args.splice(i + 1, 1);
 							// maybe the unknown option is actually a value that just
 							// happens to match the pattern for an option?
@@ -778,7 +787,7 @@ export default class Parser extends HookEmitter {
 			log(`Found command: ${highlight(cmd.name)}`);
 			return new ParsedArgument('command', {
 				command: cmd,
-				input: [ arg ]
+				input: isParsed ? arg.input : [ arg ]
 			});
 		}
 
@@ -790,14 +799,14 @@ export default class Parser extends HookEmitter {
 			}
 			return new ParsedArgument('extension', {
 				command: ext,
-				input: [ arg ]
+				input: isParsed ? arg.input : [ arg ]
 			});
 		}
 
 		if (!type) {
 			log(`Found unknown argument: ${highlight(arg)}`);
 			return new ParsedArgument('argument', {
-				input: [ arg ]
+				input: isParsed ? arg.input : [ arg ]
 			});
 		}
 	}
