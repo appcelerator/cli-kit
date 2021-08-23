@@ -11,7 +11,7 @@ let Command;
  *
  * @type {RegExp}
  */
-const jsRegExp = /^(.+)\.js$/;
+const jsRegExp = /\.js$/;
 
 /**
  * Stores a map of `Command` instances that have been registered for a context.
@@ -79,14 +79,10 @@ export default class CommandMap extends Map {
 				it = path.resolve(it);
 
 				try {
-					const stat = fs.statSync(it);
-					const dir = stat.isDirectory() ? it : '';
-					const files = dir ? fs.readdirSync(it) : [ it ];
-					let m;
-					for (const filename of files) {
-						if (m = filename.match(jsRegExp)) {
-							const module = require(path.join(dir, filename));
-							cmd = new Command(m[1], module.__esModule ? module.default : module);
+					const files = fs.statSync(it).isDirectory() ? fs.readdirSync(it).map(filename => path.join(it, filename)) : [ it ];
+					for (const file of files) {
+						if (jsRegExp.test(file)) {
+							cmd = new Command(file);
 							this.set(cmd.name, cmd);
 							results.push(cmd);
 						}

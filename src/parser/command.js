@@ -76,7 +76,7 @@ export default class Command extends Context {
 					throw new Error('Command must export an object');
 				}
 
-				name = ctx.name;
+				name = ctx.name || path.parse(name).name;
 				params = ctx;
 			} catch (err) {
 				throw E.INVALID_COMMAND(`Bad command "${name}": ${err.message}`, { name: name, scope: 'Command.constructor', value: err });

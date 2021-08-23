@@ -1,3 +1,8 @@
+# 1.14.1 (Aug 23, 2021)
+
+ * fix: Fixed bug when adding a command using an absolute path to a js file.
+ * chore: Minor dependency updates.
+
 # 1.14.0 (Jul 27, 2021)
 
  * feat: Added `redact` flag to arguments and options so advanced implementations can know if an
