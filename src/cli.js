@@ -383,28 +383,59 @@ export default class CLI extends Context {
 
 			state.bannerRendered = true;
 
-			let { banner } = cmd;
-			for (let p = cmd.parent; banner === undefined && p; p = p.parent) {
-				if (!(state.bannerFired instanceof Error) || p.banner) {
-					banner = p.banner;
+			// copy the banner to the state
+			// if the banner is a function, run it now
+			if (cmd.banner !== undefined) {
+				state.banner = cmd.banner;
+				cmd._origBanner = cmd.banner;
+				Object.defineProperty(cmd, 'banner', {
+					get() {
+						return cmd._origBanner;
+					},
+					set(value) {
+						state.banner = value;
+					}
+				});
+			}
+
+			for (let p = cmd.parent; p; p = p.parent) {
+				if (state.banner === undefined && (!(state.bannerFired instanceof Error) || p.banner !== undefined)) {
+					state.banner = p.banner;
 				}
+
+				p._origBanner = p.banner;
+				Object.defineProperty(p, 'banner', {
+					get() {
+						return p._origBanner;
+					},
+					set(value) {
+						state.banner = value;
+					}
+				});
 			}
-			if (typeof banner === 'function') {
-				banner = await banner(state);
+
+			if (typeof state.banner === 'function') {
+				state.banner = await state.banner(state);
 			}
-			if (banner) {
-				banner = String(banner).trim();
-			}
-			if (!banner) {
-				return;
-			}
+
+			const printBanner = () => {
+				if (typeof state.banner === 'function') {
+					throw new Error('Banner function not supported here');
+				}
+				if (state.banner) {
+					state.banner = String(state.banner).trim();
+				}
+				if (state.banner) {
+					terminal.stdout.write(`${state.banner}\n\n`);
+				}
+			};
 
 			if (cmd.prop('autoHideBanner')) {
 				// wait to show banner
-				terminal.onOutput(() => terminal.stdout.write(`${banner}\n\n`));
+				terminal.onOutput(() => printBanner());
 			} else {
 				// show banner now
-				terminal.stdout.write(`${banner}\n\n`);
+				printBanner();
 			}
 		};
 
