@@ -1,3 +1,9 @@
+# 1.15.0
+
+ * feat: Moved internal `banner` value into state object to allow banner to be modified during
+   command execution when `autoHideBanner` is enabled (default).
+ * chore: Updated dependencies.
+
 # 1.14.1 (Aug 23, 2021)
 
  * fix: Fixed bug when adding a command using an absolute path to a js file.
