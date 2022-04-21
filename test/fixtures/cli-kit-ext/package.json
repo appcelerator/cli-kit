@@ -1,5 +1,8 @@
 {
   "name": "cli-kit-extension",
   "main": "./main",
+  "dependencies": {
+    "cli-kit": "*"
+  },
   "cli-kit": {}
 }
