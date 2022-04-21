@@ -516,6 +516,7 @@ export default class CLI extends Context {
 			results.parentContextNames = opts.parentContextNames;
 			results.unknown            = unknown;
 
+			// check if we haven't already errored
 			if (results.exitCode() === undefined) {
 				// determine the command to run
 				if (this.help && argv.help && (!cmd.isExtension || cmd.isCLIKitExtension)) {

@@ -1,4 +1,9 @@
-# 1.15.0
+# 1.16.0
+
+ * feat: Add support for extension CLIs with multiple exported entrypoints that do not use cli-kit.
+   Fixes [#97](https://github.com/cb1kenobi/cli-kit/issues/97).
+
+# 1.15.0 (Apr 10, 2022)
 
  * feat: Moved internal `banner` value into state object to allow banner to be modified during
    command execution when `autoHideBanner` is enabled (default).

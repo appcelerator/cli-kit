@@ -111,6 +111,26 @@ export default class Extension {
 					this.name = filename(path);
 				}
 
+				const makeDefaultAction = main => {
+					return async ({ __argv, cmd }) => {
+						process.argv = [
+							process.execPath,
+							main
+						];
+
+						const p = __argv.findIndex(arg => arg && arg.type === 'extension' && arg.command === cmd);
+						if (p !== -1) {
+							for (let i = p + 1, len = __argv.length; i < len; i++) {
+								process.argv.push.apply(process.argv, __argv[i].input);
+							}
+						}
+
+						log(`Requiring ${highlight(main)}`);
+						log(`Args: ${highlight(process.argv.join(' '))}`);
+						require(main);
+					};
+				};
+
 				if (!pkg.json.exports && pkg.main) {
 					// legacy Node.js extension
 					let { name } = this;
@@ -131,33 +151,18 @@ export default class Extension {
 
 					// if the package has a bin script that matches the package name, then add any other
 					// bin name that aliases the package named bin
-					if (pkg.json.bin) {
-						const primary = pkg.json.bin[pkg.json.name];
+					if (pkg.json.bin && typeof pkg.json.bin === 'object') {
+						const bins = Object.keys(pkg.json.bin);
+						const primary = pkg.json.bin[pkg.json.name] || (bins && pkg.json.bin[bins[0]]);
 						for (const [ name, bin ] of Object.entries(pkg.json.bin)) {
-							if (bin === primary && !aliases.includes(name)) {
+							if (bin !== primary && !aliases.includes(name)) {
 								aliases.push(name);
 							}
 						}
 					}
 
 					this.registerExtension(name, { pkg }, {
-						action: async ({ __argv, cmd }) => {
-							process.argv = [
-								process.execPath,
-								pkg.main
-							];
-
-							const p = __argv.findIndex(arg => arg && arg.type === 'extension' && arg.command === cmd);
-							if (p !== -1) {
-								for (let i = p + 1, len = __argv.length; i < len; i++) {
-									process.argv.push.apply(process.argv, __argv[i].input);
-								}
-							}
-
-							log(`Requiring ${highlight(pkg.main)}`);
-							log(`Args: ${highlight(process.argv.join(' '))}`);
-							require(pkg.main);
-						},
+						action: makeDefaultAction(pkg.main),
 						aliases,
 						desc: pkg.json.description
 					});
@@ -177,6 +182,7 @@ export default class Extension {
 								...params
 							}
 						}, {
+							action: makeDefaultAction(params.main),
 							desc: pkg.json.description,
 							...params
 						});
@@ -237,85 +243,88 @@ export default class Extension {
 		});
 		this.exports[name] = Object.assign(cmd, meta);
 		cmd.isExtension = true;
+		cmd.isCLIKitExtension = !!meta?.pkg?.clikit;
 
-		if (meta?.pkg?.clikit) {
-			cmd.isCLIKitExtension = true;
-
-			cmd.load = async function load() {
-				log(`Requiring cli-kit extension: ${highlight(this.name)} -> ${highlight(meta.pkg.main)}`);
-				let ctx;
-				try {
-					ctx = require(meta.pkg.main);
-					if (!ctx || (typeof ctx !== 'object' && typeof ctx !== 'function')) {
-						throw new Error('Extension must export an object or function');
-					}
-
-					// if this is an ES6 module, grab the default export
-					if (ctx.__esModule) {
-						ctx = ctx.default;
-					}
-
-					// if the export was a function, call it now to get its CLI definition
-					if (typeof ctx === 'function') {
-						ctx = await ctx(this);
-					}
-					if (!ctx || typeof ctx !== 'object') {
-						throw new Error('Extension does not resolve an object');
-					}
-				} catch (err) {
-					throw E.INVALID_EXTENSION(`Bad extension "${this.name}": ${err.message}`, { name: this.name, scope: 'Extension.load', value: err });
-				}
-
-				this.aliases                        = ctx.aliases;
-				this.camelCase                      = ctx.camelCase;
-				this.defaultCommand                 = ctx.defaultCommand;
-				this.help                           = ctx.help;
-				this.remoteHelp                     = ctx.remoteHelp;
-				this.treatUnknownOptionsAsArguments = ctx.treatUnknownOptionsAsArguments;
-				this.version                        = ctx.version;
-
-				this.init({
-					args:       ctx.args,
-					banner:     ctx.banner,
-					commands:   ctx.commands,
-					desc:       ctx.desc || this.desc,
-					extensions: ctx.extensions,
-					name:       this.name || ctx.name,
-					options:    ctx.options,
-					parent:     this.parent,
-					title:      ctx.title !== 'Global' && ctx.title || this.name
-				});
-
-				const versionOption = this.version && this.lookup.long.version;
-				if (versionOption && typeof versionOption.callback !== 'function') {
-					versionOption.callback = async ({ exitCode, opts, next }) => {
-						if (await next()) {
-							let { version } = this;
-							if (typeof version === 'function') {
-								version = await version(opts);
-							}
-							(opts.terminal || this.get('terminal')).stdout.write(`${version}\n`);
-							exitCode(0);
-							return false;
-						}
-					};
-				}
-
-				if (typeof ctx.action === 'function') {
-					this.action = ctx.action;
-				} else {
-					this.action = async parser => {
-						if (this.defaultCommand !== 'help' || !this.get('help')) {
-							const defcmd = this.defaultCommand && this.commands[this.defaultCommand];
-							if (defcmd) {
-								return await defcmd.action.call(defcmd, parser);
-							}
-						}
-						return await helpCommand.action.call(helpCommand, parser);
-					};
-				}
-			}.bind(cmd);
+		if (!cmd.isCLIKitExtension || !meta.pkg.json.dependencies?.['cli-kit']) {
+			return;
 		}
+
+		// we only want to define `cmd.load()` if main exports a cli-kit object
+
+		cmd.load = async function load() {
+			log(`Requiring cli-kit extension: ${highlight(this.name)} -> ${highlight(meta.pkg.main)}`);
+			let ctx;
+			try {
+				ctx = require(meta.pkg.main);
+				if (!ctx || (typeof ctx !== 'object' && typeof ctx !== 'function')) {
+					throw new Error('Extension must export an object or function');
+				}
+
+				// if this is an ES6 module, grab the default export
+				if (ctx.__esModule) {
+					ctx = ctx.default;
+				}
+
+				// if the export was a function, call it now to get its CLI definition
+				if (typeof ctx === 'function') {
+					ctx = await ctx(this);
+				}
+				if (!ctx || typeof ctx !== 'object') {
+					throw new Error('Extension does not resolve an object');
+				}
+			} catch (err) {
+				throw E.INVALID_EXTENSION(`Bad extension "${this.name}": ${err.message}`, { name: this.name, scope: 'Extension.load', value: err });
+			}
+
+			this.aliases                        = ctx.aliases;
+			this.camelCase                      = ctx.camelCase;
+			this.defaultCommand                 = ctx.defaultCommand;
+			this.help                           = ctx.help;
+			this.remoteHelp                     = ctx.remoteHelp;
+			this.treatUnknownOptionsAsArguments = ctx.treatUnknownOptionsAsArguments;
+			this.version                        = ctx.version;
+
+			this.init({
+				args:       ctx.args,
+				banner:     ctx.banner,
+				commands:   ctx.commands,
+				desc:       ctx.desc || this.desc,
+				extensions: ctx.extensions,
+				name:       this.name || ctx.name,
+				options:    ctx.options,
+				parent:     this.parent,
+				title:      ctx.title !== 'Global' && ctx.title || this.name
+			});
+
+			const versionOption = this.version && this.lookup.long.version;
+			if (versionOption && typeof versionOption.callback !== 'function') {
+				versionOption.callback = async ({ exitCode, opts, next }) => {
+					if (await next()) {
+						let { version } = this;
+						if (typeof version === 'function') {
+							version = await version(opts);
+						}
+						(opts.terminal || this.get('terminal')).stdout.write(`${version}\n`);
+						exitCode(0);
+						return false;
+					}
+				};
+			}
+
+			if (typeof ctx.action === 'function') {
+				this.action = ctx.action;
+			} else {
+				this.action = async parser => {
+					if (this.defaultCommand !== 'help' || !this.get('help')) {
+						const defcmd = this.defaultCommand && this.commands[this.defaultCommand];
+						if (defcmd) {
+							return await defcmd.action.call(defcmd, parser);
+						}
+					}
+					return await helpCommand.action.call(helpCommand, parser);
+				};
+			}
+		}.bind(cmd);
 	}
 
 	/**
