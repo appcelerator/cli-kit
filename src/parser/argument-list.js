@@ -1,6 +1,5 @@
-import Argument from './argument';
-
-import { declareCLIKitClass } from '../lib/util';
+import Argument from './argument.js';
+import { declareCLIKitClass } from '../lib/util.js';
 
 /**
  * Stores a list of `Argument` instances that have been registered for a context.

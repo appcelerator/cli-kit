@@ -1,4 +1,4 @@
-import E from '../lib/errors';
+import E from '../lib/errors.js';
 
 /**
  * Encapsulates a parsed argument.

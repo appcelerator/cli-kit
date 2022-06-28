@@ -1,5 +1,6 @@
-import CLI, { ansi, Terminal } from '../dist/index';
-
+import CLI, { ansi, Terminal } from '../src/index.js';
+import { afterEach } from 'mocha';
+import { expect } from 'chai';
 import { PassThrough } from 'stream';
 import { WritableStream } from 'memory-streams';
 

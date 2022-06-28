@@ -1,20 +1,15 @@
-/* istanbul ignore if */
-if (!Error.prepareStackTrace) {
-	require('source-map-support/register');
-}
+import Terminal from './terminal.js';
+import CLI from './cli.js';
 
-import Terminal from './terminal';
-import CLI from './cli';
+import Argument from './parser/argument.js';
+import Command from './parser/command.js';
+import Option from './parser/option.js';
+import Extension from './parser/extension.js';
 
-import Argument from './parser/argument';
-import Command from './parser/command';
-import Option from './parser/option';
-import Extension from './parser/extension';
-
-import * as ansi from './lib/ansi';
-import * as template from './render/template';
-import * as types from './parser/types';
-import * as util from './lib/util';
+import * as ansi from './lib/ansi.js';
+import * as template from './render/template.js';
+import * as types from './parser/types.js';
+import * as util from './lib/util.js';
 
 import pluralize from 'pluralize';
 import snooplogg from 'snooplogg';

@@ -1,4 +1,5 @@
-import CLI, { ansi, Terminal } from '../dist/index';
+import CLI, { ansi, Terminal } from '../src/index.js';
+import { expect } from 'chai';
 import { WritableStream } from 'memory-streams';
 
 describe('CLI', () => {

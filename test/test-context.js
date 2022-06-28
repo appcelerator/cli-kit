@@ -1,8 +1,12 @@
-import Command from '../dist/parser/command';
-import Context from '../dist/parser/context';
-import Option from '../dist/parser/option';
-import Parser from '../dist/parser/parser';
+import Command from '../src/parser/command.js';
+import Context from '../src/parser/context.js';
+import Option from '../src/parser/option.js';
+import Parser from '../src/parser/parser.js';
 import path from 'path';
+import { expect } from 'chai';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('Context', () => {
 	describe('Constructor', () => {

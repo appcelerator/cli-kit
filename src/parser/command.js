@@ -1,11 +1,11 @@
-import Context from './context';
-import debug from '../lib/debug';
-import E from '../lib/errors';
+import Context from './context.js';
+import debug from '../lib/debug.js';
+import E from '../lib/errors.js';
 import fs from 'fs';
-import helpCommand from '../commands/help';
+import helpCommand from '../commands/help.js';
 import path from 'path';
 
-import { declareCLIKitClass } from '../lib/util';
+import { declareCLIKitClass } from '../lib/util.js';
 
 const { log } = debug('cli-kit:command');
 const { highlight } = debug.styles;

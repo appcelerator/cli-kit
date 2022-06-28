@@ -1,9 +1,13 @@
-import CLI, { Terminal } from '../dist/index';
+import CLI, { Terminal } from '../src/index.js';
 import path from 'path';
+import { expect } from 'chai';
+import { fileURLToPath } from 'url';
 import { WritableStream } from 'memory-streams';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 describe('Actions', () => {
-	it('should emit an action to extensions', async function () {
+	it.only('should emit an action to extensions', async function () {
 		this.slow(4000);
 		this.timeout(5000);
 

@@ -1,8 +1,7 @@
-import E from '../lib/errors';
+import E from '../lib/errors.js';
 import fs from 'fs';
 import path from 'path';
-
-import { declareCLIKitClass } from '../lib/util';
+import { declareCLIKitClass } from '../lib/util.js';
 
 let Command;
 

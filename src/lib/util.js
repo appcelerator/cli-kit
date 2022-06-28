@@ -1,10 +1,13 @@
 import argvSplit from 'argv-split';
 import fs from 'fs-extra';
-import E from './errors';
+import E from './errors.js';
 import path from 'path';
-import pkgDir from 'pkg-dir';
 import semver from 'semver';
 import which from 'which';
+import { fileURLToPath } from 'url';
+import { packageDirectorySync } from 'pkg-dir';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * The required Node.js version for cli-kit. This is used to assert the Node version at runtime.
@@ -99,7 +102,7 @@ export function findPackage(searchPath) {
 	let clikit = false;
 	let json = {};
 	let main = null;
-	let root = pkgDir.sync(searchPath) || null;
+	let root = packageDirectorySync(searchPath) || null;
 
 	// don't let the tests think they are cli-kit
 	if (root === path.resolve(__dirname, '..', '..')) {
@@ -197,8 +200,6 @@ export function isFile(file) {
 	}
 	return false;
 }
-
-export { pkgDir };
 
 /**
  * Splits an argv (argument vector) string.

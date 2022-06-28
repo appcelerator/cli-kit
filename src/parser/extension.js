@@ -1,10 +1,10 @@
-import Command from './command';
-import debug from '../lib/debug';
-import E from '../lib/errors';
-import helpCommand from '../commands/help';
+import Command from './command.js';
+import debug from '../lib/debug.js';
+import E from '../lib/errors.js';
+import helpCommand from '../commands/help.js';
 import _path from 'path';
 
-import { declareCLIKitClass, filename, findPackage, isExecutable } from '../lib/util';
+import { declareCLIKitClass, filename, findPackage, isExecutable } from '../lib/util.js';
 import { spawn } from 'child_process';
 
 const { log, warn } = debug('cli-kit:extension');

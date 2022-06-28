@@ -1,5 +1,5 @@
 import snooplogg from 'snooplogg';
-import { ansi } from '../dist/index';
+import { ansi } from '../src/index.js';
 import { expect } from 'chai';
 
 const { chalk } = snooplogg;

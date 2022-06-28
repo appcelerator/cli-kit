@@ -1,6 +1,5 @@
-import E from '../lib/errors';
-
-import { declareCLIKitClass } from '../lib/util';
+import E from '../lib/errors.js';
+import { declareCLIKitClass } from '../lib/util.js';
 
 let Extension;
 

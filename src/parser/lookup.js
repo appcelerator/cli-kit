@@ -1,4 +1,4 @@
-import debug from '../lib/debug';
+import debug from '../lib/debug.js';
 
 const { highlight, note } = debug.styles;
 

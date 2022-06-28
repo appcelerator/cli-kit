@@ -4,14 +4,8 @@
         "node": true
     },
     "extends": "eslint:recommended",
-    "globals": {
-        "expectThrow": false
-    },
-    "parser": "babel-eslint",
     "parserOptions": {
-        "ecmaFeatures": {
-            "modules": true
-        },
+        "ecmaVersion": "2022",
         "sourceType": "module"
     },
     "plugins": [
@@ -22,14 +16,14 @@
     ],
     "root": true,
     "rules": {
-        "array-bracket-spacing": [ 'warn', 'always' ],
+        "array-bracket-spacing": [ "warn", "always" ],
         "brace-style": [ 2, "1tbs", { "allowSingleLine": true } ],
         "camelcase": "off",
         "chai-expect/missing-assertion": "error",
         "chai-expect/terminating-properties": "warn",
         "curly": [ "error", "all" ],
         "eol-last": "error",
-        "indent": "off",
+        "indent": [ "error", "tab", { "SwitchCase": 1 } ],
         "keyword-spacing": [ "error" ],
         "linebreak-style": [ "error", "unix" ],
         "max-len": [ "error", 200 ],
@@ -37,14 +31,13 @@
         "no-cond-assign": "off",
         "no-console": "off",
         "no-control-regex": "off",
-        "no-debugger": "warn",
-        "no-empty": "off",
+        "no-empty": "warn",
         "no-inner-declarations": "off",
         "no-mixed-spaces-and-tabs": "error",
         "no-multi-str": "error",
         "no-multiple-empty-lines": "error",
         "no-trailing-spaces": "error",
-        "no-unused-vars": "warn",
+        "no-unused-vars": "off",
         "no-useless-escape": "warn",
         "promise/always-return": "error",
         "promise/no-return-wrap": "error",
@@ -59,7 +52,6 @@
         "promise/no-return-in-finally": "warn",
         "promise/valid-params": "warn",
         "quotes": [ "error", "single" ],
-        "require-atomic-updates": "off",
         "semi": [ "error", "always" ],
         "space-before-blocks": [ "error", "always" ],
         "space-before-function-paren": [ "error", { "anonymous": "always", "named": "ignore", "asyncArrow": "always" }],

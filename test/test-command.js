@@ -1,4 +1,5 @@
-import CLI, { Command } from '../dist/index';
+import CLI, { Command } from '../src/index.js';
+import { expect } from 'chai';
 
 describe('Commands', () => {
 	describe('Constructor', () => {

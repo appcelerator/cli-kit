@@ -1,4 +1,5 @@
-import Option from '../dist/parser/option';
+import Option from '../src/parser/option.js';
+import { expect } from 'chai';
 
 describe('Option', () => {
 	describe('Constructor', () => {

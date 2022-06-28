@@ -1,4 +1,5 @@
-import { generateKey } from '../dist/lib/keys';
+import { expect } from 'chai';
+import { generateKey } from '../src/lib/keys.js';
 
 describe('Keys', () => {
 	it('should generate a keypress event object', () => {

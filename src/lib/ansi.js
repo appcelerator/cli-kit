@@ -1,4 +1,4 @@
-import { encode } from './util';
+import { encode } from './util.js';
 
 export const bel = '\x07';
 

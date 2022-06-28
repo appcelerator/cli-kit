@@ -1,14 +1,13 @@
-import ArgumentList from './argument-list';
-import CommandMap from './command-map';
-import debug from '../lib/debug';
-import E from '../lib/errors';
-import ExtensionMap from './extension-map';
+import ArgumentList from './argument-list.js';
+import CommandMap from './command-map.js';
+import debug from '../lib/debug.js';
+import E from '../lib/errors.js';
+import ExtensionMap from './extension-map.js';
 import HookEmitter from 'hook-emitter';
-import Lookup from './lookup';
-import OptionMap from './option-map';
+import Lookup from './lookup.js';
+import OptionMap from './option-map.js';
 import path from 'path';
-
-import { declareCLIKitClass } from '../lib/util';
+import { declareCLIKitClass } from '../lib/util.js';
 
 const { error, log } = debug('cli-kit:context');
 const { highlight, note } = debug.styles;

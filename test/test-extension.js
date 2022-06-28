@@ -1,10 +1,13 @@
 /* eslint no-control-regex:0 */
 
-import CLI, { ansi, Extension, Terminal } from '../dist/index';
+import CLI, { ansi, Extension, Terminal } from '../src/index.js';
 import path from 'path';
-
+import { expect } from 'chai';
+import { fileURLToPath } from 'url';
 import { spawnSync } from 'child_process';
 import { WritableStream } from 'memory-streams';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('Extension', () => {
 	describe('Error Handling', () => {

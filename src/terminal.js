@@ -1,11 +1,11 @@
-import debug from './lib/debug';
-import E from './lib/errors';
+import debug from './lib/debug.js';
+import E from './lib/errors.js';
 import readline from 'readline';
 
-import * as ansi from './lib/ansi';
+import * as ansi from './lib/ansi.js';
 
 import { Console } from 'console';
-import { declareCLIKitClass } from './lib/util';
+import { declareCLIKitClass } from './lib/util.js';
 import { EventEmitter } from 'events';
 
 const { log } = debug('cli-kit:terminal');

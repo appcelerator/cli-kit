@@ -1,4 +1,5 @@
-import ParsedArgument from '../dist/parser/parsed-argument';
+import ParsedArgument from '../src/parser/parsed-argument.js';
+import { expect } from 'chai';
 
 describe('Parsed Argument', () => {
 	describe('Constructor', () => {

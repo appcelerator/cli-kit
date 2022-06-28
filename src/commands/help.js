@@ -1,7 +1,9 @@
-import debug from '../lib/debug';
+import debug from '../lib/debug.js';
 import path from 'path';
+import { renderFile } from '../render/template.js';
+import { fileURLToPath } from 'url';
 
-import { renderFile } from '../render/template';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const { log } = debug('cli-kit:help');
 const { highlight } = debug.styles;
@@ -100,7 +102,7 @@ export default {
 				const unknownCommand = _[0];
 				err = params.err = new Error(`Unknown command "${unknownCommand}"`);
 
-				const { distance } = require('fastest-levenshtein');
+				const { distance } = await import('fastest-levenshtein');
 				help.suggestions = help.commands.entries
 					.map(cmd => ({ name: cmd.name, desc: cmd.desc, dist: distance(unknownCommand, cmd.name) }))
 					.filter(s => s.dist <= 2)
