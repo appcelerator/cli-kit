@@ -1,9 +1,12 @@
+import Command from './command.js';
+import debug from '../lib/debug.js';
 import E from '../lib/errors.js';
 import fs from 'fs';
 import path from 'path';
 import { declareCLIKitClass } from '../lib/util.js';
 
-let Command;
+const { log } = debug('cli-kit:command');
+const { highlight } = debug.styles;
 
 /**
  * Matches
@@ -46,10 +49,6 @@ export default class CommandMap extends Map {
 	add(cmd, params, clone) {
 		if (!cmd) {
 			throw E.INVALID_ARGUMENT('Invalid command', { name: 'cmd', scope: 'CommandMap.add', value: cmd });
-		}
-
-		if (!Command) {
-			Command = require('./command').default;
 		}
 
 		if (params !== undefined && params !== null) {
@@ -180,5 +179,41 @@ export default class CommandMap extends Map {
 			count: entries.length,
 			entries
 		};
+	}
+
+	/**
+	 * Load all commands defined in external modules.
+	 *
+	 * @returns {Promise}
+	 */
+	async init() {
+		for (const [ cmdName, cmd ] of this.entries()) {
+			if (!cmd.modulePath) {
+				continue;
+			}
+
+			try {
+				log(`Importing ${highlight(cmd.modulePath)}`);
+				let ctx = await import(cmd.modulePath);
+				if (!ctx || typeof ctx !== 'object') {
+					throw new Error('Command must export an object');
+				}
+
+				// if this is an ES6 module, grab the default export
+				if (ctx.default) {
+					ctx = ctx.default;
+				}
+
+				if (!ctx || typeof ctx !== 'object') {
+					throw new Error('Command must export an object');
+				}
+
+				const newCmd = new Command(ctx.name || cmdName, ctx);
+				this.delete(cmdName);
+				this.set(newCmd.name, newCmd);
+			} catch (err) {
+				throw E.INVALID_COMMAND(`Bad command "${cmdName}": ${err.message}`, { name: cmdName, scope: 'Command.constructor', value: err });
+			}
+		}
 	}
 }

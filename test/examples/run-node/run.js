@@ -1,4 +1,4 @@
-const CLI = require('../../../dist/index').default;
+import CLI from '../../../src/index.js';
 
 new CLI({
 	extensions: {

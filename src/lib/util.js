@@ -102,7 +102,8 @@ export function findPackage(searchPath) {
 	let clikit = false;
 	let json = {};
 	let main = null;
-	let root = packageDirectorySync(searchPath) || null;
+	let root = packageDirectorySync({ cwd: searchPath }) || null;
+	let esm = false;
 
 	// don't let the tests think they are cli-kit
 	if (root === path.resolve(__dirname, '..', '..')) {
@@ -134,6 +135,9 @@ export function findPackage(searchPath) {
 			throw E.INVALID_PACKAGE_JSON('Invalid package.json: expected object', { file, name: 'package.json.invalid', scope: 'util.findPackage', value: json });
 		}
 
+		// detect if we have an ES module
+		esm = json.type === 'module';
+
 		if (json.clikit || json['cli-kit']) {
 			clikit = true;
 			Object.assign(json, json.clikit, json['cli-kit']);
@@ -161,7 +165,7 @@ export function findPackage(searchPath) {
 		root = main ? path.dirname(main) : null;
 	}
 
-	return { clikit, json, main, root };
+	return { clikit, esm, json, main, root };
 }
 
 /**

@@ -1,14 +1,10 @@
 import Context from './context.js';
-import debug from '../lib/debug.js';
 import E from '../lib/errors.js';
 import fs from 'fs';
 import helpCommand from '../commands/help.js';
 import path from 'path';
 
 import { declareCLIKitClass } from '../lib/util.js';
-
-const { log } = debug('cli-kit:command');
-const { highlight } = debug.styles;
 
 const formatRegExp = /^([@! ]*[\w-_]+(?:\s*,\s*[@! ]*[\w-_]+)*)((?:\s*[<[]~?[\w-_]+[>\]])*)?$/;
 const nameRegExp = /^([@! ]*)([\w-_]+)\s*$/;
@@ -58,29 +54,10 @@ export default class Command extends Context {
 	 *   new Command(new Command('foo'))
 	 */
 	constructor(name, params = {}) {
+		let modulePath;
 		if (name && typeof name === 'string' && path.isAbsolute(name) && fs.existsSync(name)) {
-			let ctx;
-			try {
-				log(`Requiring ${highlight(name)}`);
-				ctx = require(name);
-				if (!ctx || typeof ctx !== 'object') {
-					throw new Error('Command must export an object');
-				}
-
-				// if this is an ES6 module, grab the default export
-				if (ctx.__esModule) {
-					ctx = ctx.default;
-				}
-
-				if (!ctx || typeof ctx !== 'object') {
-					throw new Error('Command must export an object');
-				}
-
-				name = ctx.name || path.parse(name).name;
-				params = ctx;
-			} catch (err) {
-				throw E.INVALID_COMMAND(`Bad command "${name}": ${err.message}`, { name: name, scope: 'Command.constructor', value: err });
-			}
+			modulePath = name;
+			name = path.parse(name).name;
 		}
 
 		if (!name || typeof name !== 'string') {
@@ -187,9 +164,10 @@ export default class Command extends Context {
 		this._aliases       = this.createAliases(aliases, params.aliases);
 		this.callback       = params.callback;
 		this.clikitHelp     = params.clikitHelp;
-		this.help           = params.help || {};
 		this.defaultCommand = params.defaultCommand;
+		this.help           = params.help || {};
 		this.hidden         = !!params.hidden;
+		this.modulePath     = modulePath;
 
 		// mix in any other custom props
 		for (const [ key, value ] of Object.entries(params)) {

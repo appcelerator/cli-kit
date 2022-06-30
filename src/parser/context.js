@@ -139,8 +139,8 @@ export default class Context extends HookEmitter {
 				log(`Loading extension action: ${highlight(file)}`);
 
 				try {
-					let fn = require(file);
-					if (fn.__esModule) {
+					let fn = await import(file);
+					if (fn.default) {
 						fn = fn.default;
 					}
 

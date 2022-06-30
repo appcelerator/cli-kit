@@ -1,7 +1,6 @@
 import E from '../lib/errors.js';
+import Extension from './extension.js';
 import { declareCLIKitClass } from '../lib/util.js';
-
-let Extension;
 
 /**
  * Stores a map of `Extension` instances that have been registered for a context.
@@ -49,10 +48,6 @@ export default class ExtensionMap extends Map {
 
 		if (name && typeof name !== 'string') {
 			throw E.INVALID_ARGUMENT('Expected extension name to be a string', { name: 'name', scope: 'ExtensionMap.add', value: name });
-		}
-
-		if (!Extension) {
-			Extension = require('./extension').default;
 		}
 
 		const results = [];

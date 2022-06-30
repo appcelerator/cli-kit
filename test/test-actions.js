@@ -7,7 +7,7 @@ import { WritableStream } from 'memory-streams';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('Actions', () => {
-	it.only('should emit an action to extensions', async function () {
+	it('should emit an action to extensions', async function () {
 		this.slow(4000);
 		this.timeout(5000);
 

@@ -62,8 +62,8 @@ describe('Extension', () => {
 				'-e',
 				'console.log(\'foo\');'
 			], { env });
-			expect(status).to.equal(0);
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.match(/foo/im);
+			expect(status).to.equal(0);
 		});
 
 		it('should curry args to a native binary', function () {

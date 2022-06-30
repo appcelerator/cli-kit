@@ -66,7 +66,7 @@ export default class Extension {
 			}
 
 			this.registerExtension(this.name, { exe }, {
-				action: async ({ __argv, cmd, terminal }) => {
+				async action({ __argv, cmd, terminal }) {
 					if (!Array.isArray(exe)) {
 						throw E.NO_EXECUTABLE(`Extension "${this.name}" has no executable!`);
 					}
@@ -125,14 +125,14 @@ export default class Extension {
 							}
 						}
 
-						log(`Requiring ${highlight(main)}`);
+						log(`Importing ${highlight(main)}`);
 						log(`Args: ${highlight(process.argv.join(' '))}`);
-						require(main);
+						await import(main);
 					};
 				};
 
-				if (!pkg.json.exports && pkg.main) {
-					// legacy Node.js extension
+				if (pkg.main && (!pkg.json.exports || !pkg.esm)) {
+					log(`Found Node.js ${pkg.esm ? 'ESM' : 'CommonJS'} extension with main as export`);
 					let { name } = this;
 					const aliases = Array.isArray(pkg.json.aliases) ? pkg.json.aliases : [];
 
@@ -255,13 +255,13 @@ export default class Extension {
 			log(`Requiring cli-kit extension: ${highlight(this.name)} -> ${highlight(meta.pkg.main)}`);
 			let ctx;
 			try {
-				ctx = require(meta.pkg.main);
+				ctx = await import(meta.pkg.main);
 				if (!ctx || (typeof ctx !== 'object' && typeof ctx !== 'function')) {
 					throw new Error('Extension must export an object or function');
 				}
 
 				// if this is an ES6 module, grab the default export
-				if (ctx.__esModule) {
+				if (ctx.default) {
 					ctx = ctx.default;
 				}
 

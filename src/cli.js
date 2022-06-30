@@ -9,24 +9,9 @@ import pluralize from 'pluralize';
 import Terminal from './terminal.js';
 
 import { assertNodeJSVersion, declareCLIKitClass } from './lib/util.js';
-import { WriteStream } from 'tty';
 
 const { error, log, warn } = debug('cli-kit:cli');
 const { highlight, note }  = debug.styles;
-
-/**
- * Writes data to a websocket.
- */
-class OutputSocket extends WriteStream {
-	constructor(fd, ws) {
-		super(fd);
-		this.ws = ws;
-	}
-
-	write(chunk) {
-		this.ws.send(chunk.replace(/(?<!\r)\n/g, '\r\n'));
-	}
-}
 
 /**
  * Defines a CLI context and is responsible for parsing the command line arguments.
@@ -238,6 +223,8 @@ export default class CLI extends Context {
 		} else if (!(opts.terminal instanceof Terminal)) {
 			throw E.INVALID_ARGUMENT('Expected terminal to be a Terminal instance', { name: 'opts.terminal', scope: 'CLI.exec', value: opts.terminal });
 		}
+
+		await this.commands.init();
 
 		let exitCode = undefined;
 		let showHelpOnError = this.prop('showHelpOnError');
