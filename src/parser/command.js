@@ -1,10 +1,13 @@
 import Context from './context.js';
+import debug from '../lib/debug.js';
 import E from '../lib/errors.js';
 import fs from 'fs';
 import helpCommand from '../commands/help.js';
 import path from 'path';
-
 import { declareCLIKitClass } from '../lib/util.js';
+
+const { log } = debug('cli-kit:command');
+const { highlight } = debug.styles;
 
 const formatRegExp = /^([@! ]*[\w-_]+(?:\s*,\s*[@! ]*[\w-_]+)*)((?:\s*[<[]~?[\w-_]+[>\]])*)?$/;
 const nameRegExp = /^([@! ]*)([\w-_]+)\s*$/;
@@ -54,9 +57,21 @@ export default class Command extends Context {
 	 *   new Command(new Command('foo'))
 	 */
 	constructor(name, params = {}) {
-		let modulePath;
+		super(null); // null will skip the init since we do it applyParams()
+		declareCLIKitClass(this, 'Command');
+		this.applyParams(name, params);
+	}
+
+	/**
+	 * Initializes the command.
+	 *
+	 * @param {String} name - The command name.
+	 * @param {Object} params - Various parameters.
+	 * @access private
+	 */
+	applyParams(name, params) {
 		if (name && typeof name === 'string' && path.isAbsolute(name) && fs.existsSync(name)) {
-			modulePath = name;
+			params.modulePath = name;
 			name = path.parse(name).name;
 		}
 
@@ -93,7 +108,7 @@ export default class Command extends Context {
 		}
 
 		if (!name) {
-			throw  E.INVALID_ARGUMENT('Expected command name format to contain at least one non-aliased name', { name: 'format', scope: 'Command.constructor', value: format });
+			throw E.INVALID_ARGUMENT('Expected command name format to contain at least one non-aliased name', { name: 'format', scope: 'Command.constructor', value: format });
 		}
 
 		if (!params || (typeof params !== 'object' || Array.isArray(params))) {
@@ -149,8 +164,7 @@ export default class Command extends Context {
 			params.args = params.args ? [ ...args, ...params.args ] : args;
 		}
 
-		super(params);
-		declareCLIKitClass(this, 'Command');
+		this.init(params);
 
 		if (params.action) {
 			this.action = params.action;
@@ -167,7 +181,8 @@ export default class Command extends Context {
 		this.defaultCommand = params.defaultCommand;
 		this.help           = params.help || {};
 		this.hidden         = !!params.hidden;
-		this.modulePath     = modulePath;
+		this.loaded         = !params.modulePath;
+		this.modulePath     = params.modulePath;
 
 		// mix in any other custom props
 		for (const [ key, value ] of Object.entries(params)) {
@@ -272,6 +287,40 @@ export default class Command extends Context {
 			}
 		} else {
 			this._help = {};
+		}
+	}
+
+	/**
+	 * Loads this command if it is defined in an external file.
+	 *
+	 * @returns {Promise}
+	 * @access public
+	 */
+	async load() {
+		if (this.loaded) {
+			return;
+		}
+
+		try {
+			log(`Importing ${highlight(this.modulePath)}`);
+			let ctx = await import(this.modulePath);
+			if (!ctx || typeof ctx !== 'object') {
+				throw new Error('Command must export an object');
+			}
+
+			// if this is an ES6 module, grab the default export
+			if (ctx.default) {
+				ctx = ctx.default;
+			}
+
+			if (!ctx || typeof ctx !== 'object') {
+				throw new Error('Command must export an object');
+			}
+
+			this.applyParams(ctx.name || this.name, ctx);
+			this.loaded = true;
+		} catch (err) {
+			throw E.INVALID_COMMAND(`Bad command "${this.name}": ${err.message}`, { name: this.name, scope: 'Command.load', value: err });
 		}
 	}
 

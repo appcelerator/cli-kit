@@ -55,7 +55,8 @@ export default class Lookup {
 		if (Object.keys(this.commands).length) {
 			lines.push(note('  Commands:'));
 			for (const name of Object.keys(this.commands)) {
-				lines.push(`    ${highlight(name)} => ${highlight(this.commands[name].name)}`);
+				const cmd = this.commands[name];
+				lines.push(`    ${highlight(name)} => ${highlight(cmd.name)}${cmd.modulePath ? note(' (import pending)') : ''}`);
 			}
 		}
 

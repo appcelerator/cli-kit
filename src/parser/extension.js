@@ -167,6 +167,8 @@ export default class Extension {
 						desc: pkg.json.description
 					});
 				} else if (typeof pkg.json.exports !== 'object') {
+					console.log(pkg.json.exports);
+
 					throw E.INVALID_EXTENSION('Invalid extension: Expected exports to be an object', { name: 'pkg.json.exports', scope: 'Extension.constructor', value: pkg.json.exports });
 				} else {
 					for (let [ name, params ] of Object.entries(pkg.json.exports)) {
@@ -252,7 +254,7 @@ export default class Extension {
 		// we only want to define `cmd.load()` if main exports a cli-kit object
 
 		cmd.load = async function load() {
-			log(`Requiring cli-kit extension: ${highlight(this.name)} -> ${highlight(meta.pkg.main)}`);
+			log(`Importing cli-kit extension: ${highlight(this.name)} -> ${highlight(meta.pkg.main)}`);
 			let ctx;
 			try {
 				ctx = await import(meta.pkg.main);

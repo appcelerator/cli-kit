@@ -224,8 +224,6 @@ export default class CLI extends Context {
 			throw E.INVALID_ARGUMENT('Expected terminal to be a Terminal instance', { name: 'opts.terminal', scope: 'CLI.exec', value: opts.terminal });
 		}
 
-		await this.commands.init();
-
 		let exitCode = undefined;
 		let showHelpOnError = this.prop('showHelpOnError');
 		const parser = new Parser(opts).link(this);

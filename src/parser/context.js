@@ -62,7 +62,9 @@ export default class Context extends HookEmitter {
 	constructor(params = {}) {
 		super();
 		declareCLIKitClass(this, 'Context');
-		this.init(params);
+		if (params !== null) {
+			this.init(params);
+		}
 	}
 
 	/**

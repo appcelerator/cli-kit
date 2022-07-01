@@ -784,6 +784,7 @@ export default class Parser extends HookEmitter {
 		const cmd = lookup.commands[subject];
 		if (cmd) {
 			log(`Found command: ${highlight(cmd.name)}`);
+			await cmd.load();
 			return new ParsedArgument('command', {
 				command: cmd,
 				input: isParsed ? arg.input : [ arg ]
