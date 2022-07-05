@@ -86,7 +86,7 @@ describe('Extension', () => {
 			const cli = new CLI({
 				colors: false,
 				extensions: {
-					echo: 'echo "hi"'
+					echo: 'node -e \'console.log("hi " + process.argv.slice(1).join(" "))\''
 				},
 				help: true,
 				name: 'test-cli',
@@ -107,7 +107,9 @@ describe('Extension', () => {
 	});
 
 	describe('cli-kit Node Extensions', () => {
-		it('should load and merge a cli-kit Node package', async () => {
+		it('should load and merge a cli-kit Node package', async function () {
+			this.timeout(10000);
+
 			const extension = new Extension({
 				path: path.join(__dirname, 'fixtures', 'cli-kit-ext')
 			});
@@ -167,8 +169,8 @@ describe('Extension', () => {
 			const { status, stdout, stderr } = spawnSync(process.execPath, [
 				path.join(__dirname, 'examples', 'external-js-file', 'extjsfile.js'), 'simple', 'foo', 'bar'
 			], { env });
-			expect(status).to.equal(0);
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.equal(`${process.version} foo bar`);
+			expect(status).to.equal(0);
 		});
 
 		it('should run a simple Node.js module', function () {
@@ -181,8 +183,8 @@ describe('Extension', () => {
 			const { status, stdout, stderr } = spawnSync(process.execPath, [
 				path.join(__dirname, 'examples', 'external-module', 'extmod.js'), 'foo', 'bar'
 			], { env });
-			expect(status).to.equal(0);
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.equal(`${process.version} bar`);
+			expect(status).to.equal(0);
 		});
 	});
 

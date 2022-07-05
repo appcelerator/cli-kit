@@ -127,7 +127,7 @@ export default class Extension {
 
 						log(`Importing ${highlight(main)}`);
 						log(`Args: ${highlight(process.argv.join(' '))}`);
-						await import(main);
+						await import(_path.isAbsolute(main) ? `file://${main}` : main);
 					};
 				};
 
@@ -257,7 +257,7 @@ export default class Extension {
 			log(`Importing cli-kit extension: ${highlight(this.name)} -> ${highlight(meta.pkg.main)}`);
 			let ctx;
 			try {
-				ctx = await import(meta.pkg.main);
+				ctx = await import(_path.isAbsolute(meta.pkg.main) ? `file://${meta.pkg.main}` : meta.pkg.main);
 				if (!ctx || (typeof ctx !== 'object' && typeof ctx !== 'function')) {
 					throw new Error('Extension must export an object or function');
 				}
