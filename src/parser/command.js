@@ -303,7 +303,7 @@ export default class Command extends Context {
 
 		try {
 			log(`Importing ${highlight(this.modulePath)}`);
-			let ctx = await import(this.modulePath);
+			let ctx = await import(`file://${this.modulePath}`);
 			if (!ctx || typeof ctx !== 'object') {
 				throw new Error('Command must export an object');
 			}
