@@ -54,7 +54,7 @@
     "c8": "^7.11.3",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
-    "eslint": "^8.18.0",
+    "eslint": "^8.19.0",
     "eslint-plugin-chai-expect": "^3.0.0",
     "eslint-plugin-mocha": "^10.0.5",
     "eslint-plugin-promise": "^6.0.0",
