@@ -386,7 +386,7 @@ export default class Context extends HookEmitter {
 		this.name                           = params.name;
 		this.nodeVersion                    = params.nodeVersion;
 		this.options                        = new OptionMap();
-		this.parent                         = params.parent;
+		this.parent                         = params.parent || this.parent;
 		this.rev                            = 0;
 		this.showBannerForExternalCLIs      = params.showBannerForExternalCLIs;
 		this.showHelpOnError                = params.showHelpOnError;
