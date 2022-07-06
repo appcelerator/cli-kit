@@ -103,10 +103,10 @@ export default class ExtensionMap extends Map {
 	/**
 	 * Generates an object containing the extensions for the help screen.
 	 *
-	 * @returns {Object}
+	 * @returns {Promise<Object>}
 	 * @access public
 	 */
-	generateHelp() {
+	async generateHelp() {
 		const entries = [];
 
 		for (const ctxName of Array.from(this.keys())) {

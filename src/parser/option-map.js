@@ -105,10 +105,10 @@ export default class OptionMap extends Map {
 	/**
 	 * Generates an object containing the options for the help screen.
 	 *
-	 * @returns {Object}
+	 * @returns {Promise<Object>}
 	 * @access public
 	 */
-	generateHelp() {
+	async generateHelp() {
 		let count = 0;
 		const groups = {};
 		const sortFn = (a, b) => {

@@ -141,14 +141,15 @@ export default class CommandMap extends Map {
 	/**
 	 * Generates an object containing the commands for the help screen.
 	 *
-	 * @returns {Object}
+	 * @returns {Promise<Object>}
 	 * @access public
 	 */
-	generateHelp() {
+	async generateHelp() {
 		const entries = [];
 
-		for (const cmd of Array.from(this.keys())) {
-			const { aliases, clikitHelp, desc, hidden, name } = this.get(cmd);
+		for (const cmd of this.values()) {
+			await cmd.load();
+			const { aliases, clikitHelp, desc, hidden, name } = cmd;
 			if (!hidden && !clikitHelp) {
 				const labels = new Set([ name ]);
 

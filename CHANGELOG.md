@@ -5,6 +5,7 @@
  * BREAKING CHANGE: Removed server mode including `CLI.connect()`, `CLI.listen()`, and
    `CLI.schema()`.
  * BREAKING CHANGE: No longer re-export `pkg-dir`.
+ * BREAKING CHANGE: `generateHelp()` now returns a promise.
  * chore: Updated dependencies.
 
 # v1.16.0 (Apr 21, 2022)

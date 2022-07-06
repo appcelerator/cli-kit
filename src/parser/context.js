@@ -204,7 +204,7 @@ export default class Context extends HookEmitter {
 					scopes.push({
 						title: `${ctx.title} options`,
 						name: ctx.name,
-						...ctx.options.generateHelp()
+						...(await ctx.options.generateHelp())
 					});
 					results.contexts.unshift(ctx.name);
 				}
@@ -255,10 +255,10 @@ export default class Context extends HookEmitter {
 			// set the commands
 			results.commands = {
 				title: this.parent ? `${this.title} commands` : 'Commands',
-				...this.commands.generateHelp()
+				...(await this.commands.generateHelp())
 			};
 
-			const ext = this.extensions.generateHelp();
+			const ext = await this.extensions.generateHelp();
 			results.commands.count += ext.count;
 			results.commands.entries.push(...ext.entries);
 			results.commands.entries.sort((a, b) => a.name.localeCompare(b.name));
@@ -276,7 +276,7 @@ export default class Context extends HookEmitter {
 			// set the arguments
 			results.arguments = {
 				title: this.parent ? `${this.title} arguments` : 'Arguments',
-				...this.args.generateHelp()
+				...(await this.args.generateHelp())
 			};
 
 			// set the options
