@@ -1,6 +1,6 @@
 {
   "name": "cli-kit",
-  "version": "1.16.0",
+  "version": "2.0.0",
   "description": "Everything you need to create awesome command line interfaces",
   "type": "module",
   "exports": "./src/index.js",
