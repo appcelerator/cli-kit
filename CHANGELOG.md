@@ -1,3 +1,7 @@
+# v2.0.1 (Jul 6, 2022)
+
+ * fix: Added missing `src` directory to distribution. Oops.
+
 # v2.0.0 (Jul 6, 2022)
 
  * BREAKING CHANGE: Require Node.js 14.15.0 LTS or newer.
