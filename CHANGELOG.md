@@ -1,4 +1,4 @@
-# v2.0.0
+# v2.0.0 (Jul 6, 2022)
 
  * BREAKING CHANGE: Require Node.js 14.15.0 LTS or newer.
  * BREAKING CHANGE: Changed package to a ES module.
