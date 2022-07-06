@@ -1,7 +1,7 @@
 // import debug from '../lib/debug';
-import E from '../lib/errors';
+import E from '../lib/errors.js';
 import fs from 'fs';
-import { trim, trimEnd } from '../lib/ansi';
+import { trim, trimEnd } from '../lib/ansi.js';
 
 // const logger = debug('cli-kit:template:in');
 // const { log } = logger;

@@ -1,10 +1,10 @@
-import Command from './command';
-import debug from '../lib/debug';
-import E from '../lib/errors';
-import helpCommand from '../commands/help';
+import Command from './command.js';
+import debug from '../lib/debug.js';
+import E from '../lib/errors.js';
+import helpCommand from '../commands/help.js';
 import _path from 'path';
 
-import { declareCLIKitClass, filename, findPackage, isExecutable } from '../lib/util';
+import { declareCLIKitClass, filename, findPackage, isExecutable } from '../lib/util.js';
 import { spawn } from 'child_process';
 
 const { log, warn } = debug('cli-kit:extension');
@@ -66,7 +66,7 @@ export default class Extension {
 			}
 
 			this.registerExtension(this.name, { exe }, {
-				action: async ({ __argv, cmd, terminal }) => {
+				async action({ __argv, cmd, terminal }) {
 					if (!Array.isArray(exe)) {
 						throw E.NO_EXECUTABLE(`Extension "${this.name}" has no executable!`);
 					}
@@ -125,14 +125,14 @@ export default class Extension {
 							}
 						}
 
-						log(`Requiring ${highlight(main)}`);
+						log(`Importing ${highlight(main)}`);
 						log(`Args: ${highlight(process.argv.join(' '))}`);
-						require(main);
+						await import(_path.isAbsolute(main) ? `file://${main}` : main);
 					};
 				};
 
-				if (!pkg.json.exports && pkg.main) {
-					// legacy Node.js extension
+				if (pkg.main && (!pkg.json.exports || !pkg.esm)) {
+					log(`Found Node.js ${pkg.esm ? 'ESM' : 'CommonJS'} extension with main as export`);
 					let { name } = this;
 					const aliases = Array.isArray(pkg.json.aliases) ? pkg.json.aliases : [];
 
@@ -167,6 +167,8 @@ export default class Extension {
 						desc: pkg.json.description
 					});
 				} else if (typeof pkg.json.exports !== 'object') {
+					console.log(pkg.json.exports);
+
 					throw E.INVALID_EXTENSION('Invalid extension: Expected exports to be an object', { name: 'pkg.json.exports', scope: 'Extension.constructor', value: pkg.json.exports });
 				} else {
 					for (let [ name, params ] of Object.entries(pkg.json.exports)) {
@@ -252,16 +254,16 @@ export default class Extension {
 		// we only want to define `cmd.load()` if main exports a cli-kit object
 
 		cmd.load = async function load() {
-			log(`Requiring cli-kit extension: ${highlight(this.name)} -> ${highlight(meta.pkg.main)}`);
+			log(`Importing cli-kit extension: ${highlight(this.name)} -> ${highlight(meta.pkg.main)}`);
 			let ctx;
 			try {
-				ctx = require(meta.pkg.main);
+				ctx = await import(_path.isAbsolute(meta.pkg.main) ? `file://${meta.pkg.main}` : meta.pkg.main);
 				if (!ctx || (typeof ctx !== 'object' && typeof ctx !== 'function')) {
 					throw new Error('Extension must export an object or function');
 				}
 
 				// if this is an ES6 module, grab the default export
-				if (ctx.__esModule) {
+				if (ctx.default) {
 					ctx = ctx.default;
 				}
 

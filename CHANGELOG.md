@@ -1,3 +1,13 @@
+# v2.0.0
+
+ * BREAKING CHANGE: Require Node.js 14.15.0 LTS or newer.
+ * BREAKING CHANGE: Changed package to a ES module.
+ * BREAKING CHANGE: Removed server mode including `CLI.connect()`, `CLI.listen()`, and
+   `CLI.schema()`.
+ * BREAKING CHANGE: No longer re-export `pkg-dir`.
+ * BREAKING CHANGE: `generateHelp()` now returns a promise.
+ * chore: Updated dependencies.
+
 # v1.16.0 (Apr 21, 2022)
 
  * feat: Add support for extension CLIs with multiple exported entrypoints that do not use cli-kit.

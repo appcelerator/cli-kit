@@ -2,7 +2,7 @@
   "name": "cli-kit-extension",
   "main": "./main",
   "dependencies": {
-    "cli-kit": "*"
+    "cli-kit": "^1.16.0"
   },
   "cli-kit": {}
 }

@@ -1,7 +1,6 @@
-import E from '../lib/errors';
-import Option from './option';
-
-import { declareCLIKitClass } from '../lib/util';
+import E from '../lib/errors.js';
+import Option from './option.js';
+import { declareCLIKitClass } from '../lib/util.js';
 
 /**
  * Stores a map of `Option` instances that have been registered for a context.
@@ -106,10 +105,10 @@ export default class OptionMap extends Map {
 	/**
 	 * Generates an object containing the options for the help screen.
 	 *
-	 * @returns {Object}
+	 * @returns {Promise<Object>}
 	 * @access public
 	 */
-	generateHelp() {
+	async generateHelp() {
 		let count = 0;
 		const groups = {};
 		const sortFn = (a, b) => {

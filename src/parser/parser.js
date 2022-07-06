@@ -1,15 +1,14 @@
 import camelCase from 'lodash.camelcase';
-import Command from './command';
-import Context from './context';
-import debug from '../lib/debug';
-import E from '../lib/errors';
-import Extension from './extension';
+import Command from './command.js';
+import Context from './context.js';
+import debug from '../lib/debug.js';
+import E from '../lib/errors.js';
+import Extension from './extension.js';
 import HookEmitter from 'hook-emitter';
-import ParsedArgument from './parsed-argument';
+import ParsedArgument from './parsed-argument.js';
 import pluralize from 'pluralize';
-
-import { declareCLIKitClass } from '../lib/util';
-import { transformValue } from './types';
+import { declareCLIKitClass } from '../lib/util.js';
+import { transformValue } from './types.js';
 
 const { log } = debug('cli-kit:parser');
 const { highlight, note } = debug.styles;
@@ -785,6 +784,7 @@ export default class Parser extends HookEmitter {
 		const cmd = lookup.commands[subject];
 		if (cmd) {
 			log(`Found command: ${highlight(cmd.name)}`);
+			await cmd.load();
 			return new ParsedArgument('command', {
 				command: cmd,
 				input: isParsed ? arg.input : [ arg ]

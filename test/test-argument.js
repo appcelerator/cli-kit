@@ -1,5 +1,5 @@
-import CLI, { Argument } from '../dist/index';
-
+import CLI, { Argument } from '../src/index.js';
+import { expect } from 'chai';
 import { WritableStream } from 'memory-streams';
 
 describe('Argument', () => {

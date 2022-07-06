@@ -1,10 +1,8 @@
-import E from '../lib/errors';
+import Command from './command.js';
+import E from '../lib/errors.js';
 import fs from 'fs';
 import path from 'path';
-
-import { declareCLIKitClass } from '../lib/util';
-
-let Command;
+import { declareCLIKitClass } from '../lib/util.js';
 
 /**
  * Matches
@@ -47,10 +45,6 @@ export default class CommandMap extends Map {
 	add(cmd, params, clone) {
 		if (!cmd) {
 			throw E.INVALID_ARGUMENT('Invalid command', { name: 'cmd', scope: 'CommandMap.add', value: cmd });
-		}
-
-		if (!Command) {
-			Command = require('./command').default;
 		}
 
 		if (params !== undefined && params !== null) {
@@ -147,14 +141,15 @@ export default class CommandMap extends Map {
 	/**
 	 * Generates an object containing the commands for the help screen.
 	 *
-	 * @returns {Object}
+	 * @returns {Promise<Object>}
 	 * @access public
 	 */
-	generateHelp() {
+	async generateHelp() {
 		const entries = [];
 
-		for (const cmd of Array.from(this.keys())) {
-			const { aliases, clikitHelp, desc, hidden, name } = this.get(cmd);
+		for (const cmd of this.values()) {
+			await cmd.load();
+			const { aliases, clikitHelp, desc, hidden, name } = cmd;
 			if (!hidden && !clikitHelp) {
 				const labels = new Set([ name ]);
 

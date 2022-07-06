@@ -1,10 +1,13 @@
 /* eslint no-control-regex:0 */
 
-import CLI, { ansi, Extension, Terminal } from '../dist/index';
+import CLI, { ansi, Extension, Terminal } from '../src/index.js';
 import path from 'path';
-
+import { expect } from 'chai';
+import { fileURLToPath } from 'url';
 import { spawnSync } from 'child_process';
 import { WritableStream } from 'memory-streams';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('Extension', () => {
 	describe('Error Handling', () => {
@@ -59,8 +62,8 @@ describe('Extension', () => {
 				'-e',
 				'console.log(\'foo\');'
 			], { env });
-			expect(status).to.equal(0);
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.match(/foo/im);
+			expect(status).to.equal(0);
 		});
 
 		it('should curry args to a native binary', function () {
@@ -83,7 +86,7 @@ describe('Extension', () => {
 			const cli = new CLI({
 				colors: false,
 				extensions: {
-					echo: 'echo "hi"'
+					echo: 'node -e \'console.log("hi " + process.argv.slice(1).join(" "))\''
 				},
 				help: true,
 				name: 'test-cli',
@@ -104,7 +107,9 @@ describe('Extension', () => {
 	});
 
 	describe('cli-kit Node Extensions', () => {
-		it('should load and merge a cli-kit Node package', async () => {
+		it('should load and merge a cli-kit Node package', async function () {
+			this.timeout(10000);
+
 			const extension = new Extension({
 				path: path.join(__dirname, 'fixtures', 'cli-kit-ext')
 			});
@@ -164,8 +169,8 @@ describe('Extension', () => {
 			const { status, stdout, stderr } = spawnSync(process.execPath, [
 				path.join(__dirname, 'examples', 'external-js-file', 'extjsfile.js'), 'simple', 'foo', 'bar'
 			], { env });
-			expect(status).to.equal(0);
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.equal(`${process.version} foo bar`);
+			expect(status).to.equal(0);
 		});
 
 		it('should run a simple Node.js module', function () {
@@ -178,8 +183,8 @@ describe('Extension', () => {
 			const { status, stdout, stderr } = spawnSync(process.execPath, [
 				path.join(__dirname, 'examples', 'external-module', 'extmod.js'), 'foo', 'bar'
 			], { env });
-			expect(status).to.equal(0);
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.equal(`${process.version} bar`);
+			expect(status).to.equal(0);
 		});
 	});
 

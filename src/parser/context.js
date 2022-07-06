@@ -1,14 +1,13 @@
-import ArgumentList from './argument-list';
-import CommandMap from './command-map';
-import debug from '../lib/debug';
-import E from '../lib/errors';
-import ExtensionMap from './extension-map';
+import ArgumentList from './argument-list.js';
+import CommandMap from './command-map.js';
+import debug from '../lib/debug.js';
+import E from '../lib/errors.js';
+import ExtensionMap from './extension-map.js';
 import HookEmitter from 'hook-emitter';
-import Lookup from './lookup';
-import OptionMap from './option-map';
+import Lookup from './lookup.js';
+import OptionMap from './option-map.js';
 import path from 'path';
-
-import { declareCLIKitClass } from '../lib/util';
+import { declareCLIKitClass } from '../lib/util.js';
 
 const { error, log } = debug('cli-kit:context');
 const { highlight, note } = debug.styles;
@@ -63,7 +62,9 @@ export default class Context extends HookEmitter {
 	constructor(params = {}) {
 		super();
 		declareCLIKitClass(this, 'Context');
-		this.init(params);
+		if (params !== null) {
+			this.init(params);
+		}
 	}
 
 	/**
@@ -140,8 +141,8 @@ export default class Context extends HookEmitter {
 				log(`Loading extension action: ${highlight(file)}`);
 
 				try {
-					let fn = require(file);
-					if (fn.__esModule) {
+					let fn = await import(`file://${file}`);
+					if (fn.default) {
 						fn = fn.default;
 					}
 
@@ -203,7 +204,7 @@ export default class Context extends HookEmitter {
 					scopes.push({
 						title: `${ctx.title} options`,
 						name: ctx.name,
-						...ctx.options.generateHelp()
+						...(await ctx.options.generateHelp())
 					});
 					results.contexts.unshift(ctx.name);
 				}
@@ -254,10 +255,10 @@ export default class Context extends HookEmitter {
 			// set the commands
 			results.commands = {
 				title: this.parent ? `${this.title} commands` : 'Commands',
-				...this.commands.generateHelp()
+				...(await this.commands.generateHelp())
 			};
 
-			const ext = this.extensions.generateHelp();
+			const ext = await this.extensions.generateHelp();
 			results.commands.count += ext.count;
 			results.commands.entries.push(...ext.entries);
 			results.commands.entries.sort((a, b) => a.name.localeCompare(b.name));
@@ -275,7 +276,7 @@ export default class Context extends HookEmitter {
 			// set the arguments
 			results.arguments = {
 				title: this.parent ? `${this.title} arguments` : 'Arguments',
-				...this.args.generateHelp()
+				...(await this.args.generateHelp())
 			};
 
 			// set the options
@@ -385,7 +386,7 @@ export default class Context extends HookEmitter {
 		this.name                           = params.name;
 		this.nodeVersion                    = params.nodeVersion;
 		this.options                        = new OptionMap();
-		this.parent                         = params.parent;
+		this.parent                         = params.parent || this.parent;
 		this.rev                            = 0;
 		this.showBannerForExternalCLIs      = params.showBannerForExternalCLIs;
 		this.showHelpOnError                = params.showHelpOnError;

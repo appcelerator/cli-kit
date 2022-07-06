@@ -1,8 +1,6 @@
-import E from '../lib/errors';
-
-import { declareCLIKitClass } from '../lib/util';
-
-let Extension;
+import E from '../lib/errors.js';
+import Extension from './extension.js';
+import { declareCLIKitClass } from '../lib/util.js';
 
 /**
  * Stores a map of `Extension` instances that have been registered for a context.
@@ -50,10 +48,6 @@ export default class ExtensionMap extends Map {
 
 		if (name && typeof name !== 'string') {
 			throw E.INVALID_ARGUMENT('Expected extension name to be a string', { name: 'name', scope: 'ExtensionMap.add', value: name });
-		}
-
-		if (!Extension) {
-			Extension = require('./extension').default;
 		}
 
 		const results = [];
@@ -109,10 +103,10 @@ export default class ExtensionMap extends Map {
 	/**
 	 * Generates an object containing the extensions for the help screen.
 	 *
-	 * @returns {Object}
+	 * @returns {Promise<Object>}
 	 * @access public
 	 */
-	generateHelp() {
+	async generateHelp() {
 		const entries = [];
 
 		for (const ctxName of Array.from(this.keys())) {

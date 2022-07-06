@@ -1,6 +1,5 @@
-import Argument from './argument';
-
-import { declareCLIKitClass } from '../lib/util';
+import Argument from './argument.js';
+import { declareCLIKitClass } from '../lib/util.js';
 
 /**
  * Stores a list of `Argument` instances that have been registered for a context.
@@ -45,10 +44,10 @@ export default class ArgumentList extends Array {
 	/**
 	 * Generates an object containing the arguments for the help screen.
 	 *
-	 * @returns {Object}
+	 * @returns {Promise<Object>}
 	 * @access public
 	 */
-	generateHelp() {
+	async generateHelp() {
 		const entries = [];
 
 		for (const { desc, hidden, hint, multiple, name, required } of this) {

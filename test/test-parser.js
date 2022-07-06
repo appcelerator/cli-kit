@@ -1,8 +1,11 @@
-import CLI, { ansi, Terminal } from '../dist/index';
+import CLI, { ansi, Terminal } from '../src/index.js';
 import path from 'path';
+import { expect } from 'chai';
+import { fileURLToPath } from 'url';
 import { spawnSync } from 'child_process';
 import { WritableStream } from 'memory-streams';
-import { expect } from 'chai';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('Parser', () => {
 	describe('Error Handling', () => {

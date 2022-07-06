@@ -1,6 +1,6 @@
-import Terminal from '../dist/terminal';
+import Terminal from '../src/terminal.js';
 import crypto from 'crypto';
-
+import { expect } from 'chai';
 import { WritableStream } from 'memory-streams';
 
 describe('Terminal', () => {

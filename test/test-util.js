@@ -1,6 +1,9 @@
 import path from 'path';
+import { decodeHeader, encodeHeader, findPackage, wrap } from '../src/lib/util.js';
+import { expect } from 'chai';
+import { fileURLToPath } from 'url';
 
-import { decodeHeader, encodeHeader, findPackage, wrap } from '../dist/lib/util';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('util', () => {
 	describe('findPackage()', () => {

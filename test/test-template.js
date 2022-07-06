@@ -1,8 +1,10 @@
 import fs from 'fs';
 import path from 'path';
+import { expect } from 'chai';
+import { fileURLToPath } from 'url';
+import { template } from '../src/index.js';
 
-import { template } from '../dist/index';
-
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { escapeTildes, render, renderFile } = template;
 
 describe('Template', () => {
