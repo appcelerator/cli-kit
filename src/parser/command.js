@@ -293,12 +293,12 @@ export default class Command extends Context {
 	/**
 	 * Loads this command if it is defined in an external file.
 	 *
-	 * @returns {Promise}
+	 * @returns {Promise<boolean>} Resolves `true` if it loaded the module, otherwise `false`.
 	 * @access public
 	 */
 	async load() {
 		if (this.loaded) {
-			return;
+			return false;
 		}
 
 		try {
@@ -319,6 +319,7 @@ export default class Command extends Context {
 
 			this.applyParams(ctx.name || this.name, ctx);
 			this.loaded = true;
+			return true;
 		} catch (err) {
 			throw E.INVALID_COMMAND(`Bad command "${this.name}": ${err.message}`, { name: this.name, scope: 'Command.load', value: err });
 		}

@@ -1,3 +1,7 @@
+# v2.0.2 (Jul 7, 2022)
+
+ * fix: Load extension subcommands, then re-register them by name and alias.
+
 # v2.0.1 (Jul 6, 2022)
 
  * fix: Added missing `src` directory to distribution. Oops.

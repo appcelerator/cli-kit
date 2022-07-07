@@ -12,6 +12,52 @@ import { assertNodeJSVersion, declareCLIKitClass } from './lib/util.js';
 
 const { error, log, warn } = debug('cli-kit:cli');
 const { highlight, note }  = debug.styles;
+const { chalk } = debug;
+const defaultStyles = {
+	bold: chalk.bold,
+	dim: chalk.dim,
+	italic: chalk.italic,
+	underline: chalk.underline,
+	inverse: chalk.inverse,
+	hidden: chalk.hidden,
+	strikethrough: chalk.strikethrough,
+
+	black: chalk.black,
+	red: chalk.red,
+	black: chalk.black,
+	green: chalk.green,
+	yellow: chalk.yellow,
+	blue: chalk.blue,
+	magenta: chalk.magenta,
+	cyan: chalk.cyan,
+	white: chalk.white,
+	gray: chalk.gray,
+
+	bgBlack: chalk.bgBlack,
+	bgRed: chalk.bgRed,
+	bgGreen: chalk.bgGreen,
+	bgYellow: chalk.bgYellow,
+	bgBlue: chalk.bgBlue,
+	bgMagenta: chalk.bgMagenta,
+	bgCyan: chalk.bgCyan,
+	bgWhite: chalk.bgWhite,
+
+	uppercase: s => String(s).toUpperCase(),
+	lowercase: s => String(s).toLowerCase(),
+	bracket: s => `[${s}]`,
+	paren: s => `(${s})`,
+
+	highlight: chalk.cyan,
+	lowlight: chalk.blue,
+	ok: chalk.green,
+	notice: chalk.yellow,
+	alert: chalk.red,
+	note: chalk.gray,
+	warn: chalk.yellow,
+	error: chalk.red,
+	heading: s => String(s).toUpperCase(),
+	subheading: chalk.gray
+};
 
 /**
  * Defines a CLI context and is responsible for parsing the command line arguments.
@@ -119,7 +165,7 @@ export default class CLI extends Context {
 		this.nodeVersion               = params.nodeVersion;
 		this.showBannerForExternalCLIs = params.showBannerForExternalCLIs;
 		this.showHelpOnError           = params.showHelpOnError;
-		this.styles                    = Object.assign({}, debug.styles, params.styles);
+		this.styles                    = Object.assign({}, defaultStyles, params.styles);
 		this.terminal                  = params.terminal || new Terminal();
 		this.version                   = params.version;
 		this.warnings                  = [];

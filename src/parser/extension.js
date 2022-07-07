@@ -298,6 +298,13 @@ export default class Extension {
 				title:      ctx.title !== 'Global' && ctx.title || this.name
 			});
 
+			// for each command, we need to load it and re-register it
+			for (const cmd of this.commands.values()) {
+				if (await cmd.load()) {
+					this.register(cmd);
+				}
+			}
+
 			const versionOption = this.version && this.lookup.long.version;
 			if (versionOption && typeof versionOption.callback !== 'function') {
 				versionOption.callback = async ({ exitCode, opts, next }) => {
