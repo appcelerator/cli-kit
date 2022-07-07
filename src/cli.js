@@ -24,7 +24,6 @@ const defaultStyles = {
 
 	black: chalk.black,
 	red: chalk.red,
-	black: chalk.black,
 	green: chalk.green,
 	yellow: chalk.yellow,
 	blue: chalk.blue,
