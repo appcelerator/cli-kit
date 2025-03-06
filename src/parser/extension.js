@@ -267,6 +267,10 @@ export default class Extension {
 					ctx = ctx.default;
 				}
 
+				if (ctx.__esModule) {
+					ctx = ctx.default;
+				}
+
 				// if the export was a function, call it now to get its CLI definition
 				if (typeof ctx === 'function') {
 					ctx = await ctx(this);
