@@ -72,7 +72,7 @@ jobs:
       fail-fast: false
       matrix:
         nodeVersion: ["14.21.3"]
-        os: [macos-13-arm64]
+        os: [macos-latest]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -80,7 +80,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.nodeVersion }}
-          architecture: "arm64"
       - name: Install dependencies
         run: yarn
       - name: Run tests
