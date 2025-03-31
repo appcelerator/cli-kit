@@ -41,7 +41,7 @@ jobs:
         env:
           SNOOPLOGG: "*"
 
-  Test:
+  MacOSTest:
     needs: Lint
     name: ${{ matrix.os }} ${{ matrix.nodeVersion }} Tests
     runs-on: ${{ matrix.os }}
