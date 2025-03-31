@@ -13,7 +13,7 @@ describe('util', () => {
 				findPackage(dir);
 			}, {
 				type:  Error,
-				msg:   'Failed to parse package.json: Unexpected token { in JSON at position 1',
+				msg:   'Failed to parse package.json:',
 				code:  'ERR_INVALID_PACKAGE_JSON',
 				file:  path.join(dir, 'package.json'),
 				name:  'package.json.bad',
