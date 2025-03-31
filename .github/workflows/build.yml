@@ -71,13 +71,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        nodeVersion: ["14.x"]
+        nodeVersion: ["14.21.3"]
         os: [macos-latest]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.nodeVersion }}
       - name: Install dependencies
