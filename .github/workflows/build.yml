@@ -7,12 +7,12 @@ jobs:
   Lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v4
         with:
-          node-version: '16.x'
+          node-version: "16.x"
       - name: Install dependencies
         run: yarn
       - name: Lint
@@ -25,13 +25,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        nodeVersion: [ '14.19.1', '16.14.2', '18.0.0' ]
-        os: [ macos-latest, ubuntu-latest, windows-latest ]
+        nodeVersion: ["14.19.1", "16.14.2", "18.0.0"]
+        os: [macos-latest, ubuntu-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.nodeVersion }}
       - name: Install dependencies
@@ -39,4 +39,4 @@ jobs:
       - name: Run tests
         run: yarn run test
         env:
-          SNOOPLOGG: '*'
+          SNOOPLOGG: "*"
