@@ -80,6 +80,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.nodeVersion }}
+          architecture: "x64"
       - name: Install dependencies
         run: yarn
       - name: Run tests
