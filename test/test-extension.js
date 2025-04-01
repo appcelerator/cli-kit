@@ -63,7 +63,7 @@ describe('Extension', () => {
 				'console.log(\'foo\');'
 			];
 			console.log('PLATFORM:', platform());
-			const { status, stdout, stderr } = spawnSync(process.execPath, args, {
+			const { status, stdout, stderr } = spawnSync('node', args, {
 				env,
 				shell: platform() === 'win32'
 			});
@@ -79,7 +79,7 @@ describe('Extension', () => {
 			const env = { ...process.env };
 			delete env.SNOOPLOGG;
 
-			const { status, stdout, stderr } = spawnSync(process.execPath, [
+			const { status, stdout, stderr } = spawnSync('node', [
 				path.join(__dirname, 'examples', 'run-node', 'run.js'), 'run', 'console.log(\'It works\')'
 			], {
 				env,
@@ -175,11 +175,10 @@ describe('Extension', () => {
 			const env = { ...process.env };
 			delete env.SNOOPLOGG;
 
-			const { status, stdout, stderr } = spawnSync(process.execPath, [
+			const { status, stdout, stderr } = spawnSync('node', [
 				path.join(__dirname, 'examples', 'external-js-file', 'extjsfile.js'), 'simple', 'foo', 'bar'
 			], {
-				env,
-				shell: platform() === 'win32'
+				env
 			});
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.equal(`${process.version} foo bar`);
 			expect(status).to.equal(0);
@@ -192,11 +191,10 @@ describe('Extension', () => {
 			const env = { ...process.env };
 			delete env.SNOOPLOGG;
 
-			const { status, stdout, stderr } = spawnSync(process.execPath, [
+			const { status, stdout, stderr } = spawnSync('node', [
 				path.join(__dirname, 'examples', 'external-module', 'extmod.js'), 'foo', 'bar'
 			], {
-				env,
-				shell: platform() === 'win32'
+				env
 			});
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.equal(`${process.version} bar`);
 			expect(status).to.equal(0);
