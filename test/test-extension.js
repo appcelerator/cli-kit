@@ -67,10 +67,10 @@ describe('Extension', () => {
 
 			{
 				const { status, stdout, stderr } = spawnSync('where', 'node');
-				console.log({ status, stdout: stdout.toString(), stderr: stderr.toString() });
+				console.log('ORANGES', { status, stdout: stdout.toString(), stderr: stderr.toString() });
 			}
 
-			const { status, stdout, stderr } = spawnSync('node', args, {
+			const { status, stdout, stderr } = spawnSync('node.exe', args, {
 				env,
 				shell: platform() === 'win32'
 			});
