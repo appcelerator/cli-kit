@@ -114,7 +114,7 @@ export default class Extension {
 				const makeDefaultAction = main => {
 					return async ({ __argv, cmd }) => {
 						process.argv = [
-							process.execPath,
+							'node',
 							main
 						];
 
