@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { platform } from 'os';
 import { spawnSync } from 'child_process';
 import { WritableStream } from 'memory-streams';
+import { nodePath } from '../src/lib/util.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -58,14 +59,14 @@ describe('Extension', () => {
 			delete env.SNOOPLOGG;
 			const args = [
 				path.join(__dirname, 'examples', 'external-binary', 'extbin.js'),
-				'node',
+				nodePath(),
 				'-e',
 				'console.log(\'foo\');'
 			];
 
 			let s = '',o = '',e = '';
 			try {
-				const { status, stdout, stderr } = spawnSync('where', [ 'node.exe' ]);
+				const { status, stdout, stderr } = spawnSync('where', [ nodePath() ]);
 				s = status; o = stdout; e = stderr;
 			} catch (e) {
 				console.log('EROROROROROR!', e);
@@ -74,7 +75,7 @@ describe('Extension', () => {
 				console.log('PLATFORM:', platform());
 			}
 
-			const { status, stdout, stderr } = spawnSync('node.exe', args, {
+			const { status, stdout, stderr } = spawnSync(nodePath(), args, {
 				env,
 				shell: platform() === 'win32'
 			});
@@ -90,7 +91,7 @@ describe('Extension', () => {
 			const env = { ...process.env };
 			delete env.SNOOPLOGG;
 
-			const { status, stdout, stderr } = spawnSync('node', [
+			const { status, stdout, stderr } = spawnSync(nodePath(), [
 				path.join(__dirname, 'examples', 'run-node', 'run.js'), 'run', 'console.log(\'It works\')'
 			], {
 				env,
@@ -186,7 +187,7 @@ describe('Extension', () => {
 			const env = { ...process.env };
 			delete env.SNOOPLOGG;
 
-			const { status, stdout, stderr } = spawnSync('node', [
+			const { status, stdout, stderr } = spawnSync(nodePath(), [
 				path.join(__dirname, 'examples', 'external-js-file', 'extjsfile.js'), 'simple', 'foo', 'bar'
 			], {
 				env
@@ -202,7 +203,7 @@ describe('Extension', () => {
 			const env = { ...process.env };
 			delete env.SNOOPLOGG;
 
-			const { status, stdout, stderr } = spawnSync('node', [
+			const { status, stdout, stderr } = spawnSync(nodePath(), [
 				path.join(__dirname, 'examples', 'external-module', 'extmod.js'), 'foo', 'bar'
 			], {
 				env
