@@ -59,10 +59,11 @@ describe('Extension', () => {
 				path.join(__dirname, 'examples', 'external-binary', 'extbin.js'),
 				'node',
 				'-e',
-				'\'console.log(\'foo\');\''
+				'console.log(\'foo\');'
 			];
-			const cmd = `${process.execPath} ${args.join(' ')}`;
-			const {status} = spawnSync(process.execPath, args, { env, shell: true });
+			const { status, stdout, stderr } = spawnSync(process.execPath, args, { env });
+			expect(stdout.toString().trim()).to.equal('foo');
+			expect(stderr.toString().trim()).to.equal('');
 			expect(status).to.equal(0);
 		});
 
@@ -168,7 +169,7 @@ describe('Extension', () => {
 
 			const { status, stdout, stderr } = spawnSync(process.execPath, [
 				path.join(__dirname, 'examples', 'external-js-file', 'extjsfile.js'), 'simple', 'foo', 'bar'
-			], { env, shell: true });
+			], { env });
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.equal(`${process.version} foo bar`);
 			expect(status).to.equal(0);
 		});
@@ -182,7 +183,7 @@ describe('Extension', () => {
 
 			const { status, stdout, stderr } = spawnSync(process.execPath, [
 				path.join(__dirname, 'examples', 'external-module', 'extmod.js'), 'foo', 'bar'
-			], { env, shell: true });
+			], { env });
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.equal(`${process.version} bar`);
 			expect(status).to.equal(0);
 		});

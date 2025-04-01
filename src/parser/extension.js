@@ -83,7 +83,7 @@ export default class Extension {
 
 					// spawn the process
 					log(`Running: ${highlight(`${bin} ${args.join(' ')}`)}`);
-					const child = spawn(bin, args, { windowsHide: true, shell: true });
+					const child = spawn(bin, args, { windowsHide: true });
 					child.stdout.on('data', data => terminal.stdout.write(data.toString()));
 					child.stderr.on('data', data => terminal.stderr.write(data.toString()));
 					await new Promise(resolve => child.on('close', (code = 0) => resolve({ code })));
