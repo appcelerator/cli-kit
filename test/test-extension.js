@@ -4,6 +4,7 @@ import CLI, { ansi, Extension, Terminal } from '../src/index.js';
 import path from 'path';
 import { expect } from 'chai';
 import { fileURLToPath } from 'url';
+import { platform } from 'os';
 import { spawnSync } from 'child_process';
 import { WritableStream } from 'memory-streams';
 
@@ -61,7 +62,10 @@ describe('Extension', () => {
 				'-e',
 				'console.log(\'foo\');'
 			];
-			const { status, stdout, stderr } = spawnSync(process.execPath, args, { env });
+			const { status, stdout, stderr } = spawnSync(process.execPath, args, {
+				env,
+				shell: platform() === 'win32'
+			});
 			expect(stdout.toString().trim()).to.equal('foo');
 			expect(stderr.toString().trim()).to.equal('');
 			expect(status).to.equal(0);
@@ -76,7 +80,10 @@ describe('Extension', () => {
 
 			const { status, stdout, stderr } = spawnSync(process.execPath, [
 				path.join(__dirname, 'examples', 'run-node', 'run.js'), 'run', 'console.log(\'It works\')'
-			], { env });
+			], {
+				env,
+				shell: platform() === 'win32'
+			});
 			expect(status).to.equal(0);
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.match(/It works/m);
 		});
@@ -169,7 +176,10 @@ describe('Extension', () => {
 
 			const { status, stdout, stderr } = spawnSync(process.execPath, [
 				path.join(__dirname, 'examples', 'external-js-file', 'extjsfile.js'), 'simple', 'foo', 'bar'
-			], { env });
+			], {
+				env,
+				shell: platform() === 'win32'
+			});
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.equal(`${process.version} foo bar`);
 			expect(status).to.equal(0);
 		});
@@ -183,7 +193,10 @@ describe('Extension', () => {
 
 			const { status, stdout, stderr } = spawnSync(process.execPath, [
 				path.join(__dirname, 'examples', 'external-module', 'extmod.js'), 'foo', 'bar'
-			], { env });
+			], {
+				env,
+				shell: platform() === 'win32'
+			});
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.equal(`${process.version} bar`);
 			expect(status).to.equal(0);
 		});
