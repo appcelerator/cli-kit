@@ -64,17 +64,7 @@ describe('Extension', () => {
 				'console.log(\'foo\');'
 			];
 
-			let s = '',o = '',e = '';
-			try {
-				console.log('NODE', nodePath());
-				s = status; o = stdout; e = stderr;
-			} catch (e) {
-				console.log('EROROROROROR!', e);
-			} finally {
-				console.log('ORANGES:', { s, stdout: o.toString(), stderr: e.toString() });
-				console.log('PLATFORM:', platform());
-			}
-
+			console.log('NODE:', nodePath());
 			const { status, stdout, stderr } = spawnSync(nodePath(), args, {
 				env,
 				shell: platform() === 'win32'
