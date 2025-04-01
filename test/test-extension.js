@@ -62,6 +62,7 @@ describe('Extension', () => {
 				'-e',
 				'console.log(\'foo\');'
 			];
+			console.log('PLATFORM:', platform())
 			const { status, stdout, stderr } = spawnSync(process.execPath, args, {
 				env,
 				shell: platform() === 'win32'
