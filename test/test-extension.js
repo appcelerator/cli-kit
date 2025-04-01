@@ -65,7 +65,7 @@ describe('Extension', () => {
 
 			let s = '',o = '',e = '';
 			try {
-				const { status, stdout, stderr } = spawnSync('where', 'node');
+				const { status, stdout, stderr } = spawnSync('where', ['node']);
 				s = status; o = stdout; e = stderr;
 			} catch (e) {
 				console.log('EROROROROROR!', e);
