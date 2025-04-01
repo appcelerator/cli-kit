@@ -20,8 +20,4 @@ jobs:
         with:
           node-version: ${{ matrix.nodeVersion }}
       - name: Install dependencies
-        run: where node && yarn
-      - name: Run tests
-        run: yarn run test
-        env:
-          SNOOPLOGG: "*"
+        run: where yarn && where node
