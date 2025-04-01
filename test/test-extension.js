@@ -51,12 +51,12 @@ describe('Extension', () => {
 	});
 
 	describe('Executable Extensions', () => {
-		it('should wire up extension that is a native binary', function () {
+		it.only('should wire up extension that is a native binary', function () {
 			this.slow(9000);
 			this.timeout(10000);
 
 			const env = { ...process.env };
-			delete env.SNOOPLOGG;
+			// delete env.SNOOPLOGG;
 			const args = [
 				path.join(__dirname, 'examples', 'external-binary', 'extbin.js'),
 				nodePath(),
@@ -66,9 +66,9 @@ describe('Extension', () => {
 
 			console.log('NODE:', nodePath());
 			const { status, stdout, stderr } = spawnSync(nodePath(), args, {
-				env,
-				shell: platform() === 'win32'
+				env
 			});
+			console.log('OUT', stdout.toString(), 'ERR', stderr.toString());
 			expect(stdout.toString().trim()).to.equal('foo');
 			expect(stderr.toString().trim()).to.equal('');
 			expect(status).to.equal(0);
@@ -84,8 +84,7 @@ describe('Extension', () => {
 			const { status, stdout, stderr } = spawnSync(nodePath(), [
 				path.join(__dirname, 'examples', 'run-node', 'run.js'), 'run', 'console.log(\'It works\')'
 			], {
-				env,
-				shell: platform() === 'win32'
+				env
 			});
 			expect(status).to.equal(0);
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.match(/It works/m);
@@ -97,7 +96,7 @@ describe('Extension', () => {
 			const cli = new CLI({
 				colors: false,
 				extensions: {
-					echo: 'node -e \'console.log("hi " + process.argv.slice(1).join(" "))\''
+					echo: nodePath() + ' -e \'console.log("hi " + process.argv.slice(1).join(" "))\''
 				},
 				help: true,
 				name: 'test-cli',

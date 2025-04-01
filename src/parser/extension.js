@@ -34,6 +34,7 @@ export default class Extension {
 	 * @access public
 	 */
 	constructor(pathOrParams, params) {
+		log({pathOrParams, params});
 		let path = pathOrParams;
 
 		if (typeof path === 'string' && !params) {
@@ -239,6 +240,8 @@ export default class Extension {
 	 */
 	registerExtension(name, meta, params) {
 		log(`Registering extension command: ${highlight(`${this.name}:${name}`)}`);
+		log(meta);
+		log(params);
 		const cmd = new Command(name, {
 			parent: this,
 			...params
