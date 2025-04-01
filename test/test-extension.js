@@ -62,11 +62,11 @@ describe('Extension', () => {
 				'-e',
 				'console.log(\'foo\');'
 			];
-			
+
 			console.log('PLATFORM:', platform());
 
 			{
-				const { status, stdout, stderr } = spawnSync('where', 'node'); 
+				const { status, stdout, stderr } = spawnSync('where', 'node');
 				console.log({ status, stdout: stdout.toString(), stderr: stderr.toString() });
 			}
 
