@@ -63,11 +63,15 @@ describe('Extension', () => {
 				'console.log(\'foo\');'
 			];
 
-			console.log('PLATFORM:', platform());
-
-			{
+			let s = '',o = '',e = '';
+			try {
 				const { status, stdout, stderr } = spawnSync('where', 'node');
-				console.log('ORANGES', { status, stdout: stdout.toString(), stderr: stderr.toString() });
+				s = status; o = stdout; e = stderr;
+			} catch (e) {
+				console.log('EROROROROROR!', e);
+			} finally {
+				console.log('ORANGES:', { s, stdout: o.toString(), stderr: e.toString() });
+				console.log('PLATFORM:', platform());
 			}
 
 			const { status, stdout, stderr } = spawnSync('node.exe', args, {
