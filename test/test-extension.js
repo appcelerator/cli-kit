@@ -51,24 +51,23 @@ describe('Extension', () => {
 	});
 
 	describe('Executable Extensions', () => {
-		it.only('should wire up extension that is a native binary', function () {
+		it('should wire up extension that is a native binary', function () {
 			this.slow(9000);
 			this.timeout(10000);
 
 			const env = { ...process.env };
-			// delete env.SNOOPLOGG;
+			delete env.SNOOPLOGG;
 			const args = [
 				path.join(__dirname, 'examples', 'external-binary', 'extbin.js'),
-				nodePath(),
+				// this is the command name!
+				'node',
 				'-e',
 				'console.log(\'foo\');'
 			];
 
-			console.log('NODE:', nodePath());
 			const { status, stdout, stderr } = spawnSync(nodePath(), args, {
 				env
 			});
-			console.log('OUT', stdout.toString(), 'ERR', stderr.toString());
 			expect(stdout.toString().trim()).to.equal('foo');
 			expect(stderr.toString().trim()).to.equal('');
 			expect(status).to.equal(0);
