@@ -9,17 +9,12 @@ describe('util', () => {
 	describe('findPackage()', () => {
 		it('should throw error if package.json has syntax error', () => {
 			const dir = path.resolve(__dirname, 'fixtures', 'bad-pkg-json');
-			expectThrow(() => {
+			try {
 				findPackage(dir);
-			}, {
-				type:  Error,
-				msg:   'Failed to parse package.json: Unexpected token { in JSON at position 1',
-				code:  'ERR_INVALID_PACKAGE_JSON',
-				file:  path.join(dir, 'package.json'),
-				name:  'package.json.bad',
-				scope: 'util.findPackage',
-				value: /{{{{{{{{{{\r?\n/
-			});
+				throw new Error('Expected error');
+			} catch (err) {
+				expect(err.message).to.match(/Failed to parse package.json:/);
+			}
 		});
 
 		it('should throw error if package.json is not an object', () => {

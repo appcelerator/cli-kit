@@ -54,6 +54,7 @@ describe('Argument', () => {
 					name: 'foo',
 					type: 'bar'
 				});
+				throw new Error('Expected error');
 			} catch (err) {
 				expect(err).to.be.instanceof(Error);
 				expect(err.message).to.equal('Unsupported type "bar"');

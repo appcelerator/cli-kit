@@ -4,8 +4,10 @@ import CLI, { ansi, Extension, Terminal } from '../src/index.js';
 import path from 'path';
 import { expect } from 'chai';
 import { fileURLToPath } from 'url';
+import { platform } from 'os';
 import { spawnSync } from 'child_process';
 import { WritableStream } from 'memory-streams';
+import { nodePath } from '../src/lib/util.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -55,14 +57,19 @@ describe('Extension', () => {
 
 			const env = { ...process.env };
 			delete env.SNOOPLOGG;
-
-			const { status, stdout, stderr } = spawnSync(process.execPath, [
+			const args = [
 				path.join(__dirname, 'examples', 'external-binary', 'extbin.js'),
+				// this is the command name!
 				'node',
 				'-e',
 				'console.log(\'foo\');'
-			], { env });
-			expect(stdout.toString().trim() + stderr.toString().trim()).to.match(/foo/im);
+			];
+
+			const { status, stdout, stderr } = spawnSync(nodePath(), args, {
+				env
+			});
+			expect(stdout.toString().trim()).to.equal('foo');
+			expect(stderr.toString().trim()).to.equal('');
 			expect(status).to.equal(0);
 		});
 
@@ -73,9 +80,11 @@ describe('Extension', () => {
 			const env = { ...process.env };
 			delete env.SNOOPLOGG;
 
-			const { status, stdout, stderr } = spawnSync(process.execPath, [
+			const { status, stdout, stderr } = spawnSync(nodePath(), [
 				path.join(__dirname, 'examples', 'run-node', 'run.js'), 'run', 'console.log(\'It works\')'
-			], { env });
+			], {
+				env
+			});
 			expect(status).to.equal(0);
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.match(/It works/m);
 		});
@@ -86,7 +95,7 @@ describe('Extension', () => {
 			const cli = new CLI({
 				colors: false,
 				extensions: {
-					echo: 'node -e \'console.log("hi " + process.argv.slice(1).join(" "))\''
+					echo: nodePath() + ' -e \'console.log("hi " + process.argv.slice(1).join(" "))\''
 				},
 				help: true,
 				name: 'test-cli',
@@ -166,9 +175,11 @@ describe('Extension', () => {
 			const env = { ...process.env };
 			delete env.SNOOPLOGG;
 
-			const { status, stdout, stderr } = spawnSync(process.execPath, [
+			const { status, stdout, stderr } = spawnSync(nodePath(), [
 				path.join(__dirname, 'examples', 'external-js-file', 'extjsfile.js'), 'simple', 'foo', 'bar'
-			], { env });
+			], {
+				env
+			});
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.equal(`${process.version} foo bar`);
 			expect(status).to.equal(0);
 		});
@@ -180,9 +191,11 @@ describe('Extension', () => {
 			const env = { ...process.env };
 			delete env.SNOOPLOGG;
 
-			const { status, stdout, stderr } = spawnSync(process.execPath, [
+			const { status, stdout, stderr } = spawnSync(nodePath(), [
 				path.join(__dirname, 'examples', 'external-module', 'extmod.js'), 'foo', 'bar'
-			], { env });
+			], {
+				env
+			});
 			expect(stdout.toString().trim() + stderr.toString().trim()).to.equal(`${process.version} bar`);
 			expect(status).to.equal(0);
 		});
