@@ -10,7 +10,8 @@ describe('util', () => {
 		it('should throw error if package.json has syntax error', () => {
 			const dir = path.resolve(__dirname, 'fixtures', 'bad-pkg-json');
 			try {
-				const result = findPackage(dir);
+				findPackage(dir);
+				throw new Error('Expected error');
 			} catch (err) {
 				expect(err.message).to.match(/Failed to parse package.json:/);
 			}
