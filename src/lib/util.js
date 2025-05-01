@@ -2,10 +2,13 @@ import argvSplit from 'argv-split';
 import fs from 'fs-extra';
 import E from './errors.js';
 import path from 'path';
+import os from 'os';
 import semver from 'semver';
 import which from 'which';
+import child_process from 'child_process';
 import { fileURLToPath } from 'url';
 import { packageDirectorySync } from 'pkg-dir';
+import { execPath } from 'process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -263,4 +266,28 @@ export function wrap(str, width, indent) {
 			return line;
 		})
 		.join('\n');
+}
+
+// cache to avoid extra lookups
+let _nodePath;
+export function nodePath() {
+	if (!_nodePath) {
+		const execPath = process.execPath;
+		// cannot exec cmd on windows on new versions of node https://nodejs.org/en/blog/vulnerability/april-2024-security-releases-2
+		// CVE-2024-27980. Can't pass shell: true to get around this on windows since it breaks non-shell executions.
+		// Can't imagine node would be a bat but who knows. It's .cmd on windows often.
+		if (os.platform() === 'win32' && [ 'cmd', 'bat' ].includes(path.extname(execPath))) {
+			// try and see if the node.exe lives in the same dir
+			const newNodePath = execPath.replace(new RegExp(`${path.extname(execPath)}$`), 'exe');
+			try {
+				fs.statSync(newNodePath);
+				_nodePath = newNodePath;
+			} catch (err) {
+				_nodePath = 'node.exe';
+			}
+		} else {
+			_nodePath = execPath;
+		}
+	}
+	return _nodePath;
 }

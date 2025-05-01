@@ -4,6 +4,7 @@ import { expect } from 'chai';
 import { fileURLToPath } from 'url';
 import { spawnSync } from 'child_process';
 import { WritableStream } from 'memory-streams';
+import { nodePath } from '../src/lib/util.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -86,7 +87,9 @@ describe('Parser', () => {
 			const env = Object.assign({}, process.env);
 			delete env.SNOOPLOGG;
 
-			const { status, stdout } = spawnSync(process.execPath, [ path.join(__dirname, 'examples', 'version-test', 'ver.js'), '--version' ], { env });
+			const { status, stdout } = spawnSync(nodePath(), [ path.join(__dirname, 'examples', 'version-test', 'ver.js'), '--version' ], {
+				env
+			});
 			expect(status).to.equal(0);
 			expect(stdout.toString()).to.equal('1.2.3\n');
 		});

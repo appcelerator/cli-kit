@@ -4,7 +4,7 @@ import E from '../lib/errors.js';
 import helpCommand from '../commands/help.js';
 import _path from 'path';
 
-import { declareCLIKitClass, filename, findPackage, isExecutable } from '../lib/util.js';
+import { declareCLIKitClass, filename, findPackage, isExecutable, nodePath } from '../lib/util.js';
 import { spawn } from 'child_process';
 
 const { log, warn } = debug('cli-kit:extension');
@@ -34,6 +34,7 @@ export default class Extension {
 	 * @access public
 	 */
 	constructor(pathOrParams, params) {
+		log({pathOrParams, params});
 		let path = pathOrParams;
 
 		if (typeof path === 'string' && !params) {
@@ -114,7 +115,7 @@ export default class Extension {
 				const makeDefaultAction = main => {
 					return async ({ __argv, cmd }) => {
 						process.argv = [
-							process.execPath,
+							nodePath(),
 							main
 						];
 
@@ -239,6 +240,8 @@ export default class Extension {
 	 */
 	registerExtension(name, meta, params) {
 		log(`Registering extension command: ${highlight(`${this.name}:${name}`)}`);
+		log(meta);
+		log(params);
 		const cmd = new Command(name, {
 			parent: this,
 			...params
