@@ -1,3 +1,7 @@
+# v2.1.1 (May 15, 2025)
+
+- fix: Removed a log statement that is logging a undefined field.
+
 # v2.1.0 (May 1, 2025)
 
 - fix: Fix for loading ESM - node.js upgrade on axway-cli and ESM conversion.
