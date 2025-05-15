@@ -168,8 +168,6 @@ export default class Extension {
 						desc: pkg.json.description
 					});
 				} else if (typeof pkg.json.exports !== 'object') {
-					console.log(pkg.json.exports);
-
 					throw E.INVALID_EXTENSION('Invalid extension: Expected exports to be an object', { name: 'pkg.json.exports', scope: 'Extension.constructor', value: pkg.json.exports });
 				} else {
 					for (let [ name, params ] of Object.entries(pkg.json.exports)) {
