@@ -98,6 +98,7 @@ export default class Extension {
 				try {
 					pkg = findPackage(path);
 					if (!pkg.root) {
+						// eslint-disable-next-line preserve-caught-error
 						throw new Error();
 					}
 				} catch (e) {

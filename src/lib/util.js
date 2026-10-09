@@ -244,7 +244,7 @@ export function wrap(str, width, indent) {
 			let k;
 
 			// remove escape characters
-			line = line.replace(/\u001b\[J/g, ''); // eslint-disable-line no-control-regex
+			line = line.replace(/\u001b\[J/g, '');
 
 			while (i < line.length) {
 				i++;

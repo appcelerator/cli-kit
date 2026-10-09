@@ -12,7 +12,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
+          node-version: "24.x"
       - name: Install dependencies
         run: yarn
       - name: Lint
@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        nodeVersion: ["14.x", "16.x", "18.x", "20.x", "22.x"]
+        nodeVersion: ["22.x", "24.x", "26.x"]
         os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
@@ -48,7 +48,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        nodeVersion: ["16.x", "18.x", "20.x", "22.x"]
+        nodeVersion: ["22.x", "24.x", "26.x"]
         os: [macos-latest]
     steps:
       - uses: actions/checkout@v4
@@ -57,30 +57,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.nodeVersion }}
-      - name: Install dependencies
-        run: yarn
-      - name: Run tests
-        run: yarn run test
-        env:
-          SNOOPLOGG: "*"
-
-  MacOS14Test:
-    needs: Lint
-    name: ${{ matrix.os }} ${{ matrix.nodeVersion }} Tests
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        nodeVersion: ["14.x"]
-        os: [macos-latest]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.nodeVersion }}
-          architecture: "x64"
       - name: Install dependencies
         run: yarn
       - name: Run tests
