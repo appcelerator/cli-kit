@@ -1,3 +1,16 @@
+# v3.0.0 (Oct 9, 2026)
+
+- BREAKING CHANGE: Require Node.js 22.12.0 LTS or newer.
+- chore: Migrated ESLint config to flat config (`eslint.config.js`); removed `.eslintrc` and
+  `test/.eslintrc`.
+- chore: Updated `eslint` to v10, `eslint-plugin-mocha` to v12, `eslint-plugin-chai-expect` to v4,
+  `eslint-plugin-promise` to v7, and `eslint-plugin-security` to v4.
+- chore: Updated `mocha` to v12, `sinon` to v22, and `c8` to v12.
+- chore: Updated `semver`, `tmp`, `js-yaml`, `minimatch`, `brace-expansion`, `nanoid`,
+  `picomatch`, and `serialize-javascript` to resolve security issues.
+- chore: Added `*.cjs` to `.gitattributes` so `test/setup.cjs` is normalized to LF line endings.
+- chore: Updated GitHub Actions workflow to test against Node.js 22, 24, and 26.
+
 # v2.1.1 (May 15, 2025)
 
 - fix: Removed a log statement that is logging a undefined field.
